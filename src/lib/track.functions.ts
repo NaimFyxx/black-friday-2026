@@ -39,6 +39,9 @@ export const recordEvent = createServerFn({ method: "POST" })
   .validator((d: unknown) => EventInput.parse(d))
   .handler(async ({ data }) => {
     try {
+      // Respect the admin tracking switches (site-wide off, or this device excluded).
+      const { shouldTrack } = await import("./tracking-settings.server");
+      if (!(await shouldTrack())) return { ok: true };
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       // bf_events is a new table not yet in the generated types.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,6 +65,12 @@ export const recordEvent = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+/** Is tracking on for this visitor? Read by the root route on page load. */
+export const getTrackingState = createServerFn({ method: "GET" }).handler(async () => {
+  const { shouldTrack } = await import("./tracking-settings.server");
+  return { enabled: await shouldTrack() };
+});
 
 const ErrorInput = z.object({
   area: z.string().trim().min(1).max(60),

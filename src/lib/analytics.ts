@@ -59,12 +59,20 @@ export function getSessionId(): string {
   }
 }
 
+/** True when /admin switched tracking off for this visitor (set in __root). */
+export function trackingOff(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    (window as Window & { __bfTrackingOff?: boolean }).__bfTrackingOff === true
+  );
+}
+
 /** Save one event to Supabase. Fire-and-forget: never blocks or throws. */
 function logEvent(
   event: TrackedEventName,
   extra: { value?: number; currency?: string; itemCount?: number } = {},
 ) {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || trackingOff()) return;
   const sessionId = getSessionId();
   if (sessionId.length < 8) return;
   const utm = getStoredUtm() ?? {};

@@ -15,6 +15,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as AdminCohortRouteImport } from './routes/admin.cohort'
 import { Route as AdminErrorsRouteImport } from './routes/admin.errors'
+import { Route as AdminTrackingRouteImport } from './routes/admin.tracking'
 import { Route as ProductHandleRouteImport } from './routes/product.$handle'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const AdminErrorsRoute = AdminErrorsRouteImport.update({
   path: '/errors',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTrackingRoute = AdminTrackingRouteImport.update({
+  id: '/tracking',
+  path: '/tracking',
+  getParentRoute: () => AdminRoute,
+} as any)
 const ProductHandleRoute = ProductHandleRouteImport.update({
   id: '/product/$handle',
   path: '/product/$handle',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
+  '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
+  '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
+  '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
+    | '/admin/tracking'
     | '/product/$handle'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
+    | '/admin/tracking'
     | '/product/$handle'
     | '/admin'
   id:
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
+    | '/admin/tracking'
     | '/product/$handle'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -159,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminErrorsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/tracking': {
+      id: '/admin/tracking'
+      path: '/tracking'
+      fullPath: '/admin/tracking'
+      preLoaderRoute: typeof AdminTrackingRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/product/$handle': {
       id: '/product/$handle'
       path: '/product/$handle'
@@ -173,6 +192,7 @@ interface AdminRouteChildren {
   AdminActivityRoute: typeof AdminActivityRoute
   AdminCohortRoute: typeof AdminCohortRoute
   AdminErrorsRoute: typeof AdminErrorsRoute
+  AdminTrackingRoute: typeof AdminTrackingRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -180,6 +200,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminActivityRoute: AdminActivityRoute,
   AdminCohortRoute: AdminCohortRoute,
   AdminErrorsRoute: AdminErrorsRoute,
+  AdminTrackingRoute: AdminTrackingRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

@@ -31,6 +31,36 @@ export const checkAdminAccess = createServerFn({ method: "GET" }).handler(async 
   return { isAdmin: await isAdmin() };
 });
 
+// ── Tracking switches (/admin → Tracking) ─────────────────────────────
+
+export const getTrackingSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const { assertAdmin } = await import("./admin-session.server");
+  await assertAdmin();
+  const { getSiteTracking, isDeviceExcluded } = await import("./tracking-settings.server");
+  const site = await getSiteTracking(true);
+  return { siteEnabled: site.enabled, siteSetup: site.setup, deviceExcluded: isDeviceExcluded() };
+});
+
+export const updateSiteTracking = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({ enabled: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const { setSiteTracking } = await import("./tracking-settings.server");
+    await setSiteTracking(data.enabled);
+    return { ok: true };
+  });
+
+export const updateDeviceTracking = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({ excluded: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const { setDeviceExcluded } = await import("./tracking-settings.server");
+    setDeviceExcluded(data.excluded);
+    return { ok: true };
+  });
+
 // ── Shared ────────────────────────────────────────────────────────────
 
 const MAX_RANGE_DAYS = 120;

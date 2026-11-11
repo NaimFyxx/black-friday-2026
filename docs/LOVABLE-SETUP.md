@@ -8,9 +8,9 @@ of breaking.
 ## 1. Database tables (paste this prompt into Lovable)
 
 > Please run this SQL as a new migration on the Supabase database, exactly as
-> written. It adds two new tables (`bf_events`, `bf_error_log`) and three
-> read-only report functions for the Black Friday 2026 admin. It does not
-> change any existing table.
+> written. It adds three new tables (`bf_events`, `bf_error_log`,
+> `bf_settings`) and three read-only report functions for the Black Friday
+> 2026 admin. It does not change any existing table.
 
 ```sql
 -- Black Friday 2026: campaign events (visits, product views, carts, checkouts)
@@ -47,6 +47,18 @@ create table if not exists public.bf_error_log (
 );
 create index if not exists bf_error_log_created_at_idx on public.bf_error_log (created_at desc);
 alter table public.bf_error_log enable row level security;
+
+-- Black Friday 2026: admin settings. `tracking_enabled` is the site-wide
+-- tracking switch on /admin → Tracking. Starts OFF while the site is being
+-- built; turn it on from the admin when the campaign goes live.
+create table if not exists public.bf_settings (
+  key        text primary key,
+  value      jsonb not null,
+  updated_at timestamptz not null default now()
+);
+alter table public.bf_settings enable row level security;
+insert into public.bf_settings (key, value) values ('tracking_enabled', 'false'::jsonb)
+  on conflict (key) do nothing;
 
 -- Sources report: one row per first-touch source, with the funnel counts.
 create or replace function public.bf_source_funnel(p_since timestamptz, p_until timestamptz)
@@ -119,6 +131,9 @@ grant execute on function public.bf_first_order_dates(text[]) to service_role;
 
 Add a secret named **`ADMIN_PASSWORD`**: any password, at least 8 characters.
 Share it with whoever should see the dashboards. Changing it signs everyone out.
+(It goes in Lovable, not Supabase: the password is checked by the website's
+server code, which Lovable runs and which can only read Lovable's Secrets.
+Supabase's own secrets page is only for Supabase Edge Functions.)
 
 ## 3. Shopify orders by source (Shopify admin + Lovable → Secrets)
 
@@ -131,6 +146,19 @@ orders and revenue**.
 3. **Install app** → reveal the **Admin API access token** (starts `shpat_`)
    and copy it (Shopify only shows it once).
 4. In Lovable → Secrets, add **`SHOPIFY_ADMIN_TOKEN`** with that token.
+
+## Tracking on/off (/admin → Tracking)
+
+- **Site-wide tracking** switches Google Analytics, Meta Pixel, Klaviyo,
+  Microsoft Clarity and the visit log on or off for everyone. It starts **OFF**
+  once the SQL above is run (a red "Tracking is OFF" badge shows in the admin
+  header). **Turn it on when Black Friday goes live.** Before the SQL is run,
+  tracking is on.
+- **Track this device** keeps one browser out of the numbers (a cookie), even
+  when site-wide tracking is on. Sign in to /admin on every phone and laptop
+  you and Lori test with and switch it off there.
+- Test orders placed from an excluded device don't count in the Sources report.
+- Errors are still logged either way.
 
 ## How the source tracking works
 

@@ -6,13 +6,15 @@
  * storefront password wall.
  */
 
-import { getSessionId } from "@/lib/analytics";
+import { getSessionId, trackingOff } from "@/lib/analytics";
 import { CART_ATTR } from "@/lib/campaign-config";
 import { storefrontApiRequest, type ShopifyProduct } from "@/lib/shopify";
 import { getStoredUtm } from "@/lib/utm-attribution";
 
 /** Session + first-touch UTM as Shopify cart attributes (empty values dropped). */
 function campaignCartAttributes(): Array<{ key: string; value: string }> {
+  // Tracking switched off (in /admin): leave test orders out of the reports.
+  if (trackingOff()) return [];
   const utm = getStoredUtm() ?? {};
   const pairs: Array<[string, string | undefined]> = [
     [CART_ATTR.session, getSessionId() || "unknown"],

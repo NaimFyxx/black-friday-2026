@@ -5,7 +5,12 @@ import { useState, type FormEvent } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { adminSignIn, adminSignOut, checkAdminAccess } from "@/lib/admin.functions";
+import {
+  adminSignIn,
+  adminSignOut,
+  checkAdminAccess,
+  getTrackingSettings,
+} from "@/lib/admin.functions";
 import { CAMPAIGN_LABEL } from "@/lib/campaign-config";
 
 // Layout for every /admin page: password gate, then tab nav + the page.
@@ -26,6 +31,7 @@ const TABS = [
   { to: "/admin/activity", label: "Activity" },
   { to: "/admin/cohort", label: "Customers" },
   { to: "/admin/errors", label: "Errors" },
+  { to: "/admin/tracking", label: "Tracking" },
 ] as const;
 
 function AdminLayout() {
@@ -55,6 +61,7 @@ function AdminLayout() {
             </p>
             <p className="font-display text-xl">{CAMPAIGN_LABEL}</p>
           </div>
+          <TrackingBadge />
           <nav className="flex flex-wrap gap-1 text-xs">
             {TABS.map((t) => (
               <Link
@@ -158,5 +165,20 @@ function SignOutButton() {
     >
       Sign out
     </button>
+  );
+}
+
+/** Header warning when site-wide tracking is switched off. */
+function TrackingBadge() {
+  const fn = useServerFn(getTrackingSettings);
+  const { data } = useQuery({ queryKey: ["admin-tracking"], queryFn: () => fn(), retry: 1 });
+  if (!data || data.siteEnabled) return null;
+  return (
+    <Link
+      to="/admin/tracking"
+      className="rounded-full bg-red-100 px-3 py-1 text-[11px] font-semibold text-red-800"
+    >
+      Tracking is OFF
+    </Link>
   );
 }

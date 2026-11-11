@@ -18,7 +18,7 @@ import { useCartSync } from "../hooks/useCartSync";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CAMPAIGN_NAME, trackCampaignView } from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
-import { reportClientError } from "../lib/track.functions";
+import { getTrackingState, reportClientError } from "../lib/track.functions";
 
 // Send a client error to the /admin error log. Deduped per page load so one
 // crash loop can't spam it, and capped at 5 reports per page.
@@ -45,6 +45,17 @@ const META_PIXEL_ID = "298343128719993";
 const KLAVIYO_COMPANY_ID = "XuTPpc";
 // Clarity project shared by the Christmas + Valentine's landing pages.
 const CLARITY_ID = "l993kg87k8";
+
+// Used instead of TRACKING_SNIPPET when tracking is switched off in /admin
+// (site-wide, or for this device): silent no-op stubs so the app's tracking
+// calls do nothing, and no third-party script is loaded at all.
+const NO_TRACKING_SNIPPET = `
+window.__bfTrackingOff = true;
+window.dataLayer = [];
+window.gtag = function(){};
+window.fbq = function(){};
+window.clarity = function(){};
+`.trim();
 
 // Runs before the app hydrates. Stubs gtag/fbq immediately (so early events
 // queue), then loads the real SDKs on first interaction or after 3s to keep
@@ -220,7 +231,17 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  // Ask the server once per full page load whether to track this visitor
+  // (the /admin Tracking switches). Fails open: an error means "track".
+  loader: async () => {
+    try {
+      return await getTrackingState();
+    } catch {
+      return { enabled: true };
+    }
+  },
+  shouldReload: false,
+  head: ({ loaderData }) => ({
     // Each content route, / included, sets its own head(). No og:image here on purpose:
     // every page without its own would inherit this one.
     meta: [
@@ -265,7 +286,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     // Marketing + analytics stack shared with the Christmas, Valentine's and
     // Fyxx Cup campaign sites: GA4, Meta Pixel, Klaviyo, Microsoft Clarity,
     // JS-error forwarding, ?from=app detection and scroll-depth milestones.
-    scripts: [{ children: TRACKING_SNIPPET }],
+    scripts: [{ children: loaderData?.enabled === false ? NO_TRACKING_SNIPPET : TRACKING_SNIPPET }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
