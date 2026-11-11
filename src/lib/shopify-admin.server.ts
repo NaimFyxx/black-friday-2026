@@ -5,8 +5,10 @@
 // order, so here we pull the campaign window's online orders and keep the ones
 // that came through this site, grouped by their source.
 //
-// Needs the BF_SHOPIFY_ADMIN_TOKEN secret: an Admin API access token from a custom
-// app in Shopify admin with the `read_orders` scope (see docs/LOVABLE-SETUP.md).
+// Shopify access: REUSES Pulse's existing Shopify app (the same secrets the
+// Pulse edge functions use, e.g. order-watch): SHOPIFY_STORE, SHOPIFY_CLIENT_ID,
+// SHOPIFY_CLIENT_SECRET, via Shopify's client-credentials grant. Read only, and
+// never changes those secrets, so Pulse is unaffected. No new token needed.
 
 import { CART_ATTR } from "@/lib/campaign-config";
 import { SHOPIFY_STORE_PERMANENT_DOMAIN } from "@/lib/shopify";
@@ -60,14 +62,48 @@ type OrderNode = {
   customer: { numberOfOrders: string | number } | null;
 };
 
+// Short-lived Admin API token from Pulse's app credentials, cached in memory.
+let cachedToken: { value: string; at: number } | null = null;
+const TOKEN_TTL_MS = 30 * 60 * 1000;
+
+async function getAdminToken(): Promise<{ token: string; store: string } | null> {
+  const store = (process.env["SHOPIFY_STORE"] ?? "").trim() || SHOPIFY_STORE_PERMANENT_DOMAIN;
+  const clientId = (process.env["SHOPIFY_CLIENT_ID"] ?? "").trim();
+  const clientSecret = (process.env["SHOPIFY_CLIENT_SECRET"] ?? "").trim();
+  if (!clientId || !clientSecret) return null;
+  if (cachedToken && Date.now() - cachedToken.at < TOKEN_TTL_MS) {
+    return { token: cachedToken.value, store };
+  }
+  const res = await fetch(`https://${store}/admin/oauth/access_token`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      grant_type: "client_credentials",
+    }),
+  });
+  if (!res.ok) throw new Error(`Shopify sign-in returned ${res.status}`);
+  const token = ((await res.json()) as { access_token?: string }).access_token;
+  if (!token) throw new Error("Shopify sign-in gave no token");
+  cachedToken = { value: token, at: Date.now() };
+  return { token, store };
+}
+
 export async function fetchSiteOrders(
   sinceIso: string,
   untilIso: string,
 ): Promise<SiteOrdersResult> {
-  const token = process.env["BF_SHOPIFY_ADMIN_TOKEN"];
-  if (!token) return { status: "not_configured" };
+  let auth: { token: string; store: string } | null;
+  try {
+    auth = await getAdminToken();
+  } catch (e) {
+    return { status: "error", message: e instanceof Error ? e.message : String(e) };
+  }
+  if (!auth) return { status: "not_configured" };
+  const { token } = auth;
 
-  const url = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/admin/api/${API_VERSION}/graphql.json`;
+  const url = `https://${auth.store}/admin/api/${API_VERSION}/graphql.json`;
   const q = `created_at:>='${sinceIso}' AND created_at:<'${untilIso}'`;
   const orders: SiteOrder[] = [];
   let after: string | null = null;

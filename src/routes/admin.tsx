@@ -104,7 +104,7 @@ function SignIn() {
         await queryClient.invalidateQueries({ queryKey: ["admin-access"] });
       } else if (result === "not_configured") {
         setMessage(
-          "Admin isn't set up yet: add an BF_ADMIN_PASSWORD secret (8+ characters) in Lovable.",
+          "Admin isn't set up yet: add an BLACK_FRIDAY_ADMIN_PASSWORD secret (8+ characters) in Lovable.",
         );
       } else {
         setMessage("Wrong password.");

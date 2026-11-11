@@ -1,9 +1,9 @@
 // Server-only admin lock for the /admin dashboards.
 //
-// One shared password, set as the BF_ADMIN_PASSWORD secret in Lovable. A correct
+// One shared password, set as the BLACK_FRIDAY_ADMIN_PASSWORD secret in Lovable. A correct
 // password gets an encrypted, HttpOnly session cookie for 30 days. Changing the
 // secret signs everyone out (the cookie key is derived from it).
-// FAIL CLOSED: if BF_ADMIN_PASSWORD is unset or shorter than 8 characters, nobody
+// FAIL CLOSED: if BLACK_FRIDAY_ADMIN_PASSWORD is unset or shorter than 8 characters, nobody
 // can sign in.
 
 import { createHash, timingSafeEqual } from "node:crypto";
@@ -13,7 +13,7 @@ import { useSession as openSession } from "@tanstack/react-start/server";
 type AdminSession = { admin?: boolean };
 
 function adminPassword(): string | null {
-  const p = process.env["BF_ADMIN_PASSWORD"] ?? "";
+  const p = process.env["BLACK_FRIDAY_ADMIN_PASSWORD"] ?? "";
   return p.length >= 8 ? p : null;
 }
 

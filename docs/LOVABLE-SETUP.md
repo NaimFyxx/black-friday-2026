@@ -136,30 +136,31 @@ grant execute on function public.bf_activity_daily(timestamptz, timestamptz) to 
 grant execute on function public.bf_first_order_dates(text[]) to service_role;
 ```
 
-> **Why the `BF_` prefix:** this Lovable project shares its Supabase project
+> **Why the `BLACK_FRIDAY_` prefix:** this Lovable project shares its Supabase project
 > (and so its secrets) with Fyxx Glow and other tools. Secrets with the same
-> name overwrite each other, so every secret for this site starts with `BF_`.
-> Never add or change a secret here without the prefix.
+> name overwrite each other, so every NEW secret for this site starts with
+> `BLACK_FRIDAY_`. Never change an existing secret (e.g. Pulse's `SHOPIFY_*`)
+> for this site; only read it.
 
-## 2. Admin password (Lovable → Secrets)
+## 2. Admin password — ✅ secret created (11 Nov 2026)
 
-Add a secret named **`BF_ADMIN_PASSWORD`**: any password, at least 8 characters.
+Secret **`BLACK_FRIDAY_ADMIN_PASSWORD`**: any password, at least 8 characters.
 Share it with whoever should see the dashboards. Changing it signs everyone out.
-(It goes in Lovable, not Supabase: the password is checked by the website's
-server code, which Lovable runs and which can only read Lovable's Secrets.
-Supabase's own secrets page is only for Supabase Edge Functions.)
 
-## 3. Shopify orders by source (Shopify admin + Lovable → Secrets)
+**How to check it works:** open `/admin` on the live site and sign in. If it
+says *"Admin isn't set up yet"*, the site's server can't see the secret; tell
+Claude, and the password check can move somewhere that can.
 
-This lets the Sources and Activity pages show **which sources led to real
-orders and revenue**.
+## 3. Shopify orders by source — nothing to add
 
-1. Shopify admin → **Settings → Apps and sales channels → Develop apps** →
-   **Create an app** (name it e.g. "Black Friday admin").
-2. **Configure Admin API scopes** → tick **`read_orders`** → Save.
-3. **Install app** → reveal the **Admin API access token** (starts `shpat_`)
-   and copy it (Shopify only shows it once).
-4. In Lovable → Secrets, add **`BF_SHOPIFY_ADMIN_TOKEN`** with that token.
+The admin **reuses Pulse's Shopify app**: the `SHOPIFY_STORE`,
+`SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET` secrets the Pulse edge
+functions (e.g. `order-watch`) already use. It only reads orders and never
+changes those secrets. No new Shopify app or token is needed.
+
+**How to check it works:** open `/admin` → Sources. If a yellow box says
+*"Shopify orders aren't connected yet"*, the site's server can't see Pulse's
+secrets; tell Claude.
 
 ## Tracking on/off (/admin → Tracking)
 
