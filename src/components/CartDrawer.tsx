@@ -11,7 +11,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { trackBeginCheckout } from "@/lib/analytics";
 import { formatPrice } from "@/lib/shopify";
+import { withStoredUtm } from "@/lib/utm-attribution";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 
 export function CartDrawer() {
@@ -42,7 +44,18 @@ export function CartDrawer() {
   const handleCheckout = () => {
     const checkoutUrl = getCheckoutUrl();
     if (checkoutUrl) {
-      window.open(checkoutUrl, "_blank");
+      trackBeginCheckout(
+        items.map((item) => ({
+          id: item.variantId,
+          name: item.product.node.title,
+          variant: item.variantTitle,
+          price: Number(item.price.amount),
+          currency: item.price.currencyCode,
+          quantity: item.quantity,
+        })),
+      );
+      // Carry the first-touch source onto checkout so orders can be traced.
+      window.open(withStoredUtm(checkoutUrl), "_blank");
       setIsOpen(false);
     }
   };

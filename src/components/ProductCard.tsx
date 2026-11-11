@@ -4,12 +4,8 @@ import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import {
-  firstVariant,
-  formatPrice,
-  primaryImage,
-  type ShopifyProduct,
-} from "@/lib/shopify";
+import { trackAddToCart } from "@/lib/analytics";
+import { firstVariant, formatPrice, primaryImage, type ShopifyProduct } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 
 export function ProductCard({ product }: { product: ShopifyProduct }) {
@@ -33,6 +29,14 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
         price: variant.price,
         quantity: 1,
         selectedOptions: variant.selectedOptions,
+      });
+      trackAddToCart({
+        id: variant.id,
+        name: node.title,
+        variant: variant.title,
+        price: Number(variant.price.amount),
+        currency: variant.price.currencyCode,
+        quantity: 1,
       });
       toast.success("Added to cart", { description: node.title });
     } finally {

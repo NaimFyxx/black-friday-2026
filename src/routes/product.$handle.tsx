@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { trackAddToCart, trackViewItem } from "@/lib/analytics";
 import {
   firstVariant,
   formatPrice,
@@ -72,6 +73,21 @@ function ProductPage() {
   const addItem = useCartStore((state) => state.addItem);
   const [pending, setPending] = useState(false);
 
+  // Product view -> GA4 view_item + Meta ViewContent (once per product).
+  useEffect(() => {
+    const variant = firstVariant(product);
+    if (!variant) return;
+    trackViewItem({
+      id: variant.id,
+      name: product.title,
+      variant: variant.title,
+      price: Number(variant.price.amount),
+      currency: variant.price.currencyCode,
+      quantity: 1,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [product.id]);
+
   const handleAdd = async () => {
     if (!selected) return;
     setPending(true);
@@ -83,6 +99,14 @@ function ProductPage() {
         price: selected.price,
         quantity: 1,
         selectedOptions: selected.selectedOptions,
+      });
+      trackAddToCart({
+        id: selected.id,
+        name: product.title,
+        variant: selected.title,
+        price: Number(selected.price.amount),
+        currency: selected.price.currencyCode,
+        quantity: 1,
       });
       toast.success("Added to cart", { description: product.title });
     } finally {
