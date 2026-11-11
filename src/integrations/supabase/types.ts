@@ -77,6 +77,75 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_delivery_alerts: {
+        Row: {
+          checked_at: string | null
+          closed_at: string | null
+          customer: string | null
+          emails: number
+          first_seen: string
+          invoice: string | null
+          last_emailed_at: string | null
+          odoo_created_at: string | null
+          picking: string | null
+          picking_id: number
+          reserved: number | null
+          salesperson: string | null
+          so: string | null
+          units: number | null
+        }
+        Insert: {
+          checked_at?: string | null
+          closed_at?: string | null
+          customer?: string | null
+          emails?: number
+          first_seen?: string
+          invoice?: string | null
+          last_emailed_at?: string | null
+          odoo_created_at?: string | null
+          picking?: string | null
+          picking_id: number
+          reserved?: number | null
+          salesperson?: string | null
+          so?: string | null
+          units?: number | null
+        }
+        Update: {
+          checked_at?: string | null
+          closed_at?: string | null
+          customer?: string | null
+          emails?: number
+          first_seen?: string
+          invoice?: string | null
+          last_emailed_at?: string | null
+          odoo_created_at?: string | null
+          picking?: string | null
+          picking_id?: number
+          reserved?: number | null
+          salesperson?: string | null
+          so?: string | null
+          units?: number | null
+        }
+        Relationships: []
+      }
+      bak_inv_resolution_summary_20261111: {
+        Row: {
+          id: string | null
+          issue_ref: string | null
+          resolution_summary: string | null
+        }
+        Insert: {
+          id?: string | null
+          issue_ref?: string | null
+          resolution_summary?: string | null
+        }
+        Update: {
+          id?: string | null
+          issue_ref?: string | null
+          resolution_summary?: string | null
+        }
+        Relationships: []
+      }
       btg_pin_fails: {
         Row: {
           at: string
@@ -3551,6 +3620,18 @@ export type Database = {
         }
         Relationships: []
       }
+      tmp_b2b_open: {
+        Row: {
+          c: Json | null
+        }
+        Insert: {
+          c?: Json | null
+        }
+        Update: {
+          c?: Json | null
+        }
+        Relationships: []
+      }
       tmp_btg: {
         Row: {
           active: boolean | null
@@ -3572,6 +3653,18 @@ export type Database = {
           name?: string | null
           pos?: boolean | null
           sku?: string | null
+        }
+        Relationships: []
+      }
+      tmp_resolved_check: {
+        Row: {
+          c: Json | null
+        }
+        Insert: {
+          c?: Json | null
+        }
+        Update: {
+          c?: Json | null
         }
         Relationships: []
       }
