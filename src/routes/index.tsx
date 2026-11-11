@@ -16,8 +16,9 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-background">
       <h1 className="text-5xl font-semibold tracking-tight text-foreground">Black Friday 2026</h1>
+      <p className="mt-4 text-base text-muted-foreground">Coming soon — stay tuned for our best deals.</p>
     </main>
   );
 }
