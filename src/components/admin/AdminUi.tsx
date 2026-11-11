@@ -160,9 +160,9 @@ export function SourceSetupNotices({
       )}
       {shopify === "not_configured" && (
         <SetupNotice title="Shopify orders aren't connected yet">
-          This site reuses Pulse's Shopify app (secrets <code>SHOPIFY_CLIENT_ID</code> and{" "}
-          <code>SHOPIFY_CLIENT_SECRET</code>), but the site's server can't see them. See{" "}
-          <code>docs/LOVABLE-SETUP.md</code>.
+          The <code>bf-admin</code> Supabase function can't see Pulse's Shopify secrets (
+          <code>SHOPIFY_CLIENT_ID</code> / <code>SHOPIFY_CLIENT_SECRET</code>) in the Supabase
+          project. See <code>docs/LOVABLE-SETUP.md</code>.
         </SetupNotice>
       )}
       {shopify === "error" && (

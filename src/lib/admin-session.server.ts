@@ -1,64 +1,53 @@
 // Server-only admin lock for the /admin dashboards.
 //
-// One shared password, set as the BLACK_FRIDAY_ADMIN_PASSWORD secret in Lovable. A correct
-// password gets an encrypted, HttpOnly session cookie for 30 days. Changing the
-// secret signs everyone out (the cookie key is derived from it).
-// FAIL CLOSED: if BLACK_FRIDAY_ADMIN_PASSWORD is unset or shorter than 8 characters, nobody
-// can sign in.
+// One shared password: the BLACK_FRIDAY_ADMIN_PASSWORD secret in the Supabase
+// project. This site can't read Supabase secrets, so the `bf-admin` edge
+// function checks the password for us (see bf-edge.server.ts).
+// A correct password gets an encrypted, HttpOnly session cookie for 30 days,
+// keyed by bf_settings.admin_session_secret (change that value to sign
+// everyone out).
+// FAIL CLOSED: if the password secret is unset/short, or anything can't be
+// reached, nobody can sign in.
 
-import { createHash, timingSafeEqual } from "node:crypto";
 // `useSession` is a server cookie-session helper, not a React hook.
 import { useSession as openSession } from "@tanstack/react-start/server";
 
+import { callBfAdmin, getBfSetting } from "./bf-edge.server";
+
 type AdminSession = { admin?: boolean };
 
-function adminPassword(): string | null {
-  const p = process.env["BLACK_FRIDAY_ADMIN_PASSWORD"] ?? "";
-  return p.length >= 8 ? p : null;
-}
-
-function sessionConfig(password: string) {
+async function sessionConfig() {
+  const secret = await getBfSetting("admin_session_secret");
+  if (!secret || secret.length < 32) throw new Error("admin_session_secret missing");
   return {
     name: "bf_admin",
-    // 64 hex chars, derived so there is only one secret to manage.
-    password: createHash("sha256").update(`bf-admin-session:${password}`).digest("hex"),
+    password: secret,
     maxAge: 60 * 60 * 24 * 30,
     cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
   };
 }
 
-function sameString(a: string, b: string): boolean {
-  const ha = createHash("sha256").update(a).digest();
-  const hb = createHash("sha256").update(b).digest();
-  return timingSafeEqual(ha, hb);
-}
-
 /** Checks the password and, if right, starts an admin session. */
 export async function signIn(attempt: string): Promise<"ok" | "wrong" | "not_configured"> {
-  const password = adminPassword();
-  if (!password) return "not_configured";
-  if (!sameString(attempt, password)) {
-    // Slow down guessing.
-    await new Promise((r) => setTimeout(r, 800));
-    return "wrong";
-  }
-  const session = await openSession<AdminSession>(sessionConfig(password));
+  const check = await callBfAdmin<{ configured: boolean; ok: boolean }>({
+    action: "check_password",
+    password: attempt,
+  });
+  if (!check.configured) return "not_configured";
+  if (!check.ok) return "wrong"; // the edge function already slows down guesses
+  const session = await openSession<AdminSession>(await sessionConfig());
   await session.update({ admin: true });
   return "ok";
 }
 
 export async function signOut(): Promise<void> {
-  const password = adminPassword();
-  if (!password) return;
-  const session = await openSession<AdminSession>(sessionConfig(password));
+  const session = await openSession<AdminSession>(await sessionConfig());
   await session.clear();
 }
 
 export async function isAdmin(): Promise<boolean> {
-  const password = adminPassword();
-  if (!password) return false;
   try {
-    const session = await openSession<AdminSession>(sessionConfig(password));
+    const session = await openSession<AdminSession>(await sessionConfig());
     return session.data.admin === true;
   } catch {
     return false;

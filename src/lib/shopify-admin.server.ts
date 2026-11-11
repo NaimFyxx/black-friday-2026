@@ -1,20 +1,12 @@
-// Server-only Shopify Admin API reader for the /admin sources report.
+// Server-only: Shopify orders placed through this site, for /admin.
 //
 // Every cart this site creates carries hidden attributes (_bf_session,
-// _utm_source, ...; see CART_ATTR). Shopify copies cart attributes onto the
-// order, so here we pull the campaign window's online orders and keep the ones
-// that came through this site, grouped by their source.
-//
-// Shopify access: REUSES Pulse's existing Shopify app (the same secrets the
-// Pulse edge functions use, e.g. order-watch): SHOPIFY_STORE, SHOPIFY_CLIENT_ID,
-// SHOPIFY_CLIENT_SECRET, via Shopify's client-credentials grant. Read only, and
-// never changes those secrets, so Pulse is unaffected. No new token needed.
+// _utm_source, ...; see CART_ATTR), which Shopify copies onto the order. The
+// `bf-admin` Supabase Edge Function reads the campaign window's orders with
+// Pulse's Shopify app (read only; this site can't see those secrets itself)
+// and returns only the ones that came through this site.
 
-import { CART_ATTR } from "@/lib/campaign-config";
-import { SHOPIFY_STORE_PERMANENT_DOMAIN } from "@/lib/shopify";
-
-const API_VERSION = "2026-10";
-const MAX_PAGES = 40; // 40 x 250 = 10,000 orders, far above a campaign week
+import { callBfAdmin } from "./bf-edge.server";
 
 export type SiteOrder = {
   id: string;
@@ -35,128 +27,16 @@ export type SiteOrdersResult =
   | { status: "not_configured" }
   | { status: "error"; message: string };
 
-const ORDERS_QUERY = `
-  query bfOrders($q: String!, $after: String) {
-    orders(first: 250, after: $after, query: $q, sortKey: CREATED_AT) {
-      pageInfo { hasNextPage endCursor }
-      nodes {
-        id
-        name
-        createdAt
-        cancelledAt
-        customAttributes { key value }
-        totalPriceSet { shopMoney { amount currencyCode } }
-        customer { numberOfOrders }
-      }
-    }
-  }
-`;
-
-type OrderNode = {
-  id: string;
-  name: string;
-  createdAt: string;
-  cancelledAt: string | null;
-  customAttributes: Array<{ key: string; value: string | null }>;
-  totalPriceSet: { shopMoney: { amount: string; currencyCode: string } };
-  customer: { numberOfOrders: string | number } | null;
-};
-
-// Short-lived Admin API token from Pulse's app credentials, cached in memory.
-let cachedToken: { value: string; at: number } | null = null;
-const TOKEN_TTL_MS = 30 * 60 * 1000;
-
-async function getAdminToken(): Promise<{ token: string; store: string } | null> {
-  const store = (process.env["SHOPIFY_STORE"] ?? "").trim() || SHOPIFY_STORE_PERMANENT_DOMAIN;
-  const clientId = (process.env["SHOPIFY_CLIENT_ID"] ?? "").trim();
-  const clientSecret = (process.env["SHOPIFY_CLIENT_SECRET"] ?? "").trim();
-  if (!clientId || !clientSecret) return null;
-  if (cachedToken && Date.now() - cachedToken.at < TOKEN_TTL_MS) {
-    return { token: cachedToken.value, store };
-  }
-  const res = await fetch(`https://${store}/admin/oauth/access_token`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      client_id: clientId,
-      client_secret: clientSecret,
-      grant_type: "client_credentials",
-    }),
-  });
-  if (!res.ok) throw new Error(`Shopify sign-in returned ${res.status}`);
-  const token = ((await res.json()) as { access_token?: string }).access_token;
-  if (!token) throw new Error("Shopify sign-in gave no token");
-  cachedToken = { value: token, at: Date.now() };
-  return { token, store };
-}
-
 export async function fetchSiteOrders(
   sinceIso: string,
   untilIso: string,
 ): Promise<SiteOrdersResult> {
-  let auth: { token: string; store: string } | null;
   try {
-    auth = await getAdminToken();
-  } catch (e) {
-    return { status: "error", message: e instanceof Error ? e.message : String(e) };
-  }
-  if (!auth) return { status: "not_configured" };
-  const { token } = auth;
-
-  const url = `https://${auth.store}/admin/api/${API_VERSION}/graphql.json`;
-  const q = `created_at:>='${sinceIso}' AND created_at:<'${untilIso}'`;
-  const orders: SiteOrder[] = [];
-  let after: string | null = null;
-
-  try {
-    for (let page = 0; page < MAX_PAGES; page++) {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Shopify-Access-Token": token },
-        body: JSON.stringify({ query: ORDERS_QUERY, variables: { q, after } }),
-      });
-      if (!res.ok) return { status: "error", message: `Shopify returned ${res.status}` };
-      const json = (await res.json()) as {
-        data?: {
-          orders: {
-            pageInfo: { hasNextPage: boolean; endCursor: string | null };
-            nodes: OrderNode[];
-          };
-        };
-        errors?: Array<{ message: string }>;
-      };
-      if (json.errors?.length || !json.data) {
-        return {
-          status: "error",
-          message: json.errors?.[0]?.message ?? "Unexpected Shopify reply",
-        };
-      }
-
-      for (const o of json.data.orders.nodes) {
-        const attr = new Map(o.customAttributes.map((a) => [a.key, a.value ?? ""]));
-        if (!attr.has(CART_ATTR.session)) continue; // not placed through this site
-        const n = o.customer ? Number(o.customer.numberOfOrders) : NaN;
-        orders.push({
-          id: o.id,
-          name: o.name,
-          createdAt: o.createdAt,
-          total: Number(o.totalPriceSet.shopMoney.amount) || 0,
-          currency: o.totalPriceSet.shopMoney.currencyCode,
-          cancelled: o.cancelledAt != null,
-          utm_source: attr.get(CART_ATTR.source) || null,
-          utm_medium: attr.get(CART_ATTR.medium) || null,
-          utm_campaign: attr.get(CART_ATTR.campaign) || null,
-          utm_content: attr.get(CART_ATTR.content) || null,
-          // numberOfOrders counts today's order too, so 1 means first ever.
-          isFirstOrder: Number.isFinite(n) ? n <= 1 : null,
-        });
-      }
-
-      const info = json.data.orders.pageInfo;
-      if (!info.hasNextPage || !info.endCursor) break;
-      after = info.endCursor;
-    }
-    return { status: "ok", orders };
+    return await callBfAdmin<SiteOrdersResult>({
+      action: "orders",
+      since: sinceIso,
+      until: untilIso,
+    });
   } catch (e) {
     return { status: "error", message: e instanceof Error ? e.message : String(e) };
   }

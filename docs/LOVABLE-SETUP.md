@@ -142,25 +142,35 @@ grant execute on function public.bf_first_order_dates(text[]) to service_role;
 > `BLACK_FRIDAY_`. Never change an existing secret (e.g. Pulse's `SHOPIFY_*`)
 > for this site; only read it.
 
-## 2. Admin password — ✅ secret created (11 Nov 2026)
+## 2. Admin password — ✅ DONE (11 Nov 2026)
 
-Secret **`BLACK_FRIDAY_ADMIN_PASSWORD`**: any password, at least 8 characters.
-Share it with whoever should see the dashboards. Changing it signs everyone out.
+Secret **`BLACK_FRIDAY_ADMIN_PASSWORD`** (8+ characters) in the Supabase
+project's secrets (Lovable → Supabase → Manage secrets). Share it with whoever
+should see the dashboards.
 
-**How to check it works:** open `/admin` on the live site and sign in. If it
-says *"Admin isn't set up yet"*, the site's server can't see the secret; tell
-Claude, and the password check can move somewhere that can.
+## 3. Shopify orders by source — ✅ DONE, nothing to add
 
-## 3. Shopify orders by source — nothing to add
+Reuses **Pulse's Shopify app** (`SHOPIFY_STORE`, `SHOPIFY_CLIENT_ID`,
+`SHOPIFY_CLIENT_SECRET`), read only. No new Shopify app or token.
 
-The admin **reuses Pulse's Shopify app**: the `SHOPIFY_STORE`,
-`SHOPIFY_CLIENT_ID` and `SHOPIFY_CLIENT_SECRET` secrets the Pulse edge
-functions (e.g. `order-watch`) already use. It only reads orders and never
-changes those secrets. No new Shopify app or token is needed.
+## How the secrets reach the site (the `bf-admin` edge function)
 
-**How to check it works:** open `/admin` → Sources. If a yellow box says
-*"Shopify orders aren't connected yet"*, the site's server can't see Pulse's
-secrets; tell Claude.
+Secrets saved in the Supabase project are only visible to Supabase Edge
+Functions, **not** to this website (it runs on Lovable). So a small edge
+function, **`bf-admin`** (source: `supabase/functions/bf-admin/index.ts`,
+deployed 11 Nov 2026 through the Supabase MCP), does the two things that need
+secrets:
+
+- checks the admin password against `BLACK_FRIDAY_ADMIN_PASSWORD`;
+- reads Shopify orders placed through this site, with Pulse's Shopify app.
+
+The site calls it with a shared key, `bf_settings.edge_key` (same pattern as
+Pulse's `inv_settings.cron_key`). Admin login cookies are encrypted with
+`bf_settings.admin_session_secret`; change that value to sign everyone out.
+Both values were generated inside the database and never put in the repo.
+
+If you edit `supabase/functions/bf-admin/index.ts`, redeploy it (it is not
+deployed automatically by Lovable).
 
 ## Tracking on/off (/admin → Tracking)
 
