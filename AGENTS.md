@@ -28,3 +28,14 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+
+## Project rules
+
+- All product and cart data comes from the connected Shopify store's Storefront
+  API through `src/lib/shopify.ts` and `src/lib/shopify-cart.ts`. Never add
+  mock products, and never build a checkout URL by hand: it comes from the
+  Storefront API cart response and opens in a new tab.
+- A route loader that primes the TanStack Query cache returns
+  `dehydrate(queryClient)` and the route component calls `hydrate` on it before
+  reading, so the server render and the first client render match and the
+  browser does not refetch what the server already loaded.

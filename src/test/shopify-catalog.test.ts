@@ -65,3 +65,11 @@ describe("Storefront API wiring", () => {
     );
   });
 });
+
+describe("description text", () => {
+  it("writes symbols out instead of showing the code for them", () => {
+    expect(stripHtml("<p>Awards &amp; Press Review</p>")).toBe("Awards & Press Review");
+    expect(stripHtml("<div>O'Malley&#39;s&nbsp;Cask</div>")).toBe("O'Malley's Cask");
+    expect(stripHtml("<p>Whisky</p><p>&amp; Bitters</p>")).toBe("Whisky & Bitters");
+  });
+});
