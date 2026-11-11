@@ -245,9 +245,33 @@ export function firstVariant(product: ShopifyProductNode): ShopifyVariant | null
   return product.variants.edges[0]?.node ?? null;
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
+function decodeEntity(match: string, entity: string): string {
+  const code = entity.startsWith("#x") || entity.startsWith("#X")
+    ? Number.parseInt(entity.slice(2), 16)
+    : entity.startsWith("#")
+      ? Number.parseInt(entity.slice(1), 10)
+      : Number.NaN;
+
+  if (Number.isFinite(code)) {
+    return code > 0 && code <= 0x10fffd ? String.fromCodePoint(code) : match;
+  }
+
+  return NAMED_ENTITIES[entity.toLowerCase()] ?? match;
+}
+
 export function stripHtml(html: string): string {
   return html
     .replace(/<[^>]*>/g, " ")
+    .replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, decodeEntity)
     .replace(/\s+/g, " ")
     .trim();
 }

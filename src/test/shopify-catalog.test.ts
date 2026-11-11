@@ -8,6 +8,7 @@ import {
   SHOPIFY_API_VERSION,
   SHOPIFY_STORE_PERMANENT_DOMAIN,
   SHOPIFY_STOREFRONT_URL,
+  stripHtml,
 } from "@/lib/shopify";
 
 describe("catalog shelves", () => {

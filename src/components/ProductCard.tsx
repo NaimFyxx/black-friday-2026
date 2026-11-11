@@ -16,6 +16,9 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
   const node = product.node;
   const image = primaryImage(node);
   const variant = firstVariant(node);
+  // Show the price of the variant this card actually adds, not the cheapest one.
+  const shownPrice = variant?.price ?? node.priceRange.minVariantPrice;
+  const sizeCount = node.variants.edges.length;
   const addItem = useCartStore((state) => state.addItem);
   const [pending, setPending] = useState(false);
 
@@ -69,8 +72,13 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
           </p>
           <h3 className="mt-1 line-clamp-2 font-display text-xl leading-tight">{node.title}</h3>
           <p className="mt-1 text-sm tabular-nums text-muted-foreground">
-            {formatPrice(node.priceRange.minVariantPrice)}
+            {formatPrice(shownPrice)}
           </p>
+          {sizeCount > 1 && (
+            <p className="mt-0.5 text-[10px] tracking-[0.16em] text-muted-foreground uppercase">
+              {sizeCount} sizes
+            </p>
+          )}
         </div>
       </Link>
       <Button

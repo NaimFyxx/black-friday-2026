@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   dehydrate,
+  hydrate,
   infiniteQueryOptions,
   useInfiniteQuery,
 } from "@tanstack/react-query";
@@ -87,7 +88,7 @@ function Storefront() {
 
   if (!hasHydrated.current) {
     hasHydrated.current = true;
-    queryClient.hydrate(dehydratedState);
+    hydrate(queryClient, dehydratedState);
   }
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery(
