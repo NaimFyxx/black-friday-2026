@@ -146,6 +146,105 @@ export type Database = {
         }
         Relationships: []
       }
+      bf_error_log: {
+        Row: {
+          area: string
+          created_at: string
+          detail: Json | null
+          id: string
+          message: string
+          path: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          message: string
+          path?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          message?: string
+          path?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      bf_events: {
+        Row: {
+          created_at: string
+          currency: string | null
+          event: string
+          from_app: boolean
+          id: number
+          item_count: number | null
+          path: string | null
+          session_id: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          value: number | null
+        }
+        Insert: {
+          created_at?: string
+          currency?: string | null
+          event: string
+          from_app?: boolean
+          id?: never
+          item_count?: number | null
+          path?: string | null
+          session_id: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          value?: number | null
+        }
+        Update: {
+          created_at?: string
+          currency?: string | null
+          event?: string
+          from_app?: boolean
+          id?: never
+          item_count?: number | null
+          path?: string | null
+          session_id?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          value?: number | null
+        }
+        Relationships: []
+      }
+      bf_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       btg_pin_fails: {
         Row: {
           at: string
@@ -2148,9 +2247,9 @@ export type Database = {
           initial_points: number
           kind: string
           ll_customer_id: string
-          points_expired: number
-          points_remaining: number
-          pre_enrollment: boolean
+          points_expired: number | null
+          points_remaining: number | null
+          pre_enrollment: boolean | null
           shopify_order_id: string | null
           source: string
           state: string
@@ -2164,9 +2263,9 @@ export type Database = {
           initial_points?: number
           kind: string
           ll_customer_id: string
-          points_expired?: number
-          points_remaining?: number
-          pre_enrollment?: boolean
+          points_expired?: number | null
+          points_remaining?: number | null
+          pre_enrollment?: boolean | null
           shopify_order_id?: string | null
           source: string
           state: string
@@ -2180,9 +2279,9 @@ export type Database = {
           initial_points?: number
           kind?: string
           ll_customer_id?: string
-          points_expired?: number
-          points_remaining?: number
-          pre_enrollment?: boolean
+          points_expired?: number | null
+          points_remaining?: number | null
+          pre_enrollment?: boolean | null
           shopify_order_id?: string | null
           source?: string
           state?: string
@@ -4136,6 +4235,35 @@ export type Database = {
       app_is_owner: { Args: never; Returns: boolean }
       app_marketing_modules: { Args: never; Returns: string[] }
       app_my_access: { Args: never; Returns: Json }
+      bf_activity_daily: {
+        Args: { p_since: string; p_until: string }
+        Returns: {
+          carts: number
+          checkouts: number
+          day: string
+          product_views: number
+          visits: number
+        }[]
+      }
+      bf_first_order_dates: {
+        Args: { p_customer_ids: string[] }
+        Returns: {
+          first_order_at: string
+          shopify_customer_id: string
+        }[]
+      }
+      bf_source_funnel: {
+        Args: { p_since: string; p_until: string }
+        Returns: {
+          cart_sessions: number
+          checkout_sessions: number
+          product_views: number
+          sessions: number
+          utm_campaign: string
+          utm_medium: string
+          utm_source: string
+        }[]
+      }
       btg_claim_next: {
         Args: { gap_seconds: number; stuck_minutes: number }
         Returns: number
