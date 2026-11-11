@@ -1,13 +1,19 @@
 # Black Friday 2026 — admin setup
 
 The admin dashboards live at **`/admin`** (Sources, Activity, Customers, Errors).
-The code is in the repo; three things have to be switched on in Lovable /
-Shopify. Until they are, each page shows a yellow "not set up yet" box instead
+The code is in the repo; step 1 is done, steps 2 and 3 still need doing in
+Lovable / Shopify. Until they are, each page shows a yellow "not set up yet" box instead
 of breaking.
 
-## 1. Database tables (paste this prompt into Lovable)
+## 1. Database tables — ✅ DONE (11 Nov 2026)
 
-> Please run this SQL as a new migration on the Supabase database, exactly as
+Already applied to Supabase project `gpnglfdusrymnookeclg` through the Supabase
+MCP as migration **`black_friday_2026_admin`**, so **do not paste this into
+Lovable**. (MCP migrations write no file to this repo, so the SQL below is the
+record of what ran. It is idempotent if it is ever re-run.) `tracking_enabled`
+was seeded `false`, so tracking is OFF until switched on in /admin → Tracking.
+
+> (Original Lovable prompt, kept for reference.) Please run this SQL as a new migration on the Supabase database, exactly as
 > written. It adds three new tables (`bf_events`, `bf_error_log`,
 > `bf_settings`) and three read-only report functions for the Black Friday
 > 2026 admin. It does not change any existing table.
@@ -34,6 +40,7 @@ create table if not exists public.bf_events (
 );
 create index if not exists bf_events_created_at_idx on public.bf_events (created_at);
 alter table public.bf_events enable row level security;
+revoke all on public.bf_events from anon, authenticated;
 
 -- Black Friday 2026: errors real visitors hit (page crashes, script errors).
 create table if not exists public.bf_error_log (
@@ -47,6 +54,7 @@ create table if not exists public.bf_error_log (
 );
 create index if not exists bf_error_log_created_at_idx on public.bf_error_log (created_at desc);
 alter table public.bf_error_log enable row level security;
+revoke all on public.bf_error_log from anon, authenticated;
 
 -- Black Friday 2026: admin settings. `tracking_enabled` is the site-wide
 -- tracking switch on /admin → Tracking. Starts OFF while the site is being
@@ -57,6 +65,7 @@ create table if not exists public.bf_settings (
   updated_at timestamptz not null default now()
 );
 alter table public.bf_settings enable row level security;
+revoke all on public.bf_settings from anon, authenticated;
 insert into public.bf_settings (key, value) values ('tracking_enabled', 'false'::jsonb)
   on conflict (key) do nothing;
 
