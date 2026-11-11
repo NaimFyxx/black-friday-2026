@@ -136,9 +136,14 @@ grant execute on function public.bf_activity_daily(timestamptz, timestamptz) to 
 grant execute on function public.bf_first_order_dates(text[]) to service_role;
 ```
 
+> **Why the `BF_` prefix:** this Lovable project shares its Supabase project
+> (and so its secrets) with Fyxx Glow and other tools. Secrets with the same
+> name overwrite each other, so every secret for this site starts with `BF_`.
+> Never add or change a secret here without the prefix.
+
 ## 2. Admin password (Lovable → Secrets)
 
-Add a secret named **`ADMIN_PASSWORD`**: any password, at least 8 characters.
+Add a secret named **`BF_ADMIN_PASSWORD`**: any password, at least 8 characters.
 Share it with whoever should see the dashboards. Changing it signs everyone out.
 (It goes in Lovable, not Supabase: the password is checked by the website's
 server code, which Lovable runs and which can only read Lovable's Secrets.
@@ -154,7 +159,7 @@ orders and revenue**.
 2. **Configure Admin API scopes** → tick **`read_orders`** → Save.
 3. **Install app** → reveal the **Admin API access token** (starts `shpat_`)
    and copy it (Shopify only shows it once).
-4. In Lovable → Secrets, add **`SHOPIFY_ADMIN_TOKEN`** with that token.
+4. In Lovable → Secrets, add **`BF_SHOPIFY_ADMIN_TOKEN`** with that token.
 
 ## Tracking on/off (/admin → Tracking)
 

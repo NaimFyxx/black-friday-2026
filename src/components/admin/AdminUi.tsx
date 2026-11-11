@@ -160,7 +160,7 @@ export function SourceSetupNotices({
       )}
       {shopify === "not_configured" && (
         <SetupNotice title="Shopify orders aren't connected yet">
-          Add the <code>SHOPIFY_ADMIN_TOKEN</code> secret in Lovable (steps in{" "}
+          Add the <code>BF_SHOPIFY_ADMIN_TOKEN</code> secret in Lovable (steps in{" "}
           <code>docs/LOVABLE-SETUP.md</code>) to see which sources led to real orders.
         </SetupNotice>
       )}

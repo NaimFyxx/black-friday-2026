@@ -5,7 +5,7 @@
 // order, so here we pull the campaign window's online orders and keep the ones
 // that came through this site, grouped by their source.
 //
-// Needs the SHOPIFY_ADMIN_TOKEN secret: an Admin API access token from a custom
+// Needs the BF_SHOPIFY_ADMIN_TOKEN secret: an Admin API access token from a custom
 // app in Shopify admin with the `read_orders` scope (see docs/LOVABLE-SETUP.md).
 
 import { CART_ATTR } from "@/lib/campaign-config";
@@ -64,7 +64,7 @@ export async function fetchSiteOrders(
   sinceIso: string,
   untilIso: string,
 ): Promise<SiteOrdersResult> {
-  const token = process.env["SHOPIFY_ADMIN_TOKEN"];
+  const token = process.env["BF_SHOPIFY_ADMIN_TOKEN"];
   if (!token) return { status: "not_configured" };
 
   const url = `https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/admin/api/${API_VERSION}/graphql.json`;
