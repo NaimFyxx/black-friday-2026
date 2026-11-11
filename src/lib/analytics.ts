@@ -5,7 +5,12 @@
 // is easy to filter in the shared GA4 property (Christmas, Valentine's and Fyxx
 // Cup report to the same Measurement ID). The trackers are loaded deferred in
 // __root.tsx; these helpers no-op safely before then (calls queue on the stubs).
+//
+// Visits, product views, add-to-carts and checkouts are ALSO saved to Supabase
+// (bf_events) with the visitor's first-touch source, for the /admin dashboards.
 
+import type { TrackedEventName } from "@/lib/campaign-config";
+import { recordEvent } from "@/lib/track.functions";
 import { getStoredUtm } from "@/lib/utm-attribution";
 
 export const CAMPAIGN_NAME = "black_friday_2026";
@@ -29,6 +34,52 @@ export function trackEvent(name: string, params: EventParams = {}): void {
 /** Fire a standard Meta Pixel event (AddToCart, InitiateCheckout, ...). */
 export function trackPixel(name: string, params: EventParams = {}): void {
   tw()?.fbq?.("track", name, params);
+}
+
+// ── Supabase event log (for /admin) ──────────────────────────────────
+
+const SESSION_KEY = "fyxx:bf_session";
+const VISIT_KEY = "fyxx:bf_visit_logged";
+
+/** A random ID for this browser tab session; ties events + the order together. */
+export function getSessionId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    let id = window.sessionStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+      window.sessionStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
+
+/** Save one event to Supabase. Fire-and-forget: never blocks or throws. */
+function logEvent(
+  event: TrackedEventName,
+  extra: { value?: number; currency?: string; itemCount?: number } = {},
+) {
+  if (typeof window === "undefined") return;
+  const sessionId = getSessionId();
+  if (sessionId.length < 8) return;
+  const utm = getStoredUtm() ?? {};
+  recordEvent({
+    data: {
+      event,
+      sessionId,
+      path: window.location.pathname,
+      ...utm,
+      fromApp: utm.utm_source === "fyxx_app",
+      value: extra.value !== undefined && Number.isFinite(extra.value) ? extra.value : undefined,
+      currency: extra.currency,
+      itemCount: extra.itemCount,
+    },
+  }).catch(() => {});
 }
 
 // ── Generic campaign helpers (from Fyxx Cup + Valentine's) ────────────
@@ -69,6 +120,14 @@ export function trackShare(method: string, contentName: string): void {
 /** Fire once per page load to tag the session, with the first-touch source. */
 export function trackCampaignView(): void {
   trackEvent("campaign_view", { ...(getStoredUtm() ?? {}) });
+  // Count one "visit" per browser session in Supabase.
+  try {
+    if (window.sessionStorage.getItem(VISIT_KEY)) return;
+    window.sessionStorage.setItem(VISIT_KEY, "1");
+  } catch {
+    // no storage: still log, may double count
+  }
+  logEvent("visit");
 }
 
 // ── Shop events (GA4 ecommerce + Meta Pixel) ──────────────────────────
@@ -93,7 +152,12 @@ function gaItem(i: TrackedItem) {
 }
 
 /** A product page was opened. */
+let lastView: { id: string; at: number } | null = null;
 export function trackViewItem(item: TrackedItem): void {
+  // Ignore a repeat for the same product within 2s (React can re-run effects).
+  const now = Date.now();
+  if (lastView && lastView.id === item.id && now - lastView.at < 2000) return;
+  lastView = { id: item.id, at: now };
   trackEvent("view_item", {
     currency: item.currency,
     value: item.price,
@@ -106,6 +170,7 @@ export function trackViewItem(item: TrackedItem): void {
     value: item.price,
     currency: item.currency,
   });
+  logEvent("view_item", { value: item.price, currency: item.currency, itemCount: 1 });
 }
 
 /** An item was added to the cart. */
@@ -119,6 +184,7 @@ export function trackAddToCart(item: TrackedItem): void {
     value,
     currency: item.currency,
   });
+  logEvent("add_to_cart", { value, currency: item.currency, itemCount: item.quantity });
 }
 
 /** The shopper clicked Checkout. */
@@ -133,5 +199,10 @@ export function trackBeginCheckout(items: TrackedItem[]): void {
     num_items: items.reduce((n, i) => n + i.quantity, 0),
     value,
     currency,
+  });
+  logEvent("begin_checkout", {
+    value,
+    currency,
+    itemCount: items.reduce((n, i) => n + i.quantity, 0),
   });
 }

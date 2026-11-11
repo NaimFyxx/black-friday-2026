@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -17,6 +18,25 @@ import { useCartSync } from "../hooks/useCartSync";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CAMPAIGN_NAME, trackCampaignView } from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
+import { reportClientError } from "../lib/track.functions";
+
+// Send a client error to the /admin error log. Deduped per page load so one
+// crash loop can't spam it, and capped at 5 reports per page.
+const reportedErrors = new Set<string>();
+function logClientError(area: string, message: string, stack?: string) {
+  if (typeof window === "undefined") return;
+  const key = `${area}:${message}`.slice(0, 200);
+  if (reportedErrors.has(key) || reportedErrors.size >= 5) return;
+  reportedErrors.add(key);
+  reportClientError({
+    data: {
+      area,
+      message: message.slice(0, 1000) || "Unknown error",
+      stack: stack?.slice(0, 2000),
+      path: window.location.pathname.slice(0, 300),
+    },
+  }).catch(() => {});
+}
 
 // Tracking IDs — the same accounts the Christmas, Valentine's and Fyxx Cup
 // campaign sites use, so all campaigns can be compared side by side.
@@ -166,6 +186,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    const err = error as { message?: string; stack?: string } | null;
+    logClientError("page_crash", err?.message ?? String(error), err?.stack);
   }, [error]);
 
   return (
@@ -270,14 +292,38 @@ function RootComponent() {
   useCartSync();
   // Capture utm_* / ?from=app on landing (any page), first-touch, then tag the
   // session in GA with that source.
+  const isAdminPage = useRouterState({
+    select: (state) => state.location.pathname.startsWith("/admin"),
+  });
   useEffect(() => {
     captureUtmFromUrl();
-    trackCampaignView();
+    // Admin visits aren't shoppers: keep them out of the visit counts.
+    if (!window.location.pathname.startsWith("/admin")) trackCampaignView();
+  }, []);
+  // Uncaught JS errors and failed promises -> /admin error log.
+  useEffect(() => {
+    const onError = (e: ErrorEvent) => {
+      // "Script error." with no detail comes from cross-origin third-party
+      // scripts (GA, Pixel, Clarity): undiagnosable noise, so keep it out of
+      // the admin log (it still goes to GA as js_error).
+      if (!e.error && /^Script error\.?$/i.test(e.message || "Script error.")) return;
+      logClientError("js_error", e.message, e.error?.stack);
+    };
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const r = e.reason as { message?: string; stack?: string } | undefined;
+      logClientError("unhandled_promise", r?.message ?? String(e.reason), r?.stack);
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <SiteHeader />
+      {!isAdminPage && <SiteHeader />}
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster position="top-center" />

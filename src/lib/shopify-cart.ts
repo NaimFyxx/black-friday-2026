@@ -6,7 +6,23 @@
  * storefront password wall.
  */
 
+import { getSessionId } from "@/lib/analytics";
+import { CART_ATTR } from "@/lib/campaign-config";
 import { storefrontApiRequest, type ShopifyProduct } from "@/lib/shopify";
+import { getStoredUtm } from "@/lib/utm-attribution";
+
+/** Session + first-touch UTM as Shopify cart attributes (empty values dropped). */
+function campaignCartAttributes(): Array<{ key: string; value: string }> {
+  const utm = getStoredUtm() ?? {};
+  const pairs: Array<[string, string | undefined]> = [
+    [CART_ATTR.session, getSessionId() || "unknown"],
+    [CART_ATTR.source, utm.utm_source],
+    [CART_ATTR.medium, utm.utm_medium],
+    [CART_ATTR.campaign, utm.utm_campaign],
+    [CART_ATTR.content, utm.utm_content],
+  ];
+  return pairs.filter((p): p is [string, string] => !!p[1]).map(([key, value]) => ({ key, value }));
+}
 
 export interface CartItem {
   lineId: string | null; // Shopify cart line ID, null until synced
@@ -101,7 +117,12 @@ export async function createShopifyCart(
       userErrors?: UserError[];
     };
   }>(CART_CREATE_MUTATION, {
-    input: { lines: [{ quantity: item.quantity, merchandiseId: item.variantId }] },
+    input: {
+      lines: [{ quantity: item.quantity, merchandiseId: item.variantId }],
+      // Hidden attributes copied onto the order, so /admin can credit the
+      // sale to the source that brought the shopper in.
+      attributes: campaignCartAttributes(),
+    },
   });
 
   if (!data) return null;
