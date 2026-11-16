@@ -46,8 +46,9 @@ const GA_ID = "G-N6PW62SXRQ";
 // site must NEVER fire Purchase (it would double count).
 export const META_PIXEL_ID = "1207780626389959";
 const KLAVIYO_COMPANY_ID = "XuTPpc";
-// Clarity project shared by the Christmas + Valentine's landing pages.
-const CLARITY_ID = "l993kg87k8";
+// Microsoft Clarity project for the Black Friday site only (its own project,
+// not shared with the Christmas / Valentine's / Fyxx Cup pages).
+const CLARITY_ID = "zep1cjcaqz";
 
 // Used instead of TRACKING_SNIPPET when tracking is switched off in /admin
 // (site-wide, or for this device): silent no-op stubs so the app's tracking

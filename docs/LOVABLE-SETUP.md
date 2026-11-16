@@ -208,9 +208,10 @@ deployed automatically by Lovable).
   (first-touch) and attached to every visit / cart / checkout event and to the
   Shopify cart as hidden attributes (`_bf_session`, `_utm_source`, …), which
   Shopify copies onto the order.
-- Everything is also sent to Google Analytics (tagged
-  `campaign_name = black_friday_2026`), Meta Pixel, Klaviyo and Microsoft
-  Clarity — the same accounts as the Christmas, Valentine's and Fyxx Cup sites.
+- Everything is also sent to Google Analytics (`G-N6PW62SXRQ`, shared with the
+  other campaign sites, tagged `campaign_name = black_friday_2026`), the Meta
+  Pixel (`1207780626389959`), Klaviyo (`XuTPpc`) and Microsoft Clarity
+  (`zep1cjcaqz`, a Black Friday-only project).
 
 Campaign dates for the reports are in `src/lib/campaign-config.ts`
 (20 Nov – 30 Nov 2026 by default).
