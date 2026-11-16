@@ -96,7 +96,15 @@ export function PageHeader({ title, children }: { title: string; children?: Reac
   );
 }
 
-export function StatCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
+export function StatCard({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub?: string | undefined;
+}) {
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">{label}</p>

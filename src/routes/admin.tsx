@@ -27,6 +27,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 const TABS = [
+  { to: "/admin/report", label: "Report" },
   { to: "/admin", label: "Sources" },
   { to: "/admin/activity", label: "Activity" },
   { to: "/admin/cohort", label: "Customers" },
@@ -53,7 +54,7 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
+      <header className="border-b border-border print:hidden">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-4">
           <div>
             <p className="text-[10px] tracking-[0.25em] text-muted-foreground uppercase">
