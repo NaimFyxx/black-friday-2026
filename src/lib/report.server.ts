@@ -15,6 +15,7 @@
 //   summary    plain-English summary by Lovable's AI gateway (via bf-admin)
 
 import { callBfAdmin } from "./bf-edge.server";
+import { CAMPAIGN_END, CAMPAIGN_START } from "./campaign-config";
 import { ammanDate, computeCohort, ODOO_CONNECTOR_SOURCE, type Loose } from "./cohort.server";
 import { fetchSiteOrders } from "./shopify-admin.server";
 
@@ -53,6 +54,7 @@ type InfluenceRow = {
   main_reason: string | null;
   klaviyo_message: string | null;
   codes_counted: string[] | null;
+  code_programmes: string[] | null;
   ga_source: string | null;
   ga_medium: string | null;
   visit_source: string | null;
@@ -107,10 +109,22 @@ function influenceSummary(rows: InfluenceRow[]) {
     byReason: topBuckets(infl, (r) => r.main_reason ?? "Other", 12),
     byChannel: topBuckets(rows, (r) => r.channel, 12),
     topKlaviyoMessages: topBuckets(infl, (r) => r.klaviyo_message, 10),
-    topCodes: topBuckets(infl, (r) => r.codes_counted ?? [], 10),
+    // Grouped by programme (one-off personal codes like FR-PO15-XXXX roll up),
+    // falling back to the code itself when Pulse has no programme for it.
+    topCodes: topBuckets(
+      infl,
+      (r) => {
+        const progs = [...new Set((r.code_programmes ?? []).filter(Boolean))];
+        return progs.length ? progs : (r.codes_counted ?? []);
+      },
+      10,
+    ),
     topGaSources: topBuckets(
       infl,
-      (r) => (r.ga_source ? `${r.ga_source} / ${r.ga_medium ?? "(none)"}` : null),
+      (r) =>
+        r.ga_source
+          ? `${r.ga_source.toLowerCase()} / ${(r.ga_medium ?? "(none)").toLowerCase()}`
+          : null,
       10,
     ),
   };
@@ -358,6 +372,14 @@ type PeriodLike = {
 };
 
 type ReportCore = {
+  isCampaignPeriod: boolean;
+  comparison: {
+    likeForLike: boolean;
+    basis: string;
+    now: number;
+    before: number;
+    changePct: number | null;
+  } | null;
   period: { from: string; to: string; days: number };
   previousPeriod: { from: string; to: string };
   store: Section<{ current: PeriodLike; previous: PeriodLike }>;
@@ -385,8 +407,44 @@ export async function buildCampaignReport(client: Loose, range: Range, withAi: b
     section(() => loadProducts(client, range)),
   ]);
 
+  // Like-for-like: Odoo POS totals only exist from 19 Oct 2026. If either
+  // period is missing POS days, compare the store WITHOUT POS.
+  let comparison: {
+    likeForLike: boolean;
+    basis: string;
+    now: number;
+    before: number;
+    changePct: number | null;
+  } | null = null;
+  if (store.status === "ok") {
+    const c = store.data.current;
+    const p = store.data.previous;
+    const posOf = (x: typeof c) =>
+      x.channels.find((ch) => ch.channel === "POS (Odoo)")?.revenue ?? 0;
+    const full = (x: typeof c) => !x.pos || x.pos.days >= x.pos.expectedDays;
+    const likeForLike = full(c) && full(p);
+    const now = likeForLike ? c.revenue : c.revenue - posOf(c);
+    const before = likeForLike ? p.revenue : p.revenue - posOf(p);
+    comparison = {
+      likeForLike,
+      basis: likeForLike
+        ? "all channels"
+        : "Shopify channels only (POS left out of the comparison: Odoo POS data starts 19 Oct 2026, so the earlier period has none)",
+      now,
+      before,
+      changePct: before > 0 ? ((now - before) / before) * 100 : null,
+    };
+  }
+
+  const isCampaignPeriod =
+    Math.abs(new Date(range.since).getTime() - new Date(CAMPAIGN_START).getTime()) <
+      2 * 3_600_000 &&
+    Math.abs(new Date(range.until).getTime() - new Date(CAMPAIGN_END).getTime()) < 2 * 3_600_000;
+
   const report = {
     generatedAt: new Date().toISOString(),
+    isCampaignPeriod,
+    comparison,
     period: {
       ...range,
       ...days(range),
@@ -441,6 +499,12 @@ function factsForAi(r: ReportCore): Record<string, unknown> {
     s.status === "ok" ? round(s.data) : { not_available: s.reason };
   return {
     campaign: "Fyxx Friday (Black Friday 2026), Amman, prices in JOD",
+    what_this_period_is: r.isCampaignPeriod
+      ? "The Black Friday campaign period itself."
+      : "A TEST / normal period, NOT the Black Friday campaign. Do not call it 'the campaign'; describe it as a normal trading period.",
+    sales_comparison_to_use: r.comparison
+      ? round(r.comparison)
+      : { not_available: "store sales missing" },
     period: `${r.period.from} to ${r.period.to} (${r.period.days} days)`,
     previous_period_for_comparison: `${r.previousPeriod.from} to ${r.previousPeriod.to}`,
     whole_store_all_channels:
@@ -452,7 +516,10 @@ function factsForAi(r: ReportCore): Record<string, unknown> {
     meta_ads: sec(r.meta),
     black_friday_site: sec(r.site),
     products_on_site: sec(r.products),
-    notes: r.notes,
+    notes: [
+      ...r.notes,
+      "For 'total sales up/down vs before' use ONLY sales_comparison_to_use. If it says POS was left out, do NOT describe POS as growing from zero: POS simply has no data before 19 Oct 2026.",
+    ],
   };
 }
 

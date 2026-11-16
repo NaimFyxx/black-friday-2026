@@ -161,3 +161,25 @@
     color: var(--color-foreground);
   }
 }
+
+/* Campaign report PDF (/admin/report → Download PDF). */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 12mm 14mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  body {
+    font-size: 11px;
+  }
+  /* Lovable's "Edit with Lovable" badge and the shop's toasts. */
+  #lovable-badge,
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+}

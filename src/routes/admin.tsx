@@ -81,7 +81,7 @@ function AdminLayout() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6">
+      <main className="mx-auto max-w-6xl space-y-5 px-4 py-6 print:max-w-none print:space-y-0 print:p-0">
         <Outlet />
       </main>
     </div>
