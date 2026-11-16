@@ -389,6 +389,8 @@ type PeriodStats = {
   returningRevenue: number;
   guestOrders: number;
   channels: ChannelRow[];
+  /** Odoo POS coverage: days with data vs days in the period. */
+  pos?: { days: number; expectedDays: number };
 };
 
 type OrderRow = {
@@ -398,6 +400,53 @@ type OrderRow = {
   shopify_customer_id: string | null;
   sub_channel: string;
 };
+
+/** Shopify source_name of the "Odoo Connector" channel (copies of Odoo POS sales). */
+const ODOO_CONNECTOR_SOURCE = "179433";
+const POS_CHANNEL = "POS (Odoo)";
+
+/** Amman calendar day (YYYY-MM-DD) of an instant. */
+const ammanDate = (iso: string) =>
+  new Date(new Date(iso).getTime() + 3 * 3_600_000).toISOString().slice(0, 10);
+
+type OdooPos = { orders: number; revenue: number; days: number; expectedDays: number };
+
+/** Odoo POS totals per Amman day, from Pulse's nightly pos_sync_days (read only). */
+async function loadOdooPos(client: Loose, since: string, until: string): Promise<OdooPos> {
+  const from = ammanDate(since);
+  const to = ammanDate(new Date(new Date(until).getTime() - 1).toISOString()); // until is exclusive
+  const { data, error } = await client
+    .from("pos_sync_days")
+    .select("day, odoo_orders, odoo_total")
+    .gte("day", from)
+    .lte("day", to);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as Array<{ day: string; odoo_orders: number; odoo_total: number }>;
+  const expectedDays = Math.round((new Date(to).getTime() - new Date(from).getTime()) / DAY_MS) + 1;
+  return {
+    orders: rows.reduce((t, r) => t + n(r.odoo_orders), 0),
+    revenue: rows.reduce((t, r) => t + n(r.odoo_total), 0),
+    days: rows.length,
+    expectedDays,
+  };
+}
+
+/** Add Odoo POS as its own channel and to the order/revenue totals. */
+function withPos(stats: PeriodStats, pos: OdooPos): PeriodStats {
+  const orders = stats.orders + pos.orders;
+  const revenue = stats.revenue + pos.revenue;
+  return {
+    ...stats,
+    orders,
+    revenue,
+    aov: orders ? revenue / orders : 0,
+    channels: [
+      ...stats.channels,
+      { channel: POS_CHANNEL, orders: pos.orders, revenue: pos.revenue, customers: 0 },
+    ].sort((a, b) => b.revenue - a.revenue),
+    pos: { days: pos.days, expectedDays: pos.expectedDays },
+  };
+}
 
 async function loadOrders(client: Loose, since: string, until: string): Promise<OrderRow[]> {
   const out: OrderRow[] = [];
@@ -409,6 +458,10 @@ async function loadOrders(client: Loose, since: string, until: string): Promise<
       .gte("ordered_at", since)
       .lt("ordered_at", until)
       .is("cancelled_at", null)
+      // POS sales come from Odoo (see loadOdooPos). Shopify's "Odoo Connector"
+      // orders are partial copies of them (only POS sales with a customer), so
+      // counting them would double count POS.
+      .or(`source_name.is.null,source_name.neq.${ODOO_CONNECTOR_SOURCE}`)
       .order("ordered_at", { ascending: true })
       .range(from, from + PAGE - 1);
     if (error) throw new Error(error.message);
@@ -547,9 +600,11 @@ export const getCohort = createServerFn({ method: "GET" })
     const prevSince = new Date(new Date(range.since).getTime() - len).toISOString();
 
     try {
-      const [current, previous] = await Promise.all([
+      const [current, previous, posNow, posBefore] = await Promise.all([
         loadOrders(client, range.since, range.until),
         loadOrders(client, prevSince, range.since),
+        loadOdooPos(client, range.since, range.until),
+        loadOdooPos(client, prevSince, range.since),
       ]);
       const ids = [
         ...new Set(
@@ -571,8 +626,8 @@ export const getCohort = createServerFn({ method: "GET" })
         status: "ok" as const,
         range,
         previousRange: { since: prevSince, until: range.since },
-        current: summarize(current, firstOrders, range.since),
-        previous: summarize(previous, firstOrders, prevSince),
+        current: withPos(summarize(current, firstOrders, range.since), posNow),
+        previous: withPos(summarize(previous, firstOrders, prevSince), posBefore),
         firstOrderSource: firstOrders.source,
         syncedAt: (latest as Array<{ synced_at: string }> | null)?.[0]?.synced_at ?? null,
       };

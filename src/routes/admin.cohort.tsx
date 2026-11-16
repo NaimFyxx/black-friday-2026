@@ -44,9 +44,10 @@ function CohortPage() {
   return (
     <>
       <PageHeader title="Customers">
-        Every Fyxx order in the period across all channels (website, app, POS, draft orders), from
-        the Shopify data already synced into Supabase. Compared with the same number of days right
-        before it.
+        Every Fyxx order in the period across all channels: website, app and draft orders from
+        Shopify, and POS sales from Odoo (Shopify's “Odoo Connector” copies of POS sales are left
+        out so POS isn't counted twice). Compared with the same number of days right before it. New
+        vs returning covers Shopify customers only.
       </PageHeader>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -135,6 +136,14 @@ function CohortPage() {
                         Order data last synced {fmtDate(data.syncedAt, true)}.
                       </p>
                     )}
+                    {[c.pos, p.pos].some((x) => x && x.days < x.expectedDays) && (
+                      <p className="mt-2 text-xs text-amber-700">
+                        Odoo POS totals are missing for some days (now: {c.pos?.days ?? 0}/
+                        {c.pos?.expectedDays ?? 0}, before: {p.pos?.days ?? 0}/
+                        {p.pos?.expectedDays ?? 0}). Pulse records them nightly from 19 Oct 2026;
+                        today's POS sales appear tomorrow.
+                      </p>
+                    )}
                   </Panel>
                 </div>
 
@@ -166,7 +175,7 @@ function CohortPage() {
                               {fmtPct(ch.revenue, c.revenue)}
                             </td>
                             <td className="px-4 py-2.5 text-right tabular-nums">
-                              {ch.customers.toLocaleString()}
+                              {ch.channel === "POS (Odoo)" ? "–" : ch.customers.toLocaleString()}
                             </td>
                             <td className="px-4 py-2.5 text-right text-muted-foreground tabular-nums">
                               {before ? fmtMoney(before.revenue) : "–"}
