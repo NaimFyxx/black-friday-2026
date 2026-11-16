@@ -16,7 +16,7 @@ import { SiteHeader } from "../components/SiteHeader";
 import { Toaster } from "../components/ui/sonner";
 import { useCartSync } from "../hooks/useCartSync";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { CAMPAIGN_NAME, trackCampaignView } from "../lib/analytics";
+import { CAMPAIGN_NAME, trackCampaignView, trackPixelPageView } from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
 import { getTrackingState, reportClientError } from "../lib/track.functions";
 
@@ -41,7 +41,10 @@ function logClientError(area: string, message: string, stack?: string) {
 // Tracking IDs — the same accounts the Christmas, Valentine's and Fyxx Cup
 // campaign sites use, so all campaigns can be compared side by side.
 const GA_ID = "G-N6PW62SXRQ";
-const META_PIXEL_ID = "298343128719993";
+// "FYXX | Main pixel (Shopify)": the only Meta pixel Fyxx uses. The Shopify
+// Facebook & Instagram app fires Purchase on checkout with this same ID, so this
+// site must NEVER fire Purchase (it would double count).
+export const META_PIXEL_ID = "1207780626389959";
 const KLAVIYO_COMPANY_ID = "XuTPpc";
 // Clarity project shared by the Christmas + Valentine's landing pages.
 const CLARITY_ID = "l993kg87k8";
@@ -57,12 +60,34 @@ window.fbq = function(){};
 window.clarity = function(){};
 `.trim();
 
-// Runs before the app hydrates. Stubs gtag/fbq immediately (so early events
-// queue), then loads the real SDKs on first interaction or after 3s to keep
-// the page fast — the same pattern as the Fyxx Cup site.
+// Runs before the app hydrates. The Meta Pixel loads immediately with Meta's
+// standard base code (PageView on load; later client-side route changes fire
+// PageView from RootComponent). GA/Klaviyo/Clarity are stubbed now and loaded
+// on first interaction or after 3s to keep the page fast (Fyxx Cup pattern).
+// Not used at all when tracking is switched off (see NO_TRACKING_SNIPPET).
 const TRACKING_SNIPPET = `
 (function(){
+  // Run once per page load. The router can re-insert head scripts on
+  // client-side navigation; without this guard that re-ran init/PageView
+  // and added duplicate listeners. Later PageViews come from RootComponent.
+  if (window.__bfTrackingLoaded) return;
+  window.__bfTrackingLoaded = true;
   var CAMPAIGN = '${CAMPAIGN_NAME}';
+
+  // Meta Pixel base code (standard), skipped on the private /admin pages.
+  var onAdmin = location.pathname === '/admin' || location.pathname.indexOf('/admin/') === 0;
+  if (!onAdmin) {
+    !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script',
+    'https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '${META_PIXEL_ID}');
+    fbq('track', 'PageView');
+  }
+
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   window.gtag = gtag;
@@ -88,11 +113,7 @@ const TRACKING_SNIPPET = `
   // Did the visitor arrive from the FYXX app? (?from=app)
   var fromApp = new URLSearchParams(location.search).get('from') === 'app';
 
-  // Meta Pixel stub — queues fbq() calls until the SDK finishes loading.
-  window.fbq = window.fbq || function(){ (window.fbq.q = window.fbq.q || []).push(arguments); };
-  window._fbq = window.fbq;
-
-  var gaLoaded = false, kvLoaded = false, pxLoaded = false, clLoaded = false;
+  var gaLoaded = false, kvLoaded = false, clLoaded = false;
 
   function loadGA(){
     if (gaLoaded) return; gaLoaded = true;
@@ -111,17 +132,6 @@ const TRACKING_SNIPPET = `
     var s = document.createElement('script');
     s.async = true; s.src = 'https://static.klaviyo.com/onsite/js/klaviyo.js?company_id=${KLAVIYO_COMPANY_ID}';
     document.head.appendChild(s);
-  }
-  function loadPixel(){
-    if (pxLoaded) return; pxLoaded = true;
-    // init + PageView go into the queue first; the SDK replays it on load.
-    fbq('init', '${META_PIXEL_ID}');
-    fbq('track', 'PageView');
-    fbq('trackCustom', 'CampaignView', { content_name: 'fyxx_' + CAMPAIGN, content_category: 'seasonal_campaign', content_type: 'landing_page' });
-    if (fromApp) fbq('trackCustom', 'FromApp', { campaign_name: CAMPAIGN });
-    var t = document.createElement('script');
-    t.async = true; t.src = 'https://connect.facebook.net/en_US/fbevents.js';
-    document.head.appendChild(t);
   }
   function loadClarity(){
     if (clLoaded) return; clLoaded = true;
@@ -161,7 +171,7 @@ const TRACKING_SNIPPET = `
   // Defer all SDK loads until first interaction (or 3s) to keep the page fast.
   var events = ['scroll','click','touchstart','mousemove','keydown'];
   function go(){
-    loadGA(); loadKV(); loadPixel(); loadClarity();
+    loadGA(); loadKV(); loadClarity();
     events.forEach(function(e){ document.removeEventListener(e, go); });
   }
   events.forEach(function(e){ document.addEventListener(e, go, { passive: true, once: true }); });
@@ -295,12 +305,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // Meta Pixel <noscript> fallback: only when tracking is on, never on /admin.
+  const trackingEnabled = Route.useLoaderData()?.enabled !== false;
+  const isAdmin = useRouterState({
+    select: (state) => state.location.pathname.startsWith("/admin"),
+  });
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
+        {trackingEnabled && !isAdmin && (
+          <noscript>
+            <img
+              height="1"
+              width="1"
+              style={{ display: "none" }}
+              alt=""
+              src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+            />
+          </noscript>
+        )}
         {children}
         <Scripts />
       </body>
@@ -316,6 +342,22 @@ function RootComponent() {
   const isAdminPage = useRouterState({
     select: (state) => state.location.pathname.startsWith("/admin"),
   });
+  const router = useRouter();
+  // Meta Pixel: PageView on every client-side page change (the first one fires
+  // from the base code). Counts real navigations only: a new history entry or
+  // back/forward. The search box's live "replace" URL updates don't count.
+  useEffect(() => {
+    const index = (state: unknown) => (state as { __TSR_index?: number } | undefined)?.__TSR_index;
+    return router.subscribe("onLoad", (event) => {
+      if (!event.hrefChanged || !event.fromLocation) return;
+      const from = index(event.fromLocation.state);
+      const to = index(event.toLocation.state);
+      const isReplace = from !== undefined && to !== undefined && from === to;
+      if (isReplace) return;
+      if (event.toLocation.pathname.startsWith("/admin")) return;
+      trackPixelPageView();
+    });
+  }, [router]);
   useEffect(() => {
     captureUtmFromUrl();
     // Admin visits aren't shoppers: keep them out of the visit counts.

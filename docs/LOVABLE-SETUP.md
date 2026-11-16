@@ -185,6 +185,20 @@ deployed automatically by Lovable).
 - Test orders placed from an excluded device don't count in the Sources report.
 - Errors are still logged either way.
 
+## Meta Pixel
+
+- One pixel only: **`1207780626389959`** ("FYXX | Main pixel (Shopify)").
+  Standard base code + `<noscript>` fallback in the head of every page,
+  `PageView` on load and on every client-side page change (the search box's
+  live URL updates don't count). Not loaded on `/admin`.
+- Standard events with Shopify variant IDs as `content_ids`,
+  `content_type: product`, `currency: JOD`, numeric `value`:
+  `ViewContent` (product page opened), `AddToCart`, `InitiateCheckout`
+  (cart total + `num_items`, on hand-off to Shopify checkout).
+- **Never `Purchase`**: the Shopify Facebook & Instagram app fires it on
+  checkout with the same pixel; firing it here would double count.
+- Follows the tracking switches: when off, the pixel isn't loaded at all.
+
 ## How the source tracking works
 
 - Share links with UTM tags, e.g.

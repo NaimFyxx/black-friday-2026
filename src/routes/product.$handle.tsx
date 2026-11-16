@@ -75,7 +75,10 @@ function ProductPage() {
 
   // Product view -> GA4 view_item + Meta ViewContent (once per product).
   useEffect(() => {
-    const variant = firstVariant(product);
+    // The variant the page starts on (first available), same as `selected`.
+    const variant =
+      product.variants.edges.map((e) => e.node).find((v) => v.availableForSale) ??
+      firstVariant(product);
     if (!variant) return;
     trackViewItem({
       id: variant.id,

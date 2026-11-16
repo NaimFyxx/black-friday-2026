@@ -31,10 +31,27 @@ export function trackEvent(name: string, params: EventParams = {}): void {
   tw()?.gtag?.("event", name, { campaign_name: CAMPAIGN_NAME, ...params });
 }
 
-/** Fire a standard Meta Pixel event (AddToCart, InitiateCheckout, ...). */
+/** Fire a standard Meta Pixel event (AddToCart, InitiateCheckout, ...).
+ *  NEVER "Purchase": the Shopify Facebook & Instagram app fires it on
+ *  checkout with the same pixel, so firing it here would double count. */
 export function trackPixel(name: string, params: EventParams = {}): void {
+  if (name === "Purchase") return;
   tw()?.fbq?.("track", name, params);
 }
+
+/** Meta PageView for a client-side page change (the first is in the base code). */
+export function trackPixelPageView(): void {
+  tw()?.fbq?.("track", "PageView");
+}
+
+/** Meta wants the plain Shopify variant ID: gid://shopify/ProductVariant/123 -> "123". */
+export function shopifyVariantId(id: string): string {
+  return id.split("/").pop() ?? id;
+}
+
+/** Pixel currency is always JOD; values as numbers rounded to fils. */
+const PIXEL_CURRENCY = "JOD";
+const money = (v: number) => Math.round(v * 1000) / 1000;
 
 // ── Supabase event log (for /admin) ──────────────────────────────────
 
@@ -172,11 +189,11 @@ export function trackViewItem(item: TrackedItem): void {
     items: [gaItem(item)],
   });
   trackPixel("ViewContent", {
-    content_ids: [item.id],
+    content_ids: [shopifyVariantId(item.id)],
     content_name: item.name,
     content_type: "product",
-    value: item.price,
-    currency: item.currency,
+    value: money(item.price),
+    currency: PIXEL_CURRENCY,
   });
   logEvent("view_item", { value: item.price, currency: item.currency, itemCount: 1 });
 }
@@ -186,11 +203,11 @@ export function trackAddToCart(item: TrackedItem): void {
   const value = item.price * item.quantity;
   trackEvent("add_to_cart", { currency: item.currency, value, items: [gaItem(item)] });
   trackPixel("AddToCart", {
-    content_ids: [item.id],
+    content_ids: [shopifyVariantId(item.id)],
     content_name: item.name,
     content_type: "product",
-    value,
-    currency: item.currency,
+    value: money(value),
+    currency: PIXEL_CURRENCY,
   });
   logEvent("add_to_cart", { value, currency: item.currency, itemCount: item.quantity });
 }
@@ -203,10 +220,11 @@ export function trackBeginCheckout(items: TrackedItem[]): void {
   const value = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   trackEvent("begin_checkout", { currency, value, items: items.map(gaItem) });
   trackPixel("InitiateCheckout", {
-    content_ids: items.map((i) => i.id),
+    content_ids: items.map((i) => shopifyVariantId(i.id)),
+    content_type: "product",
     num_items: items.reduce((n, i) => n + i.quantity, 0),
-    value,
-    currency,
+    value: money(value),
+    currency: PIXEL_CURRENCY,
   });
   logEvent("begin_checkout", {
     value,
