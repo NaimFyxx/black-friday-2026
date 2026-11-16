@@ -369,6 +369,7 @@ type PeriodLike = {
   newCustomers: number;
   returningCustomers: number;
   channels: Array<{ channel: string; orders: number; revenue: number }>;
+  pos?: { days: number; expectedDays: number } | undefined;
 };
 
 type ReportCore = {
@@ -516,11 +517,51 @@ function factsForAi(r: ReportCore): Record<string, unknown> {
     meta_ads: sec(r.meta),
     black_friday_site: sec(r.site),
     products_on_site: sec(r.products),
+    channel_changes_vs_before: channelChanges(r),
+    tracking_status: {
+      black_friday_site_launched: siteHasActivity(r),
+      product_tracking:
+        "ON since 16 Nov 2026 (records every product view, add to cart and checkout on the Black Friday site). Empty product data only means the site had no visitors in this period, NOT that tracking is missing.",
+    },
     notes: [
       ...r.notes,
       "For 'total sales up/down vs before' use ONLY sales_comparison_to_use. If it says POS was left out, do NOT describe POS as growing from zero: POS simply has no data before 19 Oct 2026.",
+      "'What worked' may ONLY contain things that went UP vs before or clearly beat the others. A channel or message whose revenue went DOWN (see channel_changes_vs_before) belongs in 'What didn't', even if it is still large.",
+      "Never recommend setting up or enabling tracking that tracking_status says is already ON. If the Black Friday site was not launched in this period, say so in one line and do not treat its zeros as a failure.",
     ],
   };
+}
+
+/** Per channel: revenue now vs before and the % change (null when no data before). */
+function channelChanges(r: ReportCore) {
+  if (r.store.status !== "ok") return { not_available: r.store.reason };
+  const { current, previous } = r.store.data;
+  const posMissingBefore = !!previous.pos && previous.pos.days < previous.pos.expectedDays;
+  return current.channels.map((c) => {
+    const b = previous.channels.find((x) => x.channel === c.channel);
+    const noData = c.channel === "POS (Odoo)" && posMissingBefore;
+    const before = noData ? null : (b?.revenue ?? 0);
+    return {
+      channel: c.channel,
+      revenue_jod_now: Math.round(c.revenue),
+      revenue_jod_before: before === null ? "no data" : Math.round(before),
+      direction:
+        before === null
+          ? "unknown (no data before)"
+          : c.revenue > before
+            ? "UP"
+            : c.revenue < before
+              ? "DOWN"
+              : "flat",
+      change_pct: before ? Math.round(((c.revenue - before) / before) * 100) : null,
+    };
+  });
+}
+
+function siteHasActivity(r: ReportCore): boolean {
+  if (r.site.status !== "ok") return false;
+  const t = (r.site.data as { totals?: { visits?: number; orders?: number } }).totals;
+  return !!t && ((t.visits ?? 0) > 0 || (t.orders ?? 0) > 0);
 }
 
 function strip(p: {
