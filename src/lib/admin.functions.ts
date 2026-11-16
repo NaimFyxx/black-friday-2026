@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { CAMPAIGN_END, CAMPAIGN_START } from "@/lib/campaign-config";
+import type { CampaignReport } from "@/lib/report.server";
 
 // ── Auth ──────────────────────────────────────────────────────────────
 
@@ -398,4 +399,95 @@ export const generateCampaignReport = createServerFn({ method: "POST" })
     await assertAdmin();
     const { buildCampaignReport } = await import("./report.server");
     return buildCampaignReport(await db(), data.range, data.withAi);
+  });
+
+// ── Saved reports (bf_reports) ────────────────────────────────────────
+
+export type SavedReportMeta = {
+  id: string;
+  created_at: string;
+  title: string;
+  period_from: string;
+  period_to: string;
+  is_campaign: boolean;
+};
+
+export const saveCampaignReport = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z.object({ title: z.string().trim().min(1).max(200), report: z.record(z.unknown()) }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const r = data.report as {
+      period?: { from?: string; to?: string };
+      isCampaignPeriod?: boolean;
+    };
+    const day = /^\d{4}-\d{2}-\d{2}$/;
+    if (!r.period?.from || !r.period?.to || !day.test(r.period.from) || !day.test(r.period.to)) {
+      throw new Error("Not a report");
+    }
+    if (JSON.stringify(data.report).length > 2_000_000) throw new Error("Report too large");
+    const { data: row, error } = await (
+      await db()
+    )
+      .from("bf_reports")
+      .insert({
+        title: data.title,
+        period_from: r.period.from,
+        period_to: r.period.to,
+        is_campaign: r.isCampaignPeriod === true,
+        report: data.report,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    return { id: (row as { id: string }).id };
+  });
+
+export const listSavedReports = createServerFn({ method: "GET" }).handler(async () => {
+  const { assertAdmin } = await import("./admin-session.server");
+  await assertAdmin();
+  const { data, error } = await (
+    await db()
+  )
+    .from("bf_reports")
+    .select("id, created_at, title, period_from, period_to, is_campaign")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (isMissing(error)) return { setup: "missing" as const, reports: [] as SavedReportMeta[] };
+  if (error) throw new Error(error.message);
+  return { setup: "ok" as const, reports: (data ?? []) as SavedReportMeta[] };
+});
+
+export const getSavedReport = createServerFn({ method: "GET" })
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const { data: row, error } = await (
+      await db()
+    )
+      .from("bf_reports")
+      .select("id, created_at, title, report")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Report not found");
+    return row as unknown as {
+      id: string;
+      created_at: string;
+      title: string;
+      report: CampaignReport;
+    };
+  });
+
+export const deleteSavedReport = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const { error } = await (await db()).from("bf_reports").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });

@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, type ReactNode } from "react";
@@ -15,7 +15,13 @@ import {
   type RangeKey,
 } from "@/components/admin/AdminUi";
 import { Button } from "@/components/ui/button";
-import { generateCampaignReport } from "@/lib/admin.functions";
+import {
+  deleteSavedReport,
+  generateCampaignReport,
+  getSavedReport,
+  listSavedReports,
+  saveCampaignReport,
+} from "@/lib/admin.functions";
 import { CAMPAIGN_LABEL } from "@/lib/campaign-config";
 import type { CampaignReport } from "@/lib/report.server";
 
@@ -40,31 +46,95 @@ function shortDay(day: string): string {
     : d.toLocaleDateString(undefined, { day: "numeric", month: "short", timeZone: "UTC" });
 }
 
+type Shown = {
+  report: CampaignReport;
+  /** Set when this is a saved copy (not freshly generated). */
+  saved?: { id: string; title: string; at: string };
+};
+
+function defaultTitle(r: CampaignReport): string {
+  return r.isCampaignPeriod
+    ? `${CAMPAIGN_LABEL} report`
+    : `Sales report ${r.period.from} to ${r.period.to}`;
+}
+
 function ReportPage() {
   const [rangeKey, setRangeKey] = useState<RangeKey>("campaign");
   const [withAi, setWithAi] = useState(true);
-  const fn = useServerFn(generateCampaignReport);
+  const [shown, setShown] = useState<Shown | null>(null);
+  const [title, setTitle] = useState("");
+  const queryClient = useQueryClient();
+
+  const genFn = useServerFn(generateCampaignReport);
+  const saveFn = useServerFn(saveCampaignReport);
+  const listFn = useServerFn(listSavedReports);
+  const getFn = useServerFn(getSavedReport);
+  const delFn = useServerFn(deleteSavedReport);
+
+  const saved = useQuery({ queryKey: ["admin-saved-reports"], queryFn: () => listFn(), retry: 1 });
+  const refreshSaved = () => queryClient.invalidateQueries({ queryKey: ["admin-saved-reports"] });
+
   const gen = useMutation({
-    mutationFn: () => fn({ data: { ...rangeFor(rangeKey), withAi } }),
+    mutationFn: () => genFn({ data: { ...rangeFor(rangeKey), withAi } }),
+    onSuccess: (r) => {
+      setShown({ report: r });
+      setTitle(defaultTitle(r));
+    },
+  });
+  const save = useMutation({
+    mutationFn: () => {
+      if (!shown) throw new Error("Nothing to save");
+      return saveFn({
+        data: { title: title.trim() || defaultTitle(shown.report), report: shown.report as never },
+      });
+    },
+    onSuccess: ({ id }) => {
+      if (shown) {
+        setShown({
+          ...shown,
+          saved: {
+            id,
+            title: title.trim() || defaultTitle(shown.report),
+            at: new Date().toISOString(),
+          },
+        });
+      }
+      refreshSaved();
+    },
+  });
+  const open = useMutation({
+    mutationFn: (id: string) => getFn({ data: { id } }),
+    onSuccess: (row) => {
+      setShown({ report: row.report, saved: { id: row.id, title: row.title, at: row.created_at } });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+  });
+  const remove = useMutation({
+    mutationFn: (id: string) => delFn({ data: { id } }),
+    onSuccess: (_d, id) => {
+      if (shown?.saved?.id === id) setShown(null);
+      refreshSaved();
+    },
   });
 
   const downloadPdf = () => {
     // The PDF file name comes from the page title.
-    const r = gen.data;
+    const r = shown?.report;
     const old = document.title;
-    if (r) {
-      document.title = `Fyxx ${r.isCampaignPeriod ? "Black Friday 2026" : "sales"} report ${r.period.from} to ${r.period.to}`;
-    }
+    if (r) document.title = shown?.saved?.title ?? defaultTitle(r);
     window.print();
     document.title = old;
   };
+
+  const r = shown?.report;
 
   return (
     <>
       <div className="space-y-4 print:hidden">
         <PageHeader title="Campaign report">
           One click: every number from the campaign on one page, with a plain-English summary. Takes
-          up to a minute. Use “Download PDF” to save or share it.
+          up to a minute. Save the final one so it reads the same every time; use “Download PDF” to
+          share it.
         </PageHeader>
         <div className="flex flex-wrap items-center gap-3">
           <RangePicker value={rangeKey} onChange={setRangeKey} />
@@ -78,22 +148,100 @@ function ReportPage() {
             <input type="checkbox" checked={withAi} onChange={(e) => setWithAi(e.target.checked)} />
             Include AI-written summary
           </label>
-          {gen.data && (
+        </div>
+        {gen.error && <ErrorBox error={gen.error} />}
+
+        {/* Save / download the report on screen */}
+        {r && (
+          <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border p-3">
+            {shown?.saved ? (
+              <p className="text-sm">
+                <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-800 uppercase">
+                  Saved
+                </span>{" "}
+                <strong>{shown.saved.title}</strong>{" "}
+                <span className="text-muted-foreground">
+                  · saved {fmtDate(shown.saved.at, true)}
+                </span>
+              </p>
+            ) : (
+              <>
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  maxLength={200}
+                  aria-label="Report name"
+                  className="h-9 min-w-64 flex-1 rounded-md border border-input bg-background px-3 text-sm"
+                />
+                <Button onClick={() => save.mutate()} disabled={save.isPending}>
+                  {save.isPending ? "Saving…" : "Save this report"}
+                </Button>
+              </>
+            )}
             <Button variant="outline" onClick={downloadPdf}>
               Download PDF
             </Button>
-          )}
-        </div>
-        {gen.data && (
-          <p className="text-xs text-muted-foreground">
-            Tip: in the print window choose “Save as PDF” and untick “Headers and footers” for a
-            clean file.
-          </p>
+            <p className="w-full text-xs text-muted-foreground">
+              Tip: in the print window choose “Save as PDF” and untick “Headers and footers” for a
+              clean file.
+            </p>
+            {save.error && <ErrorBox error={save.error} />}
+          </div>
         )}
-        {gen.error && <ErrorBox error={gen.error} />}
+
+        {/* Saved reports */}
+        <div className="rounded-lg border border-border p-3">
+          <p className="mb-2 text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+            Saved reports
+          </p>
+          {saved.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading…</p>
+          ) : saved.error ? (
+            <ErrorBox error={saved.error} />
+          ) : !saved.data?.reports.length ? (
+            <p className="text-sm text-muted-foreground">
+              None yet. Generate a report, then click “Save this report”.
+            </p>
+          ) : (
+            <ul className="divide-y divide-border/60">
+              {saved.data.reports.map((s) => (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
+                  <div>
+                    <p className="text-sm font-medium">{s.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {s.period_from} to {s.period_to} · saved {fmtDate(s.created_at, true)}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => open.mutate(s.id)}
+                      disabled={open.isPending}
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        if (window.confirm(`Delete the saved report “${s.title}”?`))
+                          remove.mutate(s.id);
+                      }}
+                      disabled={remove.isPending}
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+          {(open.error || remove.error) && <ErrorBox error={open.error ?? remove.error} />}
+        </div>
       </div>
 
-      {gen.data && <Report r={gen.data} />}
+      {r && <Report r={r} />}
     </>
   );
 }
