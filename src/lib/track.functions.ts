@@ -32,6 +32,20 @@ const EventInput = z.object({
   value: z.number().finite().min(0).max(1_000_000).optional(),
   currency: short(8),
   itemCount: z.number().int().min(0).max(10_000).optional(),
+  variantId: short(40),
+  productTitle: short(200),
+  productHandle: short(200),
+  items: z
+    .array(
+      z.object({
+        variant_id: z.string().max(40),
+        title: z.string().max(200),
+        qty: z.number().int().min(0).max(1000),
+        price: z.number().finite().min(0).max(1_000_000),
+      }),
+    )
+    .max(100)
+    .optional(),
 });
 export type RecordEventInput = z.input<typeof EventInput>;
 
@@ -59,6 +73,10 @@ export const recordEvent = createServerFn({ method: "POST" })
         value: data.value ?? null,
         currency: data.currency ?? null,
         item_count: data.itemCount ?? null,
+        variant_id: data.variantId ?? null,
+        product_title: data.productTitle ?? null,
+        product_handle: data.productHandle ?? null,
+        items: data.items ?? null,
       });
     } catch {
       // best-effort

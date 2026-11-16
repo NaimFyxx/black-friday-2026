@@ -87,7 +87,13 @@ export function trackingOff(): boolean {
 /** Save one event to Supabase. Fire-and-forget: never blocks or throws. */
 function logEvent(
   event: TrackedEventName,
-  extra: { value?: number; currency?: string; itemCount?: number } = {},
+  extra: {
+    value?: number;
+    currency?: string;
+    itemCount?: number;
+    product?: TrackedItem;
+    items?: TrackedItem[];
+  } = {},
 ) {
   if (typeof window === "undefined" || trackingOff()) return;
   const sessionId = getSessionId();
@@ -103,6 +109,16 @@ function logEvent(
       value: extra.value !== undefined && Number.isFinite(extra.value) ? extra.value : undefined,
       currency: extra.currency,
       itemCount: extra.itemCount,
+      // Which product (view / add to cart) or which lines (checkout), for the report.
+      variantId: extra.product ? shopifyVariantId(extra.product.id) : undefined,
+      productTitle: extra.product?.name,
+      productHandle: extra.product?.handle,
+      items: extra.items?.map((i) => ({
+        variant_id: shopifyVariantId(i.id),
+        title: i.name.slice(0, 200),
+        qty: i.quantity,
+        price: i.price,
+      })),
     },
   }).catch(() => {});
 }
@@ -160,6 +176,7 @@ export function trackCampaignView(): void {
 export type TrackedItem = {
   id: string; // Shopify variant ID
   name: string;
+  handle?: string; // Shopify product handle
   variant?: string;
   price: number;
   currency: string;
@@ -195,7 +212,12 @@ export function trackViewItem(item: TrackedItem): void {
     value: money(item.price),
     currency: PIXEL_CURRENCY,
   });
-  logEvent("view_item", { value: item.price, currency: item.currency, itemCount: 1 });
+  logEvent("view_item", {
+    value: item.price,
+    currency: item.currency,
+    itemCount: 1,
+    product: item,
+  });
 }
 
 /** An item was added to the cart. */
@@ -209,7 +231,12 @@ export function trackAddToCart(item: TrackedItem): void {
     value: money(value),
     currency: PIXEL_CURRENCY,
   });
-  logEvent("add_to_cart", { value, currency: item.currency, itemCount: item.quantity });
+  logEvent("add_to_cart", {
+    value,
+    currency: item.currency,
+    itemCount: item.quantity,
+    product: item,
+  });
 }
 
 /** The shopper clicked Checkout. */
@@ -230,5 +257,6 @@ export function trackBeginCheckout(items: TrackedItem[]): void {
     value,
     currency,
     itemCount: items.reduce((n, i) => n + i.quantity, 0),
+    items,
   });
 }

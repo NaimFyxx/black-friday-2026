@@ -83,6 +83,7 @@ function ProductPage() {
     trackViewItem({
       id: variant.id,
       name: product.title,
+      handle: product.handle,
       variant: variant.title,
       price: Number(variant.price.amount),
       currency: variant.price.currencyCode,
@@ -106,6 +107,7 @@ function ProductPage() {
       trackAddToCart({
         id: selected.id,
         name: product.title,
+        handle: product.handle,
         variant: selected.title,
         price: Number(selected.price.amount),
         currency: selected.price.currencyCode,

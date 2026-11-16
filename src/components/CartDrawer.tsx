@@ -48,6 +48,7 @@ export function CartDrawer() {
         items.map((item) => ({
           id: item.variantId,
           name: item.product.node.title,
+          handle: item.product.node.handle,
           variant: item.variantTitle,
           price: Number(item.price.amount),
           currency: item.price.currencyCode,

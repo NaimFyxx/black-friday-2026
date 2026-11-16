@@ -33,6 +33,7 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
       trackAddToCart({
         id: variant.id,
         name: node.title,
+        handle: node.handle,
         variant: variant.title,
         price: Number(variant.price.amount),
         currency: variant.price.currencyCode,
