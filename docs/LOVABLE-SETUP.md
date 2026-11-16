@@ -169,8 +169,10 @@ Pulse's `inv_settings.cron_key`). Admin login cookies are encrypted with
 `bf_settings.admin_session_secret`; change that value to sign everyone out.
 Both values were generated inside the database and never put in the repo.
 
-If you edit `supabase/functions/bf-admin/index.ts`, redeploy it (it is not
-deployed automatically by Lovable).
+Lovable **automatically redeploys** `supabase/functions/bf-admin` from this repo
+whenever it rebuilds the site, so the repo copy is the source of truth: always
+commit changes to it (a newer version deployed by hand but not committed would
+be rolled back by Lovable's next build).
 
 ## Tracking on/off (/admin → Tracking)
 

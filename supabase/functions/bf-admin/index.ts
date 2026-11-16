@@ -9,6 +9,12 @@
 //       reads Shopify orders placed through the Black Friday site, using
 //       Pulse's Shopify app (SHOPIFY_STORE / SHOPIFY_CLIENT_ID /
 //       SHOPIFY_CLIENT_SECRET). READ ONLY. Never changes any secret.
+//   { key, action: "probe" }                      -> which optional secrets exist
+//       (true/false per NAME only, never values)
+//   { key, action: "meta", since, until }          -> Meta ad results per campaign
+//       for the "Fyxx Ads" account, read-only, with BLACK_FRIDAY_META_TOKEN
+//   { key, action: "ai_summary", facts }           -> plain-English campaign
+//       summary written by Lovable's AI gateway (LOVABLE_API_KEY)
 //
 // Only the site's server may call it: `key` must match bf_settings.edge_key
 // (the same pattern as Pulse's inv_settings.cron_key). Touches no Pulse table.
@@ -118,6 +124,92 @@ async function siteOrders(since: string, until: string) {
   return orders;
 }
 
+// ── Meta Ads (read only) ──
+const META_API = "https://graph.facebook.com/v23.0";
+const META_AD_ACCOUNT = "act_4226871230742646"; // "Fyxx Ads"
+const PURCHASE_TYPES = ["omni_purchase", "purchase", "offsite_conversion.fb_pixel_purchase"];
+
+// deno-lint-ignore no-explicit-any
+function pickAction(list: any[] | undefined): number {
+  if (!Array.isArray(list)) return 0;
+  for (const t of PURCHASE_TYPES) {
+    const hit = list.find((a) => a.action_type === t);
+    if (hit) return Number(hit.value) || 0;
+  }
+  return 0;
+}
+
+async function metaResults(sinceDay: string, untilDay: string) {
+  const token = Deno.env.get("BLACK_FRIDAY_META_TOKEN");
+  if (!token) return { status: "not_configured" };
+  const acct = await fetch(`${META_API}/${META_AD_ACCOUNT}?fields=currency,name&access_token=${encodeURIComponent(token)}`);
+  const acctJson = await acct.json();
+  if (acctJson.error) return { status: "error", message: String(acctJson.error.message).slice(0, 300) };
+  const params = new URLSearchParams({
+    level: "campaign",
+    fields: "campaign_id,campaign_name,spend,impressions,clicks,actions,action_values",
+    time_range: JSON.stringify({ since: sinceDay, until: untilDay }),
+    limit: "200",
+    access_token: token,
+  });
+  // deno-lint-ignore no-explicit-any
+  const campaigns: any[] = [];
+  let url: string | null = `${META_API}/${META_AD_ACCOUNT}/insights?${params}`;
+  for (let i = 0; url && i < 10; i++) {
+    const r = await fetch(url);
+    const j = await r.json();
+    if (j.error) return { status: "error", message: String(j.error.message).slice(0, 300) };
+    for (const c of j.data ?? []) {
+      campaigns.push({
+        id: c.campaign_id,
+        name: c.campaign_name,
+        spend: Number(c.spend) || 0,
+        impressions: Number(c.impressions) || 0,
+        clicks: Number(c.clicks) || 0,
+        purchases: pickAction(c.actions),
+        purchase_value: pickAction(c.action_values),
+      });
+    }
+    url = j.paging?.next ?? null;
+  }
+  return { status: "ok", currency: acctJson.currency ?? "USD", account: acctJson.name ?? "", campaigns };
+}
+
+// ── AI summary through Lovable's AI gateway ──
+const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+const AI_MODEL = "google/gemini-2.5-flash";
+const AI_SYSTEM = `You are the marketing analyst for Fyxx, a wine, spirits and cigars shop in Amman, Jordan (prices in JOD).
+You receive the final numbers of the "Fyxx Friday" Black Friday 2026 campaign as JSON.
+Write a short report for the owner, who is not technical, in plain English:
+1. "Headline": 2-3 sentences: total sales in the campaign period vs the period before, and how much revenue marketing generated.
+2. "What worked": 3-5 bullets, each with the number that proves it.
+3. "What didn't": 2-4 bullets, each with the number.
+4. "Do next time": 3-5 concrete, practical recommendations.
+Rules: use ONLY the numbers in the JSON, never invent or estimate numbers. If a section of data is missing or marked not available, say so in one short line instead of guessing. Money in JOD with no decimals (e.g. 12,340 JOD). Keep it under 350 words. Use markdown headings and bullets.`;
+
+async function aiSummary(facts: unknown) {
+  const key = Deno.env.get("LOVABLE_API_KEY");
+  if (!key) return { status: "not_configured" };
+  const res = await fetch(AI_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      messages: [
+        { role: "system", content: AI_SYSTEM },
+        { role: "user", content: JSON.stringify(facts).slice(0, 60_000) },
+      ],
+    }),
+  });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) return { status: "error", message: `AI gateway ${res.status}: ${JSON.stringify(j).slice(0, 200)}` };
+  const text = j.choices?.[0]?.message?.content;
+  if (!text) return { status: "error", message: "AI gave no text" };
+  return { status: "ok", text: String(text), model: AI_MODEL };
+}
+
+const isDay = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+
 const isIso = (v: unknown) => typeof v === "string" && v.length <= 40 && !Number.isNaN(Date.parse(v));
 
 Deno.serve(async (req) => {
@@ -145,6 +237,32 @@ Deno.serve(async (req) => {
       return json({ status: "ok", orders: await siteOrders(since, until) });
     } catch (e) {
       console.error("[bf-admin]", String((e as Error).message));
+      return json({ status: "error", message: String((e as Error).message).slice(0, 300) });
+    }
+  }
+
+  if (body.action === "probe") {
+    return json({
+      meta_token: !!Deno.env.get("BLACK_FRIDAY_META_TOKEN"),
+      lovable_ai: !!Deno.env.get("LOVABLE_API_KEY"),
+      admin_password: (Deno.env.get("BLACK_FRIDAY_ADMIN_PASSWORD") ?? "").length >= 8,
+      shopify: !!Deno.env.get("SHOPIFY_CLIENT_ID") && !!Deno.env.get("SHOPIFY_CLIENT_SECRET"),
+    });
+  }
+
+  if (body.action === "meta") {
+    if (!isDay(body.since) || !isDay(body.until)) return json({ error: "Bad range" }, 400);
+    try {
+      return json(await metaResults(body.since, body.until));
+    } catch (e) {
+      return json({ status: "error", message: String((e as Error).message).slice(0, 300) });
+    }
+  }
+
+  if (body.action === "ai_summary") {
+    try {
+      return json(await aiSummary(body.facts ?? {}));
+    } catch (e) {
       return json({ status: "error", message: String((e as Error).message).slice(0, 300) });
     }
   }
