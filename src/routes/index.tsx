@@ -102,6 +102,7 @@ function Storefront() {
     <main className="min-h-screen bg-[#090909] text-white">
       <section className="border-b border-yellow-400/30 bg-black">
         <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
+          <div className="mb-5 inline-flex items-center rounded-full border border-yellow-400/50 bg-yellow-400/10 px-4 py-2 text-[10px] font-black tracking-[0.2em] text-yellow-300 uppercase">BLACK FRIDAY EVENT · 2026</div>
           <p className="text-[11px] font-bold tracking-[0.3em] text-yellow-400 uppercase">
             Black Friday 2026 · Amman, Jordan
           </p>
@@ -109,15 +110,14 @@ function Storefront() {
             Black Friday 2026
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-            Shop our wide selection of wine, spirits and cigars in Amman. Order online today —
-            every bottle and box below comes straight from the store.
+            THE BIGGEST DEALS OF THE YEAR. Explore the Fyxx collection and shop your favourites.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a
               href="#catalog"
               className="inline-flex items-center rounded-full bg-yellow-400 px-8 py-3 text-xs font-black tracking-[0.18em] text-black uppercase transition-transform hover:scale-[1.03]"
             >
-              Shop all
+              SHOP ALL
             </a>
           </div>
         </div>
