@@ -13,14 +13,17 @@ export const SHOPIFY_STOREFRONT_TOKEN = "6bdaffcdd3b82d66838dff6365ead6cd";
 
 export const PRODUCTS_PER_PAGE = 24;
 
-export const CATEGORIES = ["all", "wine", "spirits", "cigars"] as const;
+export const CATEGORIES = [
+  "all", "cigars", "red-wine", "white-wine", "beer", "whisky", "vodka",
+  "tequila-mezcal", "sake", "arak", "gin", "rum", "dukkan",
+] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<Category, string> = {
-  all: "Everything",
-  wine: "Wine",
-  spirits: "Spirits",
-  cigars: "Cigars",
+  all: "All Products", cigars: "Cigars", "red-wine": "Red Wine",
+  "white-wine": "White Wine", beer: "Beer", whisky: "Whisky",
+  vodka: "Vodka", "tequila-mezcal": "Tequila & Mezcal", sake: "Sake",
+  arak: "Arak", gin: "Gin", rum: "Rum", dukkan: "Dukkan",
 };
 
 /**
@@ -47,10 +50,15 @@ function productTypeFilter(type: string): string {
 }
 
 const CATEGORY_SCOPES: Record<Category, string | null> = {
-  all: null,
-  wine: "(product_type:Wine)",
-  cigars: "(product_type:Cigars)",
-  spirits: `(${SPIRITS_TYPES.map(productTypeFilter).join(" OR ")})`,
+  all: null, cigars: "(product_type:Cigars)",
+  "red-wine": '(product_type:"Red Wine")',
+  "white-wine": '(product_type:"White Wine")',
+  beer: "(product_type:Beer)", whisky: "(product_type:Whisky)",
+  vodka: "(product_type:Vodka)",
+  "tequila-mezcal": "(product_type:Tequila OR product_type:Mezcal)",
+  sake: "(product_type:Sake)", arak: "(product_type:Arak)",
+  gin: "(product_type:Gin)", rum: "(product_type:Rum)",
+  dukkan: "(product_type:Dukkan)",
 };
 
 export function isCategory(value: unknown): value is Category {
