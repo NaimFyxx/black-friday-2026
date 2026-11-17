@@ -116,7 +116,7 @@ function Storefront() {
               href="#catalog"
               className="inline-flex items-center rounded-full bg-primary px-6 py-3 text-[11px] tracking-[0.18em] text-primary-foreground uppercase transition-opacity hover:opacity-90"
             >
-              Browse the cellar
+              Shop all
             </a>
           </div>
         </div>
