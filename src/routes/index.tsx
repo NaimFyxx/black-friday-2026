@@ -18,6 +18,7 @@ import {
   getProducts,
   isCategory,
   PRODUCTS_PER_PAGE,
+  primaryImage,
   type Category,
 } from "@/lib/shopify";
 import { cn } from "@/lib/utils";
@@ -98,13 +99,13 @@ function Storefront() {
   const products = (data?.pages ?? []).flatMap((page) => page.products);
 
   return (
-    <main className="bg-background">
-      <section className="border-b border-border">
+    <main className="min-h-screen bg-[#090909] text-white">
+      <section className="border-b border-yellow-400/30 bg-black">
         <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-          <p className="text-[11px] tracking-[0.3em] text-muted-foreground uppercase">
+          <p className="text-[11px] font-bold tracking-[0.3em] text-yellow-400 uppercase">
             Black Friday 2026 · Amman, Jordan
           </p>
-          <h1 className="mt-6 max-w-3xl font-display text-6xl leading-[0.92] md:text-8xl">
+          <h1 className="mt-6 max-w-4xl font-display text-6xl font-black leading-[0.88] tracking-tight text-white md:text-8xl">
             Black Friday 2026
           </h1>
           <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
@@ -114,7 +115,7 @@ function Storefront() {
           <div className="mt-8 flex flex-wrap gap-3">
             <a
               href="#catalog"
-              className="inline-flex items-center rounded-full bg-primary px-6 py-3 text-[11px] tracking-[0.18em] text-primary-foreground uppercase transition-opacity hover:opacity-90"
+              className="inline-flex items-center rounded-full bg-yellow-400 px-8 py-3 text-xs font-black tracking-[0.18em] text-black uppercase transition-transform hover:scale-[1.03]"
             >
               Shop all
             </a>
@@ -122,10 +123,32 @@ function Storefront() {
         </div>
       </section>
 
-      <section id="catalog" className="mx-auto max-w-6xl px-6 py-12 md:py-16">
+      <section className="mx-auto max-w-6xl px-5 py-9 md:px-6 md:py-12">
+        <div className="mb-6 flex items-end justify-between gap-4">
+          <div><p className="text-[10px] font-bold tracking-[0.25em] text-yellow-400 uppercase">Find your favourites</p><h2 className="mt-2 font-display text-3xl font-bold uppercase md:text-4xl">Shop by category</h2></div>
+          <span className="hidden text-xs tracking-widest text-white/50 uppercase sm:block">12 collections</span>
+        </div>
+        <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 md:grid-cols-6 md:gap-5">
+          {CATEGORIES.filter((item) => item !== "all").map((item) => {
+            const keyword = item === "tequila-mezcal" ? "tequila" : CATEGORY_LABELS[item].split(" ")[0].toLowerCase();
+            const match = products.find((product) => product.node.productType.toLowerCase().includes(keyword));
+            const image = match ? primaryImage(match.node) : null;
+            return <Link key={item} to="/" search={{ q: undefined, category: item }} className="group flex flex-col items-center text-center">
+              <div className="aspect-square w-full max-w-[132px] overflow-hidden rounded-full border border-yellow-400/30 bg-white/5 p-1 transition-all group-hover:border-yellow-400 group-hover:shadow-[0_0_24px_rgba(250,204,21,0.18)]">
+                <div className="h-full w-full overflow-hidden rounded-full bg-white/10">
+                  {image ? <img src={image.url} alt={CATEGORY_LABELS[item]} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" /> : <div className="flex h-full items-center justify-center px-2 text-[10px] font-bold tracking-wider text-yellow-300 uppercase">{CATEGORY_LABELS[item]}</div>}
+                </div>
+              </div>
+              <span className="mt-2 text-[11px] font-bold tracking-wide text-white uppercase md:text-xs">{CATEGORY_LABELS[item]}</span>
+            </Link>;
+          })}
+        </div>
+      </section>
+
+      <section id="catalog" className="mx-auto max-w-6xl px-5 py-12 md:px-6 md:py-16">
         <div className="flex flex-col gap-6 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <h2 className="font-display text-3xl">{CATEGORY_LABELS[category]}</h2>
+            <p className="text-[10px] font-bold tracking-[0.25em] text-yellow-400 uppercase">The Fyxx Black Friday edit</p><h2 className="mt-2 font-display text-3xl font-bold uppercase">{CATEGORY_LABELS[category]}</h2>
             <p className="mt-1 text-xs tracking-[0.18em] text-muted-foreground uppercase">
               Showing {products.length} item{products.length !== 1 ? "s" : ""}
             </p>
@@ -171,7 +194,7 @@ function Storefront() {
         )}
       </section>
 
-      <footer className="border-t border-border">
+      <footer className="border-t border-white/10 bg-black">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-10 text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
           <span>fyxx — wine, spirits &amp; cigars</span>
           <span>Amman · open daily 10 AM till midnight</span>
@@ -197,8 +220,8 @@ function CategoryChip({
       className={cn(
         "rounded-full border px-4 py-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors",
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border text-muted-foreground hover:border-foreground hover:text-foreground",
+          ? "border-yellow-400 bg-yellow-400 text-black"
+          : "border-white/20 text-white/65 hover:border-yellow-400 hover:text-yellow-300",
       )}
     >
       {CATEGORY_LABELS[category]}
