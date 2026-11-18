@@ -125,30 +125,16 @@ function Storefront() {
         <span className="mr-2">ϟ</span> BLACK FRIDAY 2026 <span className="mx-2">|</span> 25–30 NOVEMBER
       </div>
 
-      <section id="top" className="relative overflow-hidden bg-[#f6f0e9]">
-        <div className="mx-auto grid max-w-[1320px] items-center gap-4 px-6 py-12 md:min-h-[430px] md:grid-cols-2 md:gap-10 md:px-12 md:py-14">
-          <div className="relative z-10 text-center md:text-left">
-            <div className="font-serif text-[clamp(5rem,12vw,10rem)] leading-[0.72] tracking-[-0.09em] text-[#f51d32]">
-              <span className="block italic">fyxx</span>
-              <span className="ml-12 block italic">Friday</span>
-            </div>
-            <h1 className="mt-8 text-3xl font-black tracking-tight text-[#ed1c32] md:text-4xl">BLACK FRIDAY 2026</h1>
-            <p className="mt-3 text-[11px] font-bold tracking-[0.34em] text-[#4b0719] uppercase md:text-sm">Limited-time liquor specials</p>
-            <a href="#catalog" className="mt-7 inline-flex items-center gap-3 bg-[#f51d32] px-10 py-4 text-sm font-black tracking-wide text-white transition-all hover:bg-[#c90f27]">
-              SHOP ALL <span aria-hidden="true">→</span>
-            </a>
-          </div>
-          <div className="relative mx-auto flex min-h-[300px] w-full max-w-[560px] items-center justify-center md:min-h-[390px]">
-            <div className="absolute h-[250px] w-[250px] rounded-full bg-[#f51d32] md:h-[350px] md:w-[350px]" />
-            <div className="relative z-10 flex h-full w-full items-end justify-center gap-1 md:gap-3">
-              {heroProducts.map((product, index) => {
-                const image = primaryImage(product.node);
-                return image ? <div key={product.node.id} className={cn("flex w-1/4 items-end justify-center", index === 1 || index === 3 ? "pb-1" : "pb-5")}>
-                  <img src={image.url} alt={product.node.title} className="max-h-[290px] w-full object-contain drop-shadow-[0_18px_12px_rgba(54,0,12,0.22)] md:max-h-[360px]" />
-                </div> : null;
-              })}
-            </div>
-          </div>
+      <section id="top" className="bg-[#f4eee8]">
+        <div className="mx-auto flex w-full justify-center">
+          <a href="#catalog" aria-label="Shop Fyxx Friday special offers" className="block w-full max-w-[760px]">
+            <img
+              src="https://cdn.shopify.com/s/files/1/0108/6328/0224/files/fyxx-friday-hero.jpg?v=1795017522"
+              alt="Fyxx Friday — November 27 special offers"
+              fetchPriority="high"
+              className="block h-auto w-full"
+            />
+          </a>
         </div>
       </section>
 
