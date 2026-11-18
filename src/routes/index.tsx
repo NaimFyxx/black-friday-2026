@@ -98,110 +98,120 @@ function Storefront() {
 
   const products = (data?.pages ?? []).flatMap((page) => page.products);
 
+  const heroProducts = products.slice(0, 4);
+  const categoryKeywords: Record<string, string[]> = {
+    cigars: ["cigar"], "red-wine": ["red wine", "red"], "white-wine": ["white wine", "white"],
+    beer: ["beer"], whisky: ["whisky", "whiskey"], vodka: ["vodka"],
+    "tequila-mezcal": ["tequila", "mezcal"], sake: ["sake"], arak: ["arak"],
+    gin: ["gin"], rum: ["rum"], dukkan: ["dukkan", "accessor", "snack"],
+  };
+
   return (
-    <main className="min-h-screen bg-[#090909] text-white">
-      <section className="border-b border-yellow-400/30 bg-black">
-        <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
-          <div className="mb-5 inline-flex items-center rounded-full border border-yellow-400/50 bg-yellow-400/10 px-4 py-2 text-[10px] font-black tracking-[0.2em] text-yellow-300 uppercase">BLACK FRIDAY EVENT · 2026</div>
-          <p className="text-[11px] font-bold tracking-[0.3em] text-yellow-400 uppercase">
-            Black Friday 2026 · Amman, Jordan
-          </p>
-          <h1 className="mt-6 max-w-4xl font-display text-6xl font-black leading-[0.88] tracking-tight text-white md:text-8xl">
-            Black Friday 2026
-          </h1>
-          <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground">
-            THE BIGGEST DEALS OF THE YEAR. Explore the Fyxx collection and shop your favourites.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="#catalog"
-              className="inline-flex items-center rounded-full bg-yellow-400 px-8 py-3 text-xs font-black tracking-[0.18em] text-black uppercase transition-transform hover:scale-[1.03]"
-            >
-              SHOP ALL
+    <main className="min-h-screen bg-[#f6f0e9] text-[#4b0719]">
+      <header className="bg-black text-white">
+        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-5 py-4 md:px-10">
+          <Link to="/" search={{ q: undefined, category: "all" }} className="font-serif text-4xl italic tracking-[-0.08em] text-[#f51d32] md:text-5xl">fyxx</Link>
+          <nav className="hidden items-center gap-7 text-[11px] font-semibold tracking-wide uppercase md:flex">
+            <a href="#top" className="transition-colors hover:text-[#ff263b]">Home</a>
+            <a href="#catalog" className="transition-colors hover:text-[#ff263b]">The Cellar</a>
+            <a href="#categories" className="transition-colors hover:text-[#ff263b]">Shop by category</a>
+            <a href="#footer" className="transition-colors hover:text-[#ff263b]">About us</a>
+          </nav>
+          <a href="#catalog" className="border border-white/70 px-4 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors hover:bg-white hover:text-black">Shop now</a>
+        </div>
+      </header>
+
+      <div className="bg-[#f51d32] px-3 py-2 text-center text-xs font-semibold tracking-[0.08em] text-white md:text-lg">
+        <span className="mr-2">ϟ</span> BLACK FRIDAY 2026 <span className="mx-2">|</span> 25–30 NOVEMBER
+      </div>
+
+      <section id="top" className="relative overflow-hidden bg-[#f6f0e9]">
+        <div className="mx-auto grid max-w-[1320px] items-center gap-4 px-6 py-12 md:min-h-[430px] md:grid-cols-2 md:gap-10 md:px-12 md:py-14">
+          <div className="relative z-10 text-center md:text-left">
+            <div className="font-serif text-[clamp(5rem,12vw,10rem)] leading-[0.72] tracking-[-0.09em] text-[#f51d32]">
+              <span className="block italic">fyxx</span>
+              <span className="ml-12 block italic">Friday</span>
+            </div>
+            <h1 className="mt-8 text-3xl font-black tracking-tight text-[#ed1c32] md:text-4xl">BLACK FRIDAY 2026</h1>
+            <p className="mt-3 text-[11px] font-bold tracking-[0.34em] text-[#4b0719] uppercase md:text-sm">Limited-time liquor specials</p>
+            <a href="#catalog" className="mt-7 inline-flex items-center gap-3 bg-[#f51d32] px-10 py-4 text-sm font-black tracking-wide text-white transition-all hover:bg-[#c90f27]">
+              SHOP ALL <span aria-hidden="true">→</span>
             </a>
+          </div>
+          <div className="relative mx-auto flex min-h-[300px] w-full max-w-[560px] items-center justify-center md:min-h-[390px]">
+            <div className="absolute h-[250px] w-[250px] rounded-full bg-[#f51d32] md:h-[350px] md:w-[350px]" />
+            <div className="relative z-10 flex h-full w-full items-end justify-center gap-1 md:gap-3">
+              {heroProducts.map((product, index) => {
+                const image = primaryImage(product.node);
+                return image ? <div key={product.node.id} className={cn("flex w-1/4 items-end justify-center", index === 1 || index === 3 ? "pb-1" : "pb-5")}>
+                  <img src={image.url} alt={product.node.title} className="max-h-[290px] w-full object-contain drop-shadow-[0_18px_12px_rgba(54,0,12,0.22)] md:max-h-[360px]" />
+                </div> : null;
+              })}
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-5 py-9 md:px-6 md:py-12">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <div><p className="text-[10px] font-bold tracking-[0.25em] text-yellow-400 uppercase">Find your favourites</p><h2 className="mt-2 font-display text-3xl font-bold uppercase md:text-4xl">Shop by category</h2></div>
-          <span className="hidden text-xs tracking-widest text-white/50 uppercase sm:block">12 collections</span>
+      <section id="categories" className="mx-auto max-w-[1320px] px-5 pb-10 pt-2 md:px-10 md:pb-16">
+        <div className="mb-7 flex items-center gap-5">
+          <span className="h-px flex-1 bg-[#f51d32]" />
+          <h2 className="text-center text-xl font-black tracking-tight text-[#ed1c32] md:text-3xl">SHOP BY CATEGORY</h2>
+          <span className="h-px flex-1 bg-[#f51d32]" />
         </div>
-        <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 md:grid-cols-6 md:gap-5">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 md:grid-cols-6 md:gap-x-7 md:gap-y-8">
           {CATEGORIES.filter((item) => item !== "all").map((item) => {
-            const keyword = item === "tequila-mezcal" ? "tequila" : CATEGORY_LABELS[item].split(" ")[0].toLowerCase();
-            const match = products.find((product) => product.node.productType.toLowerCase().includes(keyword));
+            const keywords = categoryKeywords[item] ?? [CATEGORY_LABELS[item].toLowerCase()];
+            const match = products.find((product) => keywords.some((keyword) => product.node.productType.toLowerCase().includes(keyword)));
             const image = match ? primaryImage(match.node) : null;
             return <Link key={item} to="/" search={{ q: undefined, category: item }} className="group flex flex-col items-center text-center">
-              <div className="aspect-square w-full max-w-[132px] overflow-hidden rounded-full border border-yellow-400/30 bg-white/5 p-1 transition-all group-hover:border-yellow-400 group-hover:shadow-[0_0_24px_rgba(250,204,21,0.18)]">
-                <div className="h-full w-full overflow-hidden rounded-full bg-white/10">
-                  {image ? <img src={image.url} alt={CATEGORY_LABELS[item]} loading="lazy" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110" /> : <div className="flex h-full items-center justify-center px-2 text-[10px] font-bold tracking-wider text-yellow-300 uppercase">{CATEGORY_LABELS[item]}</div>}
-                </div>
+              <div className="aspect-square w-full max-w-[142px] overflow-hidden rounded-full bg-[#b20d24] shadow-sm transition-transform duration-300 group-hover:scale-105">
+                {image ? <img src={image.url} alt={CATEGORY_LABELS[item]} loading="lazy" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-2 text-[10px] font-bold text-white uppercase">{CATEGORY_LABELS[item]}</div>}
               </div>
-              <span className="mt-2 text-[11px] font-bold tracking-wide text-white uppercase md:text-xs">{CATEGORY_LABELS[item]}</span>
+              <span className="mt-2 text-[10px] font-black tracking-tight text-[#4b0719] uppercase md:text-xs">{CATEGORY_LABELS[item]}</span>
             </Link>;
           })}
         </div>
       </section>
 
-      <section id="catalog" className="mx-auto max-w-6xl px-5 py-12 md:px-6 md:py-16">
-        <div className="flex flex-col gap-6 border-b border-border pb-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-[10px] font-bold tracking-[0.25em] text-yellow-400 uppercase">The Fyxx Black Friday edit</p><h2 className="mt-2 font-display text-3xl font-bold uppercase">{CATEGORY_LABELS[category]}</h2>
-            <p className="mt-1 text-xs tracking-[0.18em] text-muted-foreground uppercase">
-              Showing {products.length} item{products.length !== 1 ? "s" : ""}
-            </p>
+      <section id="catalog" className="bg-[#fffdfa]">
+        <div className="mx-auto max-w-[1320px] px-5 py-12 md:px-10 md:py-16">
+          <div className="flex flex-col gap-6 border-b border-[#eadde0] pb-6 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[10px] font-bold tracking-[0.25em] text-[#ed1c32] uppercase">The Fyxx Black Friday edit</p>
+              <h2 className="mt-2 font-display text-3xl font-bold uppercase text-[#4b0719]">{CATEGORY_LABELS[category]}</h2>
+              <p className="mt-1 text-xs tracking-[0.18em] text-[#805d66] uppercase">Showing {products.length} item{products.length !== 1 ? "s" : ""}</p>
+            </div>
+            <CatalogSearch value={q} />
           </div>
-          <CatalogSearch value={q} />
-        </div>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          {CATEGORIES.map((item) => (
-            <CategoryChip key={item} category={item} active={item === category} search={q} />
-          ))}
-        </div>
-
-        {products.length === 0 ? (
-          <p className="py-24 text-center text-sm text-muted-foreground">No products found</p>
-        ) : (
-          <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3 lg:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard key={product.node.id} product={product} />
-            ))}
+          <div className="mt-6 flex flex-wrap gap-2">
+            {CATEGORIES.map((item) => <CategoryChip key={item} category={item} active={item === category} search={q} />)}
           </div>
-        )}
 
-        {hasNextPage && (
-          <div className="mt-14 flex justify-center">
-            <Button
-              variant="outline"
-              size="lg"
-              className="rounded-full px-8"
-              disabled={isFetchingNextPage}
-              onClick={() => fetchNextPage()}
-            >
-              {isFetchingNextPage ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading
-                </>
-              ) : (
-                "Load more"
-              )}
+          {products.length === 0 ? (
+            <p className="py-24 text-center text-sm text-[#805d66]">No products found</p>
+          ) : (
+            <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3 lg:grid-cols-4">
+              {products.map((product) => <ProductCard key={product.node.id} product={product} />)}
+            </div>
+          )}
+
+          {hasNextPage && <div className="mt-14 flex justify-center">
+            <Button variant="outline" size="lg" className="rounded-full border-[#ed1c32] px-8 text-[#ed1c32] hover:bg-[#ed1c32] hover:text-white" disabled={isFetchingNextPage} onClick={() => fetchNextPage()}>
+              {isFetchingNextPage ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading</> : "Load more"}
             </Button>
-          </div>
-        )}
+          </div>}
+        </div>
       </section>
 
-      <footer className="border-t border-white/10 bg-black">
-        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-6 py-10 text-[11px] tracking-[0.18em] text-muted-foreground uppercase">
-          <span>fyxx — wine, spirits &amp; cigars</span>
-          <span>Amman · open daily 10 AM till midnight</span>
+      <footer id="footer" className="bg-black text-white">
+        <div className="mx-auto flex max-w-[1320px] flex-col gap-2 px-6 py-10 text-[11px] tracking-[0.18em] text-white/65 uppercase">
+          <span className="font-serif text-3xl italic tracking-tight text-[#f51d32]">fyxx</span>
+          <span>Wine · spirits · cigars</span>
+          <span>Amman · Jordan</span>
         </div>
       </footer>
-    </main>
-  );
+    </main>;
 }
 
 function CategoryChip({
