@@ -211,7 +211,8 @@ function Storefront() {
           <span>Amman · Jordan</span>
         </div>
       </footer>
-    </main>;
+    </main>
+  );
 }
 
 function CategoryChip({
@@ -230,8 +231,8 @@ function CategoryChip({
       className={cn(
         "rounded-full border px-4 py-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors",
         active
-          ? "border-yellow-400 bg-yellow-400 text-black"
-          : "border-white/20 text-white/65 hover:border-yellow-400 hover:text-yellow-300",
+          ? "border-[#ed1c32] bg-[#ed1c32] text-white"
+          : "border-[#ed1c32]/25 text-[#4b0719]/75 hover:border-[#ed1c32] hover:text-[#ed1c32]",
       )}
     >
       {CATEGORY_LABELS[category]}
