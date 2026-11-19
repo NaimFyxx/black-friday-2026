@@ -22,9 +22,17 @@ export function SiteHeader() {
           <Link
             to="/"
             search={{ q: undefined, category: "all" }}
-            className="font-display text-2xl leading-none italic"
+            aria-label="Fyxx Friday home"
+            className="block"
           >
-            fyxx
+            {/* Red logo on cream, per the Fyxx Friday guidelines. */}
+            <img
+              src="/brand/fyxx-friday-logo-red.svg"
+              alt="Fyxx Friday"
+              width={2587}
+              height={1446}
+              className="h-9 w-auto"
+            />
           </Link>
 
           <nav className="hidden items-center gap-1 md:flex">

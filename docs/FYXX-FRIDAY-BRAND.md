@@ -25,6 +25,21 @@ design. **Five colours, nothing else.**
 | Red `#F61D2F` | Cream (or Black on Post-02) | Warm cream (Post-02 only) or Cream | Black |
 | Burgundy `#480016` | Cream | Red ("2026") | Cream |
 
+## Logo
+
+Official "fyxx Friday" logo SVGs (from Naim's Drive, "Fyxx Friday 2026 Logos
+(SVG)"), one per palette colour, in `public/brand/`:
+
+| File | Use on |
+|---|---|
+| `fyxx-friday-logo-cream.svg` | Burgundy and red backgrounds (most designs) |
+| `fyxx-friday-logo-red.svg` | Cream backgrounds (Post-04, Story-04, the site's cream header) |
+| `fyxx-friday-logo-black.svg` | Post-02, Post-06 and Story-02 |
+| `fyxx-friday-logo-warm-cream.svg` | Post-02 accents / the printable poster only |
+| `fyxx-friday-logo-burgundy.svg` | In the file, but not used in Andrea's designs |
+
+Website: `<img src="/brand/fyxx-friday-logo-cream.svg">` (aspect ratio 2587 × 1446).
+
 ## Fonts
 
 **Aktiv Grotesk** (Adobe Fonts): **Medium**, **Ex Medium**, **Ex Bold**, **Ex XBold**.

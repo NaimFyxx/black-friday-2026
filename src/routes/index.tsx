@@ -110,7 +110,7 @@ function Storefront() {
     <main className="min-h-screen bg-ff-cream text-ff-black">
       <header className="bg-ff-burgundy text-ff-cream">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-5 py-4 md:px-10">
-          <Link to="/" search={{ q: undefined, category: "all" }} className="font-serif text-4xl italic tracking-[-0.08em] text-ff-cream md:text-5xl">fyxx</Link>
+          <Link to="/" search={{ q: undefined, category: "all" }} aria-label="Fyxx Friday home" className="block"><img src="/brand/fyxx-friday-logo-cream.svg" alt="Fyxx Friday" width={2587} height={1446} className="h-10 w-auto md:h-14" /></Link>
           <nav className="hidden items-center gap-7 text-[11px] font-semibold tracking-wide uppercase md:flex">
             <a href="#top" className="transition-colors hover:text-ff-red">Home</a>
             <a href="#catalog" className="transition-colors hover:text-ff-red">The Cellar</a>
@@ -192,7 +192,7 @@ function Storefront() {
 
       <footer id="footer" className="bg-ff-burgundy text-ff-cream">
         <div className="mx-auto flex max-w-[1320px] flex-col gap-2 px-6 py-10 text-[11px] tracking-[0.18em] text-ff-cream uppercase">
-          <span className="font-serif text-3xl italic tracking-tight text-ff-cream">fyxx</span>
+          <img src="/brand/fyxx-friday-logo-cream.svg" alt="Fyxx Friday" width={2587} height={1446} loading="lazy" className="mb-2 h-12 w-auto self-start" />
           <span>Wine · spirits · cigars</span>
           <span>Amman · Jordan</span>
         </div>
