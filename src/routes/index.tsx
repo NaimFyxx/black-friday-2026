@@ -12,7 +12,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  buildCatalogQuery,
+  catalogSource,
   CATEGORY_LABELS,
   CATEGORIES,
   getProducts,
@@ -29,7 +29,7 @@ const catalogQueryOptions = (deps: { category: Category; q: string | undefined }
       getProducts({
         first: PRODUCTS_PER_PAGE,
         after: pageParam ?? null,
-        query: buildCatalogQuery({ category: deps.category, search: deps.q }),
+        ...catalogSource({ category: deps.category, search: deps.q }),
       }),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) =>
@@ -182,7 +182,7 @@ function CategoryChip({
   return (
     <Link
       to="/"
-      search={{ q: search, category }}
+      search={{ q: undefined, category }}
       className={cn(
         "rounded-full border px-4 py-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors",
         active
@@ -210,7 +210,8 @@ function CatalogSearch({ value }: { value: string | undefined }) {
         to: "/",
         search: (prev) => ({
           q: term.trim() || undefined,
-          category: prev.category ?? "all",
+          // Search covers the whole shop, so the "All products" chip lights up.
+          category: term.trim() ? "all" : (prev.category ?? "all"),
         }),
         replace: true,
       });

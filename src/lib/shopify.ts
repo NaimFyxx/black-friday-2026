@@ -14,76 +14,75 @@ export const SHOPIFY_STOREFRONT_TOKEN = "6bdaffcdd3b82d66838dff6365ead6cd";
 export const PRODUCTS_PER_PAGE = 24;
 
 export const CATEGORIES = [
-  "all", "cigars", "red-wine", "white-wine", "beer", "whisky", "vodka",
-  "tequila-mezcal", "sake", "arak", "gin", "rum", "dukkan",
+  "all",
+  "cigars",
+  "red-wine",
+  "white-wine",
+  "beer",
+  "whisky",
+  "vodka",
+  "tequila-mezcal",
+  "sake",
+  "arak",
+  "gin",
+  "rum",
+  "dukkan",
 ] as const;
 export type Category = (typeof CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<Category, string> = {
-  all: "All Products", cigars: "Cigars", "red-wine": "Red Wine",
-  "white-wine": "White Wine", beer: "Beer", whisky: "Whisky",
-  vodka: "Vodka", "tequila-mezcal": "Tequila & Mezcal", sake: "Sake",
-  arak: "Arak", gin: "Gin", rum: "Rum", dukkan: "Dukkan",
+  all: "All Products",
+  cigars: "Cigars",
+  "red-wine": "Red Wine",
+  "white-wine": "White Wine",
+  beer: "Beer",
+  whisky: "Whisky",
+  vodka: "Vodka",
+  "tequila-mezcal": "Tequila & Mezcal",
+  sake: "Sake",
+  arak: "Arak",
+  gin: "Gin",
+  rum: "Rum",
+  dukkan: "Dukkan",
 };
 
 /**
- * "Spirits" is not a single product type in this catalog — it is the family of
- * whisky, vodka, gin, rum, tequila, liqueurs and friends. Quoting is only added
- * where the type name itself needs it (Cognac/Brandy).
+ * Each shelf shows its Shopify COLLECTION (the lists the Fyxx team curates in
+ * Shopify admin, same as on myfyxx.com), in the collection's own order.
+ * "All products" is the whole catalog.
  */
-const SPIRITS_TYPES = [
-  "Whisky",
-  "Vodka",
-  "Gin",
-  "Rum",
-  "Tequila",
-  "Liqueurs",
-  "Absinthe",
-  "Arak",
-  "Mezcal",
-  "Bitters",
-  "Cognac/Brandy",
-];
-
-function productTypeFilter(type: string): string {
-  return /[^A-Za-z0-9]/.test(type) ? `product_type:"${type}"` : `product_type:${type}`;
-}
-
-const CATEGORY_SCOPES: Record<Category, string | null> = {
-  all: null, cigars: "(product_type:Cigars)",
-  "red-wine": '(product_type:"Red Wine")',
-  "white-wine": '(product_type:"White Wine")',
-  beer: "(product_type:Beer)", whisky: "(product_type:Whisky)",
-  vodka: "(product_type:Vodka)",
-  "tequila-mezcal": "(product_type:Tequila OR product_type:Mezcal)",
-  sake: "(product_type:Sake)", arak: "(product_type:Arak)",
-  gin: "(product_type:Gin)", rum: "(product_type:Rum)",
-  dukkan: "(product_type:Dukkan)",
+export const CATEGORY_COLLECTIONS: Record<Category, string | null> = {
+  all: null,
+  cigars: "cigars",
+  "red-wine": "red-wines",
+  "white-wine": "white-wines",
+  beer: "beer",
+  whisky: "whisky",
+  vodka: "vodka",
+  "tequila-mezcal": "tequila-and-mezcal",
+  sake: "sake",
+  arak: "arak",
+  gin: "gin",
+  rum: "rum",
+  dukkan: "dukkan",
 };
 
 export function isCategory(value: unknown): value is Category {
   return typeof value === "string" && (CATEGORIES as readonly string[]).includes(value);
 }
 
-/** Search syntax for one shelf, or null when the shelf is "Everything". */
-export function categoryScope(category: Category): string | null {
-  return CATEGORY_SCOPES[category] ?? null;
-}
-
 /**
- * Combine a shelf with a free-text search into one Storefront API query string.
- * Returns null when nothing should be filtered at all.
+ * Where a shelf's products come from. A search term searches the WHOLE
+ * catalog (Shopify can't search inside a collection); otherwise the shelf's
+ * collection, or everything for "All products".
  */
-export function buildCatalogQuery(input: {
-  category: Category;
-  search?: string | undefined;
-}): string | null {
-  const scope = categoryScope(input.category);
+export function catalogSource(input: { category: Category; search?: string | undefined }): {
+  collection: string | null;
+  query: string | null;
+} {
   const term = input.search?.trim();
-
-  if (scope && term) return `${scope} AND ${term}`;
-  if (scope) return scope;
-  return term ? term : null;
+  if (term) return { collection: null, query: term };
+  return { collection: CATEGORY_COLLECTIONS[input.category] ?? null, query: null };
 }
 
 export interface ShopifyMoney {
@@ -161,6 +160,17 @@ const CATALOG_QUERY = `
   }
 `;
 
+const COLLECTION_QUERY = `
+  query GetCollectionProducts($handle: String!, $first: Int!, $after: String) {
+    collection(handle: $handle) {
+      products(first: $first, after: $after, sortKey: COLLECTION_DEFAULT) {
+        pageInfo { hasNextPage endCursor }
+        edges { node { ${PRODUCT_FIELDS} } }
+      }
+    }
+  }
+`;
+
 const PRODUCT_BY_HANDLE_QUERY = `
   query GetProductByHandle($handle: String!) {
     productByHandle(handle: $handle) { ${PRODUCT_FIELDS} }
@@ -218,7 +228,23 @@ export async function getProducts(input: {
   first?: number;
   after?: string | null;
   query?: string | null;
+  /** Shopify collection handle: list that collection's products instead. */
+  collection?: string | null;
 }): Promise<CatalogPage> {
+  if (input.collection) {
+    const res = await storefrontApiRequest<{
+      collection: CatalogResponse["products"] extends infer P ? { products: P } | null : never;
+    }>(COLLECTION_QUERY, {
+      handle: input.collection,
+      first: input.first ?? PRODUCTS_PER_PAGE,
+      after: input.after ?? null,
+    });
+    const products = res?.data?.collection?.products;
+    return {
+      products: (products?.edges ?? []).map((edge) => ({ node: edge.node })),
+      pageInfo: products?.pageInfo ?? { hasNextPage: false, endCursor: null },
+    };
+  }
   const data = await storefrontApiRequest<CatalogResponse>(CATALOG_QUERY, {
     first: input.first ?? PRODUCTS_PER_PAGE,
     after: input.after ?? null,
@@ -265,11 +291,12 @@ const NAMED_ENTITIES: Record<string, string> = {
 };
 
 function decodeEntity(match: string, entity: string): string {
-  const code = entity.startsWith("#x") || entity.startsWith("#X")
-    ? Number.parseInt(entity.slice(2), 16)
-    : entity.startsWith("#")
-      ? Number.parseInt(entity.slice(1), 10)
-      : Number.NaN;
+  const code =
+    entity.startsWith("#x") || entity.startsWith("#X")
+      ? Number.parseInt(entity.slice(2), 16)
+      : entity.startsWith("#")
+        ? Number.parseInt(entity.slice(1), 10)
+        : Number.NaN;
 
   if (Number.isFinite(code)) {
     return code > 0 && code <= 0x10fffd ? String.fromCodePoint(code) : match;
