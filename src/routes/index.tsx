@@ -102,8 +102,9 @@ function Storefront() {
   return (
     <main className="min-h-screen bg-ff-cream text-ff-black">
       <h1 className="sr-only">Fyxx Friday: Black Friday 2026, November 27, special offers and best deals</h1>
-      <div id="top" className="bg-ff-red px-3 py-2 text-center text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg">
-        BLACK FRIDAY 2026 <span className="mx-2">|</span> NOVEMBER 27 <span className="mx-2">|</span> SPECIAL OFFERS. BEST DEALS
+      {/* One line on every screen: the text scales with the screen width on phones. */}
+      <div id="top" className="overflow-hidden bg-ff-red px-2 py-2 text-center text-[clamp(8px,2.55vw,12px)] font-semibold tracking-[0.02em] whitespace-nowrap text-ff-cream sm:tracking-[0.08em] md:text-lg">
+        BLACK FRIDAY 2026 <span className="mx-1 sm:mx-2">|</span> NOVEMBER 27 <span className="mx-1 sm:mx-2">|</span> SPECIAL OFFERS. BEST DEALS
       </div>
 
       <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">
