@@ -18,7 +18,6 @@ import {
   getProducts,
   isCategory,
   PRODUCTS_PER_PAGE,
-  primaryImage,
   type Category,
 } from "@/lib/shopify";
 import { cn } from "@/lib/utils";
@@ -99,12 +98,6 @@ function Storefront() {
   const products = (data?.pages ?? []).flatMap((page) => page.products);
 
   const heroProducts = products.slice(0, 4);
-  const categoryKeywords: Record<string, string[]> = {
-    cigars: ["cigar"], "red-wine": ["red wine", "red"], "white-wine": ["white wine", "white"],
-    beer: ["beer"], whisky: ["whisky", "whiskey"], vodka: ["vodka"],
-    "tequila-mezcal": ["tequila", "mezcal"], sake: ["sake"], arak: ["arak"],
-    gin: ["gin"], rum: ["rum"], dukkan: ["dukkan", "accessor", "snack"],
-  };
 
   return (
     <main className="min-h-screen bg-ff-cream text-ff-black">
@@ -114,7 +107,6 @@ function Storefront() {
           <nav className="hidden items-center gap-7 text-[11px] font-semibold tracking-wide uppercase md:flex">
             <a href="#top" className="transition-colors hover:text-ff-red">Home</a>
             <a href="#catalog" className="transition-colors hover:text-ff-red">The Cellar</a>
-            <a href="#categories" className="transition-colors hover:text-ff-red">Shop by category</a>
             <a href="#footer" className="transition-colors hover:text-ff-red">About us</a>
           </nav>
           <a href="#catalog" className="border border-ff-cream px-4 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors hover:bg-ff-cream hover:text-ff-burgundy">Shop now</a>
@@ -158,27 +150,6 @@ function Storefront() {
           <div className="mt-8 text-center lg:hidden">
             <HeroCopy />
           </div>
-        </div>
-      </section>
-
-      <section id="categories" className="mx-auto max-w-[1320px] px-5 pb-10 pt-2 md:px-10 md:pb-16">
-        <div className="mb-7 flex items-center gap-5">
-          <span className="h-px flex-1 bg-ff-red" />
-          <h2 className="text-center text-xl font-black tracking-tight text-ff-red md:text-3xl">SHOP BY CATEGORY</h2>
-          <span className="h-px flex-1 bg-ff-red" />
-        </div>
-        <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 md:grid-cols-6 md:gap-x-7 md:gap-y-8">
-          {CATEGORIES.filter((item) => item !== "all").map((item) => {
-            const keywords = categoryKeywords[item] ?? [CATEGORY_LABELS[item].toLowerCase()];
-            const match = products.find((product) => keywords.some((keyword) => product.node.productType.toLowerCase().includes(keyword)));
-            const image = match ? primaryImage(match.node) : null;
-            return <Link key={item} to="/" search={{ q: undefined, category: item }} className="group flex flex-col items-center text-center">
-              <div className="aspect-square w-full max-w-[142px] overflow-hidden rounded-full bg-ff-burgundy shadow-sm transition-transform duration-300 group-hover:scale-105">
-                {image ? <img src={image.url} alt={CATEGORY_LABELS[item]} loading="lazy" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-2 text-[10px] font-bold text-ff-cream uppercase">{CATEGORY_LABELS[item]}</div>}
-              </div>
-              <span className="mt-2 text-[10px] font-black tracking-tight text-ff-black uppercase md:text-xs">{CATEGORY_LABELS[item]}</span>
-            </Link>;
-          })}
         </div>
       </section>
 
