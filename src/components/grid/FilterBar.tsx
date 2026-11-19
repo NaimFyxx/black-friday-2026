@@ -39,16 +39,19 @@ export function FilterBar({
         >
           All <Count n={facets.all.count} />
         </ChipButton>
-        {facets.mains.map((m) => (
-          <ChipButton
-            key={m.name}
-            active={filters.main === m.name}
-            onClick={() => onChange({ main: m.name, sub: undefined })}
-          >
-            {m.name} <Count n={m.count} />
-            {sale && m.upto ? <UpTo n={m.upto} /> : null}
-          </ChipButton>
-        ))}
+        {/* A category with nothing to show (e.g. no discounts yet) is hidden. */}
+        {facets.mains
+          .filter((m) => m.count > 0 || filters.main === m.name)
+          .map((m) => (
+            <ChipButton
+              key={m.name}
+              active={filters.main === m.name}
+              onClick={() => onChange({ main: m.name, sub: undefined })}
+            >
+              {m.name} <Count n={m.count} />
+              {sale && m.upto ? <UpTo n={m.upto} /> : null}
+            </ChipButton>
+          ))}
       </Row>
 
       {filters.main && facets.subs.length > 0 && (

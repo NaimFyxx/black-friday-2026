@@ -10,7 +10,7 @@ export function TopDeals({ items, threshold }: { items: CatalogItem[]; threshold
       <h2 id="top-deals" className="ff-headline text-xl text-ff-red uppercase md:text-2xl">
         Top deals
       </h2>
-      <div className="-mx-5 mt-3 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-5 pb-2 [scrollbar-width:none] md:-mx-10 md:px-10">
+      <div className="-mx-5 mt-3 flex snap-x snap-mandatory scroll-px-5 md:scroll-px-10 gap-4 overflow-x-auto overscroll-x-contain px-5 pb-2 [scrollbar-width:none] md:-mx-10 md:px-10">
         {items.map((item, i) => (
           <CatalogCard
             key={item.product_id}
