@@ -126,20 +126,17 @@ function Storefront() {
 
       <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">
         <div className="mx-auto max-w-[1320px] px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
-          <div className="flex flex-col gap-6 border-b border-ff-black/15 pb-6 md:flex-row md:items-end md:justify-between">
-            <div className="flex items-end gap-5 md:gap-8">
-              <div>
-                <p className="text-[10px] font-bold tracking-[0.25em] text-ff-red uppercase">The Fyxx Black Friday edit</p>
-                <h2 className="mt-2 font-display text-3xl font-bold uppercase text-ff-black">{CATEGORY_LABELS[category]}</h2>
-                <p className="mt-1 text-xs tracking-[0.18em] text-ff-black uppercase">Showing {products.length} item{products.length !== 1 ? "s" : ""}</p>
-              </div>
-              {/* Mini Fyxx Friday logo + the campaign bottles, next to the title. */}
-              <div aria-hidden="true" className="flex shrink-0 items-end">
-                <img src="/brand/fyxx-friday-logo-red.svg" alt="" width={2587} height={1446} fetchPriority="high" className="h-12 w-auto md:h-16" />
-                <img src="/brand/fyxx-friday-bottles.webp" alt="" width={942} height={1202} fetchPriority="high" className="-ml-3 h-16 w-auto md:-ml-4 md:h-24" />
-              </div>
+          {/* Fyxx Friday logo + the four campaign bottles, centred (no text). The
+              category name stays available to screen readers. */}
+          <div className="flex flex-col items-center gap-6 border-b border-ff-black/15 pb-6">
+            <h2 className="sr-only">{CATEGORY_LABELS[category]}</h2>
+            <div aria-hidden="true" className="flex items-end justify-center">
+              <img src="/brand/fyxx-friday-logo-red.svg" alt="" width={2587} height={1446} fetchPriority="high" className="h-16 w-auto md:h-24" />
+              <img src="/brand/fyxx-friday-bottles.webp" alt="" width={942} height={1202} fetchPriority="high" className="-ml-4 h-24 w-auto md:-ml-6 md:h-36" />
             </div>
-            <CatalogSearch value={q} />
+            <div className="w-full max-w-sm">
+              <CatalogSearch value={q} />
+            </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
