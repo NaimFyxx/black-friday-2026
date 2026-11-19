@@ -35,7 +35,7 @@ export function SiteHeader() {
             />
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1 xl:flex">
             {CATEGORIES.map((category) => (
               <Link
                 key={category}
