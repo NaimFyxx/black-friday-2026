@@ -5,7 +5,7 @@ import { Loader2, Search } from "lucide-react";
 
 import { BackToTop } from "@/components/grid/BackToTop";
 import { CatalogCard } from "@/components/grid/CatalogCard";
-import { FilterBar } from "@/components/grid/FilterBar";
+import { FilterBar, SortMenu } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { Input } from "@/components/ui/input";
@@ -182,6 +182,9 @@ function Storefront() {
               <div ref={gridTop} className="ff-small mt-4 flex items-center gap-2 text-xs text-ff-black/70">
                 <span className="tabular-nums">{total} products</span>
                 {isFetching && !isFetchingNextPage && <Loader2 className="h-3 w-3 animate-spin" />}
+                <span className="ml-auto">
+                  <SortMenu sale={sale} value={filters.sort} onChange={(sort) => setFilters({ sort })} />
+                </span>
               </div>
 
               {items.length === 0 ? (

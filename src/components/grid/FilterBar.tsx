@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 /**
  * Sticky filters under the header.
  * Row 1: All / Wine / Spirits / Cigars. Row 2: sub categories of the picked one.
- * Row 3: price bands and the sort menu. Each chip shows its count, and during
+ * Row 3: price bands. Each chip shows its count, and during
  * the sale its "up to X%". Nothing links to Shopify collections.
  */
 export function FilterBar({
@@ -25,10 +25,6 @@ export function FilterBar({
   onChange: (patch: Partial<CatalogFilters>) => void;
 }) {
   const sale = facets.state === "sale";
-  const sortOptions: SortKey[] = sale
-    ? ["discount", "price_asc", "price_desc"]
-    : ["newest", "price_asc", "price_desc"];
-  const sort = filters.sort && sortOptions.includes(filters.sort) ? filters.sort : sortOptions[0];
 
   return (
     <div className="sticky top-16 z-30 -mx-5 border-b border-ff-black/15 bg-ff-cream/95 px-5 py-2 md:top-[88px] md:-mx-10 md:px-10">
@@ -73,35 +69,51 @@ export function FilterBar({
         </Row>
       )}
 
-      <div className="mt-1.5 flex items-center gap-2">
-        <Row label="Price" className="mt-0 min-w-0 flex-1">
-          {facets.bands.map((b) => (
-            <ChipButton
-              key={b.index}
-              small
-              active={filters.band === b.index}
-              onClick={() => onChange({ band: filters.band === b.index ? undefined : b.index })}
-            >
-              {bandLabel(b)} <Count n={b.count} />
-            </ChipButton>
-          ))}
-        </Row>
-        <label className="shrink-0">
-          <span className="sr-only">Sort</span>
-          <select
-            value={sort}
-            onChange={(e) => onChange({ sort: e.target.value as SortKey })}
-            className="ff-small h-8 max-w-[8.5rem] rounded-full border border-ff-black/25 bg-ff-cream px-3 text-xs text-ff-black"
+      <Row label="Price">
+        {facets.bands.map((b) => (
+          <ChipButton
+            key={b.index}
+            small
+            active={filters.band === b.index}
+            onClick={() => onChange({ band: filters.band === b.index ? undefined : b.index })}
           >
-            {sortOptions.map((k) => (
-              <option key={k} value={k}>
-                {SORT_LABELS[k]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+            {bandLabel(b)} <Count n={b.count} />
+          </ChipButton>
+        ))}
+      </Row>
     </div>
+  );
+}
+
+/** Sort menu, shown on the line with the product count (so it never covers the chips). */
+export function SortMenu({
+  sale,
+  value,
+  onChange,
+}: {
+  sale: boolean;
+  value: SortKey | undefined;
+  onChange: (sort: SortKey) => void;
+}) {
+  const sortOptions: SortKey[] = sale
+    ? ["discount", "price_asc", "price_desc"]
+    : ["newest", "price_asc", "price_desc"];
+  const sort = value && sortOptions.includes(value) ? value : sortOptions[0];
+  return (
+    <label className="flex shrink-0 items-center gap-1.5">
+      <span className="ff-small text-xs text-ff-black/70">Sort</span>
+      <select
+        value={sort}
+        onChange={(e) => onChange(e.target.value as SortKey)}
+        className="ff-small h-8 rounded-full border border-ff-black/25 bg-ff-cream px-3 text-xs text-ff-black"
+      >
+        {sortOptions.map((k) => (
+          <option key={k} value={k}>
+            {SORT_LABELS[k]}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
