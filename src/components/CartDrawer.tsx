@@ -103,7 +103,7 @@ export function CartDrawer() {
                         <img
                           src={item.product.node.images.edges[0].node.url}
                           alt={item.product.node.title}
-                          className="h-full w-full object-cover"
+                          className="h-full w-full object-cover mix-blend-multiply"
                         />
                       )}
                     </div>

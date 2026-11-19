@@ -72,32 +72,53 @@
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sand: var(--sand);
   --color-ink: var(--ink);
-  --font-display: "Instrument Serif", "Times New Roman", serif;
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  /* Fyxx Friday palette (Andrea's Illustrator file). Use ONLY these five;
+     see docs/FYXX-FRIDAY-BRAND.md for where each one goes. */
+  --color-ff-red: var(--ff-red);
+  --color-ff-burgundy: var(--ff-burgundy);
+  --color-ff-cream: var(--ff-cream);
+  --color-ff-warm-cream: var(--ff-warm-cream);
+  --color-ff-black: var(--ff-black);
+  /* Aktiv Grotesk (Adobe Fonts kit xse1zxg). Headings use the Extended
+     width (Ex Medium / Ex Bold / Ex XBold) once it is added to the kit;
+     until then they fall back to regular Aktiv Grotesk. */
+  --font-display: "aktiv-grotesk-extended", "aktiv-grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-serif: "aktiv-grotesk-extended", "aktiv-grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: "aktiv-grotesk", "Helvetica Neue", Arial, sans-serif;
 }
 
 :root {
   --radius: 0.375rem;
-  --sand: oklch(0.965 0.021 76);
-  --ink: oklch(0.21 0.02 60);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.21 0.02 60);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.02 60);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.02 60);
-  --primary: oklch(0.21 0.02 60);
-  --primary-foreground: oklch(0.985 0.006 80);
-  --secondary: oklch(0.965 0.021 76);
-  --secondary-foreground: oklch(0.21 0.02 60);
-  --muted: oklch(0.965 0.021 76);
-  --muted-foreground: oklch(0.53 0.02 60);
-  --accent: oklch(0.965 0.021 76);
-  --accent-foreground: oklch(0.21 0.02 60);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.898 0.014 74);
-  --input: oklch(0.898 0.014 74);
+  /* Fyxx Friday palette: five colours, nothing else. No pure white
+     anywhere: anything that looks white is cream #F3EFEA. */
+  --ff-red: #f61d2f;
+  --ff-burgundy: #480016;
+  --ff-cream: #f3efea;
+  --ff-warm-cream: #fbf1e3;
+  --ff-black: #000000;
+
+  /* Base UI colours, all taken from the palette. */
+  --sand: var(--ff-cream);
+  --ink: var(--ff-black);
+  --background: var(--ff-cream);
+  --foreground: var(--ff-black);
+  --card: var(--ff-cream);
+  --card-foreground: var(--ff-black);
+  --popover: var(--ff-cream);
+  --popover-foreground: var(--ff-black);
+  --primary: var(--ff-red);
+  --primary-foreground: var(--ff-cream);
+  --secondary: var(--ff-cream);
+  --secondary-foreground: var(--ff-black);
+  --muted: var(--ff-cream);
+  --muted-foreground: var(--ff-burgundy);
+  --accent: var(--ff-cream);
+  --accent-foreground: var(--ff-black);
+  --destructive: var(--ff-red);
+  --destructive-foreground: var(--ff-cream);
+  /* Hairlines: black at low opacity on cream (no extra colour). */
+  --border: color-mix(in srgb, var(--ff-black) 14%, transparent);
+  --input: color-mix(in srgb, var(--ff-black) 22%, transparent);
   --ring: oklch(0.704 0.04 256.788);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);

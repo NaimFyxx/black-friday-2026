@@ -55,20 +55,20 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
         params={{ handle: node.handle }}
         className="block focus-visible:outline-none"
       >
-        <div className="relative aspect-4/5 overflow-hidden rounded-lg border border-[#eadde0] bg-white">
+        <div className="relative aspect-4/5 overflow-hidden rounded-lg border border-ff-black/15 bg-ff-cream">
           {image ? (
             <img
               src={image.url}
               alt={image.altText ?? node.title}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+              className="h-full w-full object-cover mix-blend-multiply transition-transform duration-500 group-hover:scale-[1.03]"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs tracking-[0.2em] text-muted-foreground uppercase">
               No photo
             </div>
           )}
-          {isDiscounted && <span className="absolute top-2 left-2 rounded-full bg-[#ed1c32] px-2.5 py-1 text-[10px] font-black tracking-wider text-white uppercase">{discountPercent}% OFF</span>}
+          {isDiscounted && <span className="absolute top-2 left-2 rounded-full bg-ff-red px-2.5 py-1 text-[10px] font-black tracking-wider text-ff-cream uppercase">{discountPercent}% OFF</span>}
           {variant && !variant.availableForSale && (
             <span className="absolute top-2 left-2 rounded-full bg-background/90 px-2 py-0.5 text-[10px] tracking-[0.16em] uppercase">
               Out of stock
@@ -76,15 +76,15 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
           )}
         </div>
         <div className="mt-3">
-          <p className="text-[10px] tracking-[0.2em] text-[#ed1c32] uppercase">
+          <p className="text-[10px] tracking-[0.2em] text-ff-red uppercase">
             {node.productType || "Fyxx"}
           </p>
-          <h3 className="mt-1 line-clamp-2 font-display text-xl leading-tight text-[#4b0719]">{node.title}</h3>
-          <p className="mt-1 text-sm tabular-nums text-[#4b0719]">
+          <h3 className="mt-1 line-clamp-2 font-display text-xl leading-tight text-ff-black">{node.title}</h3>
+          <p className="mt-1 text-sm tabular-nums text-ff-black">
             {formatPrice(shownPrice)}
           </p>
           {sizeCount > 1 && (
-            <p className="mt-0.5 text-[10px] tracking-[0.16em] text-[#805d66] uppercase">
+            <p className="mt-0.5 text-[10px] tracking-[0.16em] text-ff-black uppercase">
               {sizeCount} sizes
             </p>
           )}
@@ -95,7 +95,7 @@ export function ProductCard({ product }: { product: ShopifyProduct }) {
         disabled={!variant || pending}
         variant="outline"
         size="sm"
-        className="mt-3 w-full rounded-none border-[#ed1c32] bg-[#ed1c32] font-bold text-white hover:bg-[#c90f27] hover:text-white"
+        className="mt-3 w-full rounded-none border-ff-red bg-ff-red font-bold text-ff-cream hover:bg-ff-burgundy hover:text-ff-cream"
       >
         {pending ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />

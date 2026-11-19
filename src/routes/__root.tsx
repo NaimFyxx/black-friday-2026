@@ -279,16 +279,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      {
-        rel: "preconnect",
-        href: "https://fonts.gstatic.com",
-        crossOrigin: "anonymous",
-      },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Work+Sans:wght@300;400;500;600&display=swap",
-      },
+      // Fyxx Friday font: Aktiv Grotesk from the Fyxx Adobe Fonts kit (xse1zxg,
+      // same kit as the Christmas / Valentine's sites).
+      { rel: "preconnect", href: "https://use.typekit.net", crossOrigin: "anonymous" },
+      { rel: "preconnect", href: "https://p.typekit.net", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://use.typekit.net/xse1zxg.css" },
       { rel: "preconnect", href: "https://www.googletagmanager.com" },
       { rel: "preconnect", href: "https://static.klaviyo.com" },
       { rel: "preconnect", href: "https://connect.facebook.net" },

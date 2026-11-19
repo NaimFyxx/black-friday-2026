@@ -135,7 +135,7 @@ function ProductPage() {
             <img
               src={image.url}
               alt={image.altText ?? product.title}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover mix-blend-multiply"
             />
           ) : (
             <div className="flex h-full items-center justify-center text-xs tracking-[0.2em] text-muted-foreground uppercase">

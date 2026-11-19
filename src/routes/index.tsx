@@ -107,25 +107,25 @@ function Storefront() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f6f0e9] text-[#4b0719]">
-      <header className="bg-black text-white">
+    <main className="min-h-screen bg-ff-cream text-ff-black">
+      <header className="bg-ff-burgundy text-ff-cream">
         <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-5 py-4 md:px-10">
-          <Link to="/" search={{ q: undefined, category: "all" }} className="font-serif text-4xl italic tracking-[-0.08em] text-[#f51d32] md:text-5xl">fyxx</Link>
+          <Link to="/" search={{ q: undefined, category: "all" }} className="font-serif text-4xl italic tracking-[-0.08em] text-ff-cream md:text-5xl">fyxx</Link>
           <nav className="hidden items-center gap-7 text-[11px] font-semibold tracking-wide uppercase md:flex">
-            <a href="#top" className="transition-colors hover:text-[#ff263b]">Home</a>
-            <a href="#catalog" className="transition-colors hover:text-[#ff263b]">The Cellar</a>
-            <a href="#categories" className="transition-colors hover:text-[#ff263b]">Shop by category</a>
-            <a href="#footer" className="transition-colors hover:text-[#ff263b]">About us</a>
+            <a href="#top" className="transition-colors hover:text-ff-red">Home</a>
+            <a href="#catalog" className="transition-colors hover:text-ff-red">The Cellar</a>
+            <a href="#categories" className="transition-colors hover:text-ff-red">Shop by category</a>
+            <a href="#footer" className="transition-colors hover:text-ff-red">About us</a>
           </nav>
-          <a href="#catalog" className="border border-white/70 px-4 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors hover:bg-white hover:text-black">Shop now</a>
+          <a href="#catalog" className="border border-ff-cream px-4 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors hover:bg-ff-cream hover:text-ff-burgundy">Shop now</a>
         </div>
       </header>
 
-      <div className="bg-[#f51d32] px-3 py-2 text-center text-xs font-semibold tracking-[0.08em] text-white md:text-lg">
+      <div className="bg-ff-red px-3 py-2 text-center text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg">
         <span className="mr-2">ϟ</span> BLACK FRIDAY 2026 <span className="mx-2">|</span> 25–30 NOVEMBER
       </div>
 
-      <section id="top" className="bg-[#f4eee8]">
+      <section id="top" className="bg-ff-cream">
         <div className="mx-auto flex w-full justify-center">
           <a href="#catalog" aria-label="Shop Fyxx Friday special offers" className="block w-full max-w-[760px]">
             <img
@@ -140,9 +140,9 @@ function Storefront() {
 
       <section id="categories" className="mx-auto max-w-[1320px] px-5 pb-10 pt-2 md:px-10 md:pb-16">
         <div className="mb-7 flex items-center gap-5">
-          <span className="h-px flex-1 bg-[#f51d32]" />
-          <h2 className="text-center text-xl font-black tracking-tight text-[#ed1c32] md:text-3xl">SHOP BY CATEGORY</h2>
-          <span className="h-px flex-1 bg-[#f51d32]" />
+          <span className="h-px flex-1 bg-ff-red" />
+          <h2 className="text-center text-xl font-black tracking-tight text-ff-red md:text-3xl">SHOP BY CATEGORY</h2>
+          <span className="h-px flex-1 bg-ff-red" />
         </div>
         <div className="grid grid-cols-3 gap-x-3 gap-y-6 sm:grid-cols-4 md:grid-cols-6 md:gap-x-7 md:gap-y-8">
           {CATEGORIES.filter((item) => item !== "all").map((item) => {
@@ -150,22 +150,22 @@ function Storefront() {
             const match = products.find((product) => keywords.some((keyword) => product.node.productType.toLowerCase().includes(keyword)));
             const image = match ? primaryImage(match.node) : null;
             return <Link key={item} to="/" search={{ q: undefined, category: item }} className="group flex flex-col items-center text-center">
-              <div className="aspect-square w-full max-w-[142px] overflow-hidden rounded-full bg-[#b20d24] shadow-sm transition-transform duration-300 group-hover:scale-105">
-                {image ? <img src={image.url} alt={CATEGORY_LABELS[item]} loading="lazy" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-2 text-[10px] font-bold text-white uppercase">{CATEGORY_LABELS[item]}</div>}
+              <div className="aspect-square w-full max-w-[142px] overflow-hidden rounded-full bg-ff-burgundy shadow-sm transition-transform duration-300 group-hover:scale-105">
+                {image ? <img src={image.url} alt={CATEGORY_LABELS[item]} loading="lazy" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center px-2 text-[10px] font-bold text-ff-cream uppercase">{CATEGORY_LABELS[item]}</div>}
               </div>
-              <span className="mt-2 text-[10px] font-black tracking-tight text-[#4b0719] uppercase md:text-xs">{CATEGORY_LABELS[item]}</span>
+              <span className="mt-2 text-[10px] font-black tracking-tight text-ff-black uppercase md:text-xs">{CATEGORY_LABELS[item]}</span>
             </Link>;
           })}
         </div>
       </section>
 
-      <section id="catalog" className="bg-[#fffdfa]">
+      <section id="catalog" className="bg-ff-cream">
         <div className="mx-auto max-w-[1320px] px-5 py-12 md:px-10 md:py-16">
-          <div className="flex flex-col gap-6 border-b border-[#eadde0] pb-6 md:flex-row md:items-end md:justify-between">
+          <div className="flex flex-col gap-6 border-b border-ff-black/15 pb-6 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-[10px] font-bold tracking-[0.25em] text-[#ed1c32] uppercase">The Fyxx Black Friday edit</p>
-              <h2 className="mt-2 font-display text-3xl font-bold uppercase text-[#4b0719]">{CATEGORY_LABELS[category]}</h2>
-              <p className="mt-1 text-xs tracking-[0.18em] text-[#805d66] uppercase">Showing {products.length} item{products.length !== 1 ? "s" : ""}</p>
+              <p className="text-[10px] font-bold tracking-[0.25em] text-ff-red uppercase">The Fyxx Black Friday edit</p>
+              <h2 className="mt-2 font-display text-3xl font-bold uppercase text-ff-black">{CATEGORY_LABELS[category]}</h2>
+              <p className="mt-1 text-xs tracking-[0.18em] text-ff-black uppercase">Showing {products.length} item{products.length !== 1 ? "s" : ""}</p>
             </div>
             <CatalogSearch value={q} />
           </div>
@@ -175,7 +175,7 @@ function Storefront() {
           </div>
 
           {products.length === 0 ? (
-            <p className="py-24 text-center text-sm text-[#805d66]">No products found</p>
+            <p className="py-24 text-center text-sm text-ff-black">No products found</p>
           ) : (
             <div className="mt-10 grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3 lg:grid-cols-4">
               {products.map((product) => <ProductCard key={product.node.id} product={product} />)}
@@ -183,16 +183,16 @@ function Storefront() {
           )}
 
           {hasNextPage && <div className="mt-14 flex justify-center">
-            <Button variant="outline" size="lg" className="rounded-full border-[#ed1c32] px-8 text-[#ed1c32] hover:bg-[#ed1c32] hover:text-white" disabled={isFetchingNextPage} onClick={() => fetchNextPage()}>
+            <Button variant="outline" size="lg" className="rounded-full border-ff-red px-8 text-ff-red hover:bg-ff-red hover:text-ff-cream" disabled={isFetchingNextPage} onClick={() => fetchNextPage()}>
               {isFetchingNextPage ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading</> : "Load more"}
             </Button>
           </div>}
         </div>
       </section>
 
-      <footer id="footer" className="bg-black text-white">
-        <div className="mx-auto flex max-w-[1320px] flex-col gap-2 px-6 py-10 text-[11px] tracking-[0.18em] text-white/65 uppercase">
-          <span className="font-serif text-3xl italic tracking-tight text-[#f51d32]">fyxx</span>
+      <footer id="footer" className="bg-ff-burgundy text-ff-cream">
+        <div className="mx-auto flex max-w-[1320px] flex-col gap-2 px-6 py-10 text-[11px] tracking-[0.18em] text-ff-cream uppercase">
+          <span className="font-serif text-3xl italic tracking-tight text-ff-cream">fyxx</span>
           <span>Wine · spirits · cigars</span>
           <span>Amman · Jordan</span>
         </div>
@@ -217,8 +217,8 @@ function CategoryChip({
       className={cn(
         "rounded-full border px-4 py-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors",
         active
-          ? "border-[#ed1c32] bg-[#ed1c32] text-white"
-          : "border-[#ed1c32]/25 text-[#4b0719]/75 hover:border-[#ed1c32] hover:text-[#ed1c32]",
+          ? "border-ff-red bg-ff-red text-ff-cream"
+          : "border-ff-red text-ff-black hover:border-ff-red hover:text-ff-red",
       )}
     >
       {CATEGORY_LABELS[category]}
