@@ -102,9 +102,26 @@ function Storefront() {
   return (
     <main className="min-h-screen bg-ff-cream text-ff-black">
       <h1 className="sr-only">Fyxx Friday: Black Friday 2026, November 27, special offers and best deals</h1>
-      {/* One line on every screen: the text scales with the screen width on phones. */}
-      <div id="top" className="overflow-hidden bg-ff-red px-2 py-2 text-center text-[clamp(8px,2.55vw,12px)] font-semibold tracking-[0.02em] whitespace-nowrap text-ff-cream sm:tracking-[0.08em] md:text-lg">
-        BLACK FRIDAY 2026 <span className="mx-1 sm:mx-2">|</span> NOVEMBER 27 <span className="mx-1 sm:mx-2">|</span> SPECIAL OFFERS. BEST DEALS
+      {/* Moving ticker: the message scrolls right to left on a loop. Pauses on
+          hover; stays still for visitors who ask for reduced motion. */}
+      <div id="top" className="ff-ticker overflow-hidden bg-ff-red py-2 text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg">
+        <span className="sr-only">Black Friday 2026, November 27: special offers, best deals</span>
+        <div aria-hidden="true" className="ff-ticker-track flex w-max whitespace-nowrap">
+          {[0, 1].map((half) => (
+            <div key={half} className="flex shrink-0">
+              {Array.from({ length: 4 }, (_, k) => (
+                <span key={k} className="flex shrink-0 items-center">
+                  <span className="px-4 md:px-6">BLACK FRIDAY 2026</span>
+                  <span>|</span>
+                  <span className="px-4 md:px-6">NOVEMBER 27</span>
+                  <span>|</span>
+                  <span className="px-4 md:px-6">SPECIAL OFFERS. BEST DEALS</span>
+                  <span>|</span>
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
 
       <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">

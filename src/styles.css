@@ -204,3 +204,25 @@
     display: none !important;
   }
 }
+
+/* Black Friday ticker (homepage red banner): two identical halves slide left
+   by half their width, so the loop has no visible jump. */
+@keyframes ff-ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.ff-ticker-track {
+  animation: ff-ticker 35s linear infinite;
+}
+.ff-ticker:hover .ff-ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ff-ticker-track {
+    animation: none;
+  }
+}
