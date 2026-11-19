@@ -68,7 +68,7 @@ export function CartDrawer() {
           variant="outline"
           size="icon"
           aria-label="Open cart"
-          className="relative h-10 w-10 rounded-full border-border bg-background"
+          className="relative h-10 w-10 rounded-full border-border bg-ff-cream text-ff-black hover:bg-ff-cream hover:text-ff-red"
         >
           <ShoppingBag className="h-4 w-4" />
           {mounted && totalItems > 0 && (

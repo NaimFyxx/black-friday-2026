@@ -101,20 +101,8 @@ function Storefront() {
 
   return (
     <main className="min-h-screen bg-ff-cream text-ff-black">
-      <header className="bg-ff-burgundy text-ff-cream">
-        <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-6 px-5 py-4 md:px-10">
-          <Link to="/" search={{ q: undefined, category: "all" }} aria-label="Fyxx Friday home" className="block"><img src="/brand/fyxx-friday-logo-cream.svg" alt="Fyxx Friday" width={2587} height={1446} className="h-10 w-auto md:h-14" /></Link>
-          <nav className="hidden items-center gap-7 text-[11px] font-semibold tracking-wide uppercase md:flex">
-            <a href="#top" className="transition-colors hover:text-ff-red">Home</a>
-            <a href="#catalog" className="transition-colors hover:text-ff-red">The Cellar</a>
-            <a href="#footer" className="transition-colors hover:text-ff-red">About us</a>
-          </nav>
-          <a href="#catalog" className="border border-ff-cream px-4 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors hover:bg-ff-cream hover:text-ff-burgundy">Shop now</a>
-        </div>
-      </header>
-
       <div className="bg-ff-red px-3 py-2 text-center text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg">
-        <span className="mr-2">ϟ</span> BLACK FRIDAY 2026 <span className="mx-2">|</span> 25–30 NOVEMBER
+        BLACK FRIDAY 2026 <span className="mx-2">|</span> NOVEMBER 27 <span className="mx-2">|</span> SPECIAL OFFERS. BEST DEALS
       </div>
 
       {/* Hero: built from Andrea's Fyxx Friday elements (red logo SVG, the bottle
@@ -153,7 +141,7 @@ function Storefront() {
         </div>
       </section>
 
-      <section id="catalog" className="bg-ff-cream">
+      <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">
         <div className="mx-auto max-w-[1320px] px-5 py-12 md:px-10 md:py-16">
           <div className="flex flex-col gap-6 border-b border-ff-black/15 pb-6 md:flex-row md:items-end md:justify-between">
             <div>

@@ -1,53 +1,46 @@
 import { Link } from "@tanstack/react-router";
 
 import { CartDrawer } from "@/components/CartDrawer";
-import { CATEGORIES, CATEGORY_LABELS } from "@/lib/shopify";
+
+// The one site header (every shop page): burgundy with the cream Fyxx Friday
+// logo, per the brand guide. Links go to the homepage sections so they also
+// work from a product page.
+const HOME = { to: "/", search: { q: undefined, category: "all" } } as const;
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40">
-      <div className="bg-primary px-6 py-2 text-primary-foreground">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <p className="text-[10px] tracking-[0.22em] uppercase">
-            Get Your Fyxx Daily from 10 AM till Midnight
-          </p>
-          <p className="hidden text-[10px] tracking-[0.22em] uppercase sm:block">
-            Wine · Spirits · Cigars — Amman
-          </p>
-        </div>
-      </div>
+    <header className="sticky top-0 z-40 bg-ff-burgundy text-ff-cream">
+      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-3 md:gap-6 md:px-10 md:py-4">
+        <Link {...HOME} hash="top" aria-label="Fyxx Friday home" className="block shrink-0">
+          <img
+            src="/brand/fyxx-friday-logo-cream.svg"
+            alt="Fyxx Friday"
+            width={2587}
+            height={1446}
+            className="h-10 w-auto md:h-14"
+          />
+        </Link>
 
-      <div className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-3">
-          <Link
-            to="/"
-            search={{ q: undefined, category: "all" }}
-            aria-label="Fyxx Friday home"
-            className="block"
-          >
-            {/* Red logo on cream, per the Fyxx Friday guidelines. */}
-            <img
-              src="/brand/fyxx-friday-logo-red.svg"
-              alt="Fyxx Friday"
-              width={2587}
-              height={1446}
-              className="h-9 w-auto"
-            />
+        <nav className="hidden items-center gap-7 text-[11px] font-semibold tracking-wide uppercase md:flex">
+          <Link {...HOME} hash="top" className="transition-colors hover:text-ff-red">
+            Home
           </Link>
+          <Link {...HOME} hash="catalog" className="transition-colors hover:text-ff-red">
+            The Cellar
+          </Link>
+          <Link {...HOME} hash="footer" className="transition-colors hover:text-ff-red">
+            About us
+          </Link>
+        </nav>
 
-          <nav className="hidden items-center gap-1 xl:flex">
-            {CATEGORIES.map((category) => (
-              <Link
-                key={category}
-                to="/"
-                search={{ q: undefined, category }}
-                className="rounded-full px-3 py-1.5 text-[11px] tracking-[0.18em] uppercase transition-colors hover:bg-secondary"
-              >
-                {CATEGORY_LABELS[category]}
-              </Link>
-            ))}
-          </nav>
-
+        <div className="flex items-center gap-3">
+          <Link
+            {...HOME}
+            hash="catalog"
+            className="hidden border border-ff-cream px-4 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors hover:bg-ff-cream hover:text-ff-burgundy sm:inline-block"
+          >
+            Shop now
+          </Link>
           <CartDrawer />
         </div>
       </div>
