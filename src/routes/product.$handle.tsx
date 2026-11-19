@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useCanGoBack, useRouter } from "@tanstack/react-router";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/product/$handle")({
       <p className="text-sm text-muted-foreground">No products found</p>
       <Link
         to="/"
-        search={{ q: undefined, category: "all" }}
+        search={{}}
         className="mt-6 inline-flex items-center rounded-full border border-border px-5 py-2 text-[11px] tracking-[0.18em] uppercase"
       >
         Back to the catalog
@@ -72,6 +72,8 @@ function ProductPage() {
   const image = primaryImage(product);
   const addItem = useCartStore((state) => state.addItem);
   const [pending, setPending] = useState(false);
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
 
   // Product view -> GA4 view_item + Meta ViewContent (once per product).
   useEffect(() => {
@@ -101,6 +103,7 @@ function ProductPage() {
         variantId: selected.id,
         variantTitle: selected.title,
         price: selected.price,
+        compareAtPrice: selected.compareAtPrice ?? null,
         quantity: 1,
         selectedOptions: selected.selectedOptions,
       });
@@ -123,7 +126,15 @@ function ProductPage() {
     <main className="mx-auto max-w-6xl px-6 py-10 md:py-16">
       <Link
         to="/"
-        search={{ q: undefined, category: "all" }}
+        search={{}}
+        onClick={(event) => {
+          // Came from the catalog: go back, so filters, sort, search and the
+          // scroll position are restored.
+          if (canGoBack) {
+            event.preventDefault();
+            router.history.back();
+          }
+        }}
         className="text-[11px] tracking-[0.18em] text-muted-foreground uppercase hover:text-foreground"
       >
         ← Back to the catalog

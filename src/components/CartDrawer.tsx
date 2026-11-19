@@ -15,9 +15,12 @@ import { trackBeginCheckout } from "@/lib/analytics";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { withStoredUtm } from "@/lib/utm-attribution";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
+import { useCartUi } from "@/stores/cartUiStore";
 
 export function CartDrawer() {
-  const [isOpen, setIsOpen] = useState(false);
+  // Shared open state, so the floating cart bar can open this same drawer.
+  const isOpen = useCartUi((s) => s.open);
+  const setIsOpen = useCartUi((s) => s.setOpen);
   const [mounted, setMounted] = useState(false);
   const items = useCartStore((state) => state.items);
   const isLoading = useCartStore((state) => state.isLoading);

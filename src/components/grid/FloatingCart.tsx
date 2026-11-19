@@ -1,0 +1,47 @@
+import { useEffect, useState } from "react";
+import { ShoppingBag } from "lucide-react";
+
+import { formatJod } from "@/lib/shopify";
+import { selectCartCount, useCartStore } from "@/stores/cartStore";
+import { useCartUi } from "@/stores/cartUiStore";
+
+/** Floating cart bar: item count, total and (during the sale) what they saved. Opens the existing cart drawer. */
+export function FloatingCart({ sale }: { sale: boolean }) {
+  const [mounted, setMounted] = useState(false);
+  const items = useCartStore((s) => s.items);
+  const count = useCartStore(selectCartCount);
+  const setOpen = useCartUi((s) => s.setOpen);
+  useEffect(() => setMounted(true), []);
+  if (!mounted || count === 0) return null;
+
+  const total = items.reduce((sum, i) => sum + Number(i.price.amount) * i.quantity, 0);
+  const saved = items.reduce((sum, i) => {
+    const cmp = i.compareAtPrice ? Number(i.compareAtPrice.amount) : 0;
+    const price = Number(i.price.amount);
+    return sum + (cmp > price ? (cmp - price) * i.quantity : 0);
+  }, 0);
+
+  return (
+    <button
+      type="button"
+      onClick={() => setOpen(true)}
+      className="fixed inset-x-4 bottom-4 z-40 flex items-center gap-3 rounded-full bg-ff-burgundy px-5 py-3 text-left text-ff-cream shadow-lg md:right-6 md:left-auto md:w-96"
+      style={{ marginBottom: "env(safe-area-inset-bottom)" }}
+    >
+      <ShoppingBag className="h-5 w-5 shrink-0" />
+      <span className="min-w-0 flex-1">
+        <span className="ff-num block text-sm">
+          {count} item{count === 1 ? "" : "s"} · {formatJod(total)}
+        </span>
+        {sale && saved > 0 && (
+          <span className="ff-small block text-xs text-ff-cream/80">
+            You saved {formatJod(saved)}
+          </span>
+        )}
+      </span>
+      <span className="ff-subline shrink-0 rounded-full bg-ff-red px-3 py-1 text-xs">
+        View cart
+      </span>
+    </button>
+  );
+}

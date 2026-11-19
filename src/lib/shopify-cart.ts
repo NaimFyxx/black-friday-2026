@@ -32,6 +32,8 @@ export interface CartItem {
   variantId: string;
   variantTitle: string;
   price: { amount: string; currencyCode: string };
+  /** Shopify compare-at price when the line was added during the sale (for "You saved"). */
+  compareAtPrice?: { amount: string; currencyCode: string } | null;
   quantity: number;
   selectedOptions: Array<{ name: string; value: string }>;
 }

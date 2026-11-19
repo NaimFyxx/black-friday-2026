@@ -5,7 +5,7 @@ import { CartDrawer } from "@/components/CartDrawer";
 // The one site header (every shop page): burgundy with the cream Fyxx Friday
 // logo, per the brand guide. Links go to the homepage sections so they also
 // work from a product page.
-const HOME = { to: "/", search: { q: undefined, category: "all" } } as const;
+const HOME = { to: "/", search: {} } as const;
 
 export function SiteHeader() {
   return (

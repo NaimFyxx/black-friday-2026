@@ -82,7 +82,10 @@ async function fetchAll(): Promise<SfProduct[]> {
   for (let page = 0; page < MAX_PAGES; page++) {
     const r = await fetch(STOREFRONT, {
       method: "POST",
-      headers: { "content-type": "application/json", "X-Shopify-Storefront-Access-Token": STOREFRONT_TOKEN },
+      headers: {
+        "content-type": "application/json",
+        "X-Shopify-Storefront-Access-Token": STOREFRONT_TOKEN,
+      },
       body: JSON.stringify({ query: QUERY, variables: { after } }),
     });
     if (!r.ok) throw new Error(`Shopify Storefront HTTP ${r.status}`);
@@ -97,7 +100,8 @@ async function fetchAll(): Promise<SfProduct[]> {
 }
 
 const has = (list: string[] | undefined, v: string) => !!list && list.includes(v);
-const anyTag = (list: string[] | undefined, tags: string[]) => !!list && list.some((t) => tags.includes(t));
+const anyTag = (list: string[] | undefined, tags: string[]) =>
+  !!list && list.some((t) => tags.includes(t));
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
 
 function classify(p: SfProduct, map: Main[], ex: Exclusions) {
@@ -129,7 +133,9 @@ function toRow(p: SfProduct, cat: { main: string; sub: string | null }) {
   // The card shows one variant: the in-stock one with the biggest discount,
   // else the first in-stock one, else the first.
   const inStock = info.filter((i) => i.v.availableForSale);
-  const pick = inStock.length ? inStock.reduce((a, b) => (b.disc > a.disc ? b : a), inStock[0]) : info[0];
+  const pick = inStock.length
+    ? inStock.reduce((a, b) => (b.disc > a.disc ? b : a), inStock[0])
+    : info[0];
   return {
     product_id: p.id,
     variant_id: pick.v.id,
@@ -165,13 +171,15 @@ Deno.serve(async (req) => {
     return json({ error: "bad json" }, 400);
   }
   const edgeKey = await setting<string | null>("edge_key", null);
-  if (!edgeKey || !body.key || !(await sameString(body.key, edgeKey))) return json({ error: "forbidden" }, 403);
+  if (!edgeKey || !body.key || !(await sameString(body.key, edgeKey)))
+    return json({ error: "forbidden" }, 403);
 
   const started = Date.now();
   try {
     const map = await setting<Main[]>("category_mapping", []);
     const ex = await setting<Exclusions>("exclusions", {});
-    if (!Array.isArray(map) || map.length === 0) throw new Error("bf_settings.category_mapping is empty");
+    if (!Array.isArray(map) || map.length === 0)
+      throw new Error("bf_settings.category_mapping is empty");
 
     const products = await fetchAll();
     const rows = products
@@ -185,39 +193,82 @@ Deno.serve(async (req) => {
     for (const r of rows) counts[r.main_category] = (counts[r.main_category] ?? 0) + 1;
 
     if (body.dry_run) {
-      return json({ ok: true, dry_run: true, fetched: products.length, kept: rows.length, counts, sample: rows.slice(0, 3) });
+      return json({
+        ok: true,
+        dry_run: true,
+        fetched: products.length,
+        kept: rows.length,
+        counts,
+        sample: rows.slice(0, 3),
+      });
     }
 
     // Safety: a sudden drop (bad fetch or broken mapping) must not empty the site.
-    const { count: before } = await db.from("bf_products").select("product_id", { count: "exact", head: true });
+    const { count: before } = await db
+      .from("bf_products")
+      .select("product_id", { count: "exact", head: true });
     if (before && rows.length < before * 0.5) {
-      throw new Error(`Only ${rows.length} products kept vs ${before} last time; nothing changed. Check the mapping and exclusions.`);
+      throw new Error(
+        `Only ${rows.length} products kept vs ${before} last time; nothing changed. Check the mapping and exclusions.`,
+      );
     }
 
     for (let i = 0; i < rows.length; i += 500) {
-      const { error } = await db.from("bf_products").upsert(rows.slice(i, i + 500), { onConflict: "product_id" });
+      const { error } = await db
+        .from("bf_products")
+        .upsert(rows.slice(i, i + 500), { onConflict: "product_id" });
       if (error) throw new Error(`save failed: ${error.message}`);
     }
     // Remove products no longer eligible (deleted in Shopify or now excluded).
     const keep = new Set(rows.map((r) => r.product_id));
     const existing: string[] = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await db.from("bf_products").select("product_id").order("product_id").range(from, from + 999);
+      const { data, error } = await db
+        .from("bf_products")
+        .select("product_id")
+        .order("product_id")
+        .range(from, from + 999);
       if (error) throw new Error(`read failed: ${error.message}`);
       existing.push(...(data ?? []).map((e) => e.product_id as string));
       if (!data || data.length < 1000) break;
     }
     const stale = existing.filter((id) => !keep.has(id));
     for (let i = 0; i < stale.length; i += 200) {
-      await db.from("bf_products").delete().in("product_id", stale.slice(i, i + 200));
+      await db
+        .from("bf_products")
+        .delete()
+        .in("product_id", stale.slice(i, i + 200));
     }
 
-    const result = { at: new Date().toISOString(), ok: true, count: rows.length, removed: stale.length, counts, duration_ms: Date.now() - started };
-    await db.from("bf_settings").upsert({ key: "products_last_refresh", value: result, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    const result = {
+      at: new Date().toISOString(),
+      ok: true,
+      count: rows.length,
+      removed: stale.length,
+      counts,
+      duration_ms: Date.now() - started,
+    };
+    await db
+      .from("bf_settings")
+      .upsert(
+        { key: "products_last_refresh", value: result, updated_at: new Date().toISOString() },
+        { onConflict: "key" },
+      );
     return json(result);
   } catch (e) {
-    const result = { at: new Date().toISOString(), ok: false, error: String((e as Error).message ?? e), duration_ms: Date.now() - started };
-    if (!body.dry_run) await db.from("bf_settings").upsert({ key: "products_last_refresh", value: result, updated_at: new Date().toISOString() }, { onConflict: "key" });
+    const result = {
+      at: new Date().toISOString(),
+      ok: false,
+      error: String((e as Error).message ?? e),
+      duration_ms: Date.now() - started,
+    };
+    if (!body.dry_run)
+      await db
+        .from("bf_settings")
+        .upsert(
+          { key: "products_last_refresh", value: result, updated_at: new Date().toISOString() },
+          { onConflict: "key" },
+        );
     return json(result, 500);
   }
 });
