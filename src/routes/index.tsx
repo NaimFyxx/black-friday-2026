@@ -101,53 +101,25 @@ function Storefront() {
 
   return (
     <main className="min-h-screen bg-ff-cream text-ff-black">
-      <div className="bg-ff-red px-3 py-2 text-center text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg">
+      <h1 className="sr-only">Fyxx Friday: Black Friday 2026, November 27, special offers and best deals</h1>
+      <div id="top" className="bg-ff-red px-3 py-2 text-center text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg">
         BLACK FRIDAY 2026 <span className="mx-2">|</span> NOVEMBER 27 <span className="mx-2">|</span> SPECIAL OFFERS. BEST DEALS
       </div>
 
-      {/* Hero: built from Andrea's Fyxx Friday elements (red logo SVG, the bottle
-          group cut out of the campaign artwork, live text) so it adapts to any
-          screen instead of being one tall photo. Colours per the brand guide:
-          red logo + "NOVEMBER 27" and black body text on cream. */}
-      <section id="top" className="relative overflow-hidden bg-ff-cream">
-        <h1 className="sr-only">Fyxx Friday: November 27, special offers and best deals</h1>
-        <div className="mx-auto grid max-w-[1320px] items-center px-5 pt-8 pb-12 md:px-10 md:py-12 lg:grid-cols-[1.05fr_1fr] lg:gap-6 lg:py-16">
-          <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-            <img
-              src="/brand/fyxx-friday-logo-red.svg"
-              alt="Fyxx Friday"
-              width={2587}
-              height={1446}
-              fetchPriority="high"
-              className="h-auto w-[86%] max-w-[600px] md:w-[62%] lg:w-full"
-            />
-            <div className="mt-8 hidden lg:block">
-              <HeroCopy />
-            </div>
-          </div>
-          <div className="relative z-10 -mt-[24%] flex justify-center md:-mt-[18%] lg:mt-0 lg:-ml-24">
-            <img
-              src="/brand/fyxx-friday-bottles.webp"
-              alt="A selection of Fyxx Friday wines"
-              width={942}
-              height={1202}
-              fetchPriority="high"
-              className="h-auto w-[74%] max-w-[520px] object-contain md:w-[52%] lg:max-h-[72vh] lg:w-auto lg:max-w-full"
-            />
-          </div>
-          <div className="mt-8 text-center lg:hidden">
-            <HeroCopy />
-          </div>
-        </div>
-      </section>
-
       <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">
-        <div className="mx-auto max-w-[1320px] px-5 py-12 md:px-10 md:py-16">
+        <div className="mx-auto max-w-[1320px] px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
           <div className="flex flex-col gap-6 border-b border-ff-black/15 pb-6 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-[10px] font-bold tracking-[0.25em] text-ff-red uppercase">The Fyxx Black Friday edit</p>
-              <h2 className="mt-2 font-display text-3xl font-bold uppercase text-ff-black">{CATEGORY_LABELS[category]}</h2>
-              <p className="mt-1 text-xs tracking-[0.18em] text-ff-black uppercase">Showing {products.length} item{products.length !== 1 ? "s" : ""}</p>
+            <div className="flex items-end gap-5 md:gap-8">
+              <div>
+                <p className="text-[10px] font-bold tracking-[0.25em] text-ff-red uppercase">The Fyxx Black Friday edit</p>
+                <h2 className="mt-2 font-display text-3xl font-bold uppercase text-ff-black">{CATEGORY_LABELS[category]}</h2>
+                <p className="mt-1 text-xs tracking-[0.18em] text-ff-black uppercase">Showing {products.length} item{products.length !== 1 ? "s" : ""}</p>
+              </div>
+              {/* Mini Fyxx Friday logo + the campaign bottles, next to the title. */}
+              <div aria-hidden="true" className="flex shrink-0 items-end">
+                <img src="/brand/fyxx-friday-logo-red.svg" alt="" width={2587} height={1446} fetchPriority="high" className="h-12 w-auto md:h-16" />
+                <img src="/brand/fyxx-friday-bottles.webp" alt="" width={942} height={1202} fetchPriority="high" className="-ml-3 h-16 w-auto md:-ml-4 md:h-24" />
+              </div>
             </div>
             <CatalogSearch value={q} />
           </div>
@@ -180,25 +152,6 @@ function Storefront() {
         </div>
       </footer>
     </main>
-  );
-}
-
-function HeroCopy() {
-  return (
-    <>
-      <p className="font-display text-4xl leading-none font-extrabold tracking-tight text-ff-red uppercase md:text-6xl">
-        November 27
-      </p>
-      <p className="mt-3 text-sm font-medium tracking-[0.22em] text-ff-black uppercase md:text-base">
-        Special offers. Best deals.
-      </p>
-      <a
-        href="#catalog"
-        className="mt-7 inline-flex items-center bg-ff-red px-8 py-3.5 text-xs font-bold tracking-[0.18em] text-ff-cream uppercase transition-colors hover:bg-ff-burgundy"
-      >
-        Shop the offers
-      </a>
-    </>
   );
 }
 
