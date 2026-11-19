@@ -131,7 +131,7 @@ function Row({
       role="group"
       aria-label={label}
       className={cn(
-        "mt-1.5 flex gap-2 overflow-x-auto overscroll-x-contain [scrollbar-width:none] first:mt-0",
+        "-mx-5 mt-1.5 flex gap-2 overflow-x-auto px-5 md:-mx-10 md:px-10 overscroll-x-contain [scrollbar-width:none] first:mt-0",
         className,
       )}
     >
