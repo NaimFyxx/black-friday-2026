@@ -1,0 +1,49 @@
+/*
+ * Fyxx Friday design tokens: the ONE place for brand colours and font roles.
+ * Imported at the top of src/styles.css, so every page and component gets them.
+ * Brand guide: docs/FYXX-FRIDAY-BRAND.md. Five colours, no pure white.
+ * Tailwind classes: bg-ff-red, text-ff-cream, border-ff-burgundy, ... and
+ * font-display / font-sans, plus the .ff-headline / .ff-subline / .ff-small
+ * helpers below.
+ */
+:root {
+  /* Colours */
+  --ff-red: #f61d2f;
+  --ff-burgundy: #480016;
+  --ff-cream: #f3efea;
+  --ff-warm-cream: #fbf1e3;
+  --ff-black: #000000;
+
+  /* Fonts (Adobe Fonts kit xse1zxg). "Ex" is the Extended width; until it is
+     added to the kit the browser falls back to regular Aktiv Grotesk. */
+  --ff-font-extended: "aktiv-grotesk-extended", "aktiv-grotesk", "Helvetica Neue", Arial, sans-serif;
+  --ff-font-regular: "aktiv-grotesk", "Helvetica Neue", Arial, sans-serif;
+
+  /* Roles: headlines and numerals = Ex Bold; sublines = Ex Medium;
+     small text = Medium. */
+  --ff-headline-family: var(--ff-font-extended);
+  --ff-headline-weight: 700;
+  --ff-subline-family: var(--ff-font-extended);
+  --ff-subline-weight: 500;
+  --ff-small-family: var(--ff-font-regular);
+  --ff-small-weight: 500;
+}
+
+.ff-headline {
+  font-family: var(--ff-headline-family);
+  font-weight: var(--ff-headline-weight);
+}
+.ff-subline {
+  font-family: var(--ff-subline-family);
+  font-weight: var(--ff-subline-weight);
+}
+.ff-small {
+  font-family: var(--ff-small-family);
+  font-weight: var(--ff-small-weight);
+}
+/* Prices and percentages: Ex Bold with even-width digits. */
+.ff-num {
+  font-family: var(--ff-headline-family);
+  font-weight: var(--ff-headline-weight);
+  font-variant-numeric: tabular-nums;
+}

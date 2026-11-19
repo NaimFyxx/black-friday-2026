@@ -269,8 +269,13 @@ export async function getProductByHandle(handle: string): Promise<ShopifyProduct
   return data?.data?.productByHandle ?? null;
 }
 
+/** "JOD 12.500": currency first, three decimals (fils). */
 export function formatPrice(money: ShopifyMoney): string {
-  return `${Number(money.amount).toFixed(2)} ${money.currencyCode}`;
+  return formatJod(Number(money.amount), money.currencyCode);
+}
+
+export function formatJod(amount: number, currency = "JOD"): string {
+  return `${currency} ${amount.toFixed(3)}`;
 }
 
 export function primaryImage(product: ShopifyProductNode): ShopifyImage | null {

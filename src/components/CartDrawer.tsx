@@ -12,7 +12,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { trackBeginCheckout } from "@/lib/analytics";
-import { formatPrice } from "@/lib/shopify";
+import { formatJod, formatPrice } from "@/lib/shopify";
 import { withStoredUtm } from "@/lib/utm-attribution";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 
@@ -160,7 +160,7 @@ export function CartDrawer() {
                     Total
                   </span>
                   <span className="font-display text-2xl tabular-nums">
-                    {totalPrice.toFixed(2)} {currency}
+                    {formatJod(totalPrice, currency)}
                   </span>
                 </div>
                 <Button

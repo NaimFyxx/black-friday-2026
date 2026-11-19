@@ -8,6 +8,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./tokens.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -82,20 +83,15 @@
   /* Aktiv Grotesk (Adobe Fonts kit xse1zxg). Headings use the Extended
      width (Ex Medium / Ex Bold / Ex XBold) once it is added to the kit;
      until then they fall back to regular Aktiv Grotesk. */
-  --font-display: "aktiv-grotesk-extended", "aktiv-grotesk", "Helvetica Neue", Arial, sans-serif;
-  --font-serif: "aktiv-grotesk-extended", "aktiv-grotesk", "Helvetica Neue", Arial, sans-serif;
-  --font-sans: "aktiv-grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-display: var(--ff-font-extended);
+  --font-serif: var(--ff-font-extended);
+  --font-sans: var(--ff-font-regular);
 }
 
 :root {
   --radius: 0.375rem;
-  /* Fyxx Friday palette: five colours, nothing else. No pure white
-     anywhere: anything that looks white is cream #F3EFEA. */
-  --ff-red: #f61d2f;
-  --ff-burgundy: #480016;
-  --ff-cream: #f3efea;
-  --ff-warm-cream: #fbf1e3;
-  --ff-black: #000000;
+  /* Fyxx Friday palette (--ff-red, --ff-burgundy, --ff-cream,
+     --ff-warm-cream, --ff-black) is defined in src/tokens.css. */
 
   /* Base UI colours, all taken from the palette. */
   --sand: var(--ff-cream);

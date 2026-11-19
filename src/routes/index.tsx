@@ -56,13 +56,13 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Black Friday 2026 — Fyxx Wine, Spirits & Cigars in Amman" },
+      { title: "Fyxx Friday: Black Friday 2026 at Fyxx, Wine, Spirits & Cigars in Amman" },
       {
         name: "description",
         content:
           "Black Friday 2026 at Fyxx: browse every wine, spirit and cigar in our Amman cellar and check out securely with Shopify.",
       },
-      { property: "og:title", content: "Black Friday 2026 — Fyxx" },
+      { property: "og:title", content: "Fyxx Friday: Black Friday 2026" },
       {
         property: "og:description",
         content:

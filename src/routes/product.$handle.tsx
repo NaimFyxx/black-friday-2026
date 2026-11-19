@@ -23,7 +23,7 @@ export const Route = createFileRoute("/product/$handle")({
     return product;
   },
   head: ({ loaderData }) => {
-    const title = loaderData ? `${loaderData.title} — Fyxx` : "Product — Fyxx";
+    const title = loaderData ? `${loaderData.title} | Fyxx` : "Product | Fyxx";
     const description = loaderData
       ? stripHtml(loaderData.descriptionHtml).slice(0, 180) ||
         `${loaderData.title} from the Fyxx cellar in Amman.`
