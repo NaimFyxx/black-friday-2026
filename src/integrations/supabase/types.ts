@@ -81,6 +81,8 @@ export type Database = {
         Row: {
           checked_at: string | null
           closed_at: string | null
+          closed_by: string | null
+          closed_state: string | null
           customer: string | null
           emails: number
           first_seen: string
@@ -97,6 +99,8 @@ export type Database = {
         Insert: {
           checked_at?: string | null
           closed_at?: string | null
+          closed_by?: string | null
+          closed_state?: string | null
           customer?: string | null
           emails?: number
           first_seen?: string
@@ -113,6 +117,8 @@ export type Database = {
         Update: {
           checked_at?: string | null
           closed_at?: string | null
+          closed_by?: string | null
+          closed_state?: string | null
           customer?: string | null
           emails?: number
           first_seen?: string
@@ -125,6 +131,153 @@ export type Database = {
           salesperson?: string | null
           so?: string | null
           units?: number | null
+        }
+        Relationships: []
+      }
+      bak_btg_requests_20261112: {
+        Row: {
+          bom_id: number | null
+          bottle_cost: number | null
+          bottle_ml: number | null
+          bottle_name: string | null
+          bottle_product_id: number | null
+          bottle_sku: string | null
+          cost_per_pour: number | null
+          created_at: string | null
+          error: string | null
+          finished_at: string | null
+          flag: string | null
+          id: number | null
+          margin: number | null
+          odoo_changes: Json | null
+          odoo_product_id: number | null
+          odoo_template_id: number | null
+          option_name: string | null
+          pour_ml: number | null
+          price: number | null
+          price_before_confirm: number | null
+          price_confirmed_at: string | null
+          price_confirmed_by: string | null
+          price_note: string | null
+          reported_at: string | null
+          reported_by: string | null
+          shopify_product_id: string | null
+          shopify_variant_id: string | null
+          sku: string | null
+          staff_name: string | null
+          started_at: string | null
+          status: string | null
+        }
+        Insert: {
+          bom_id?: number | null
+          bottle_cost?: number | null
+          bottle_ml?: number | null
+          bottle_name?: string | null
+          bottle_product_id?: number | null
+          bottle_sku?: string | null
+          cost_per_pour?: number | null
+          created_at?: string | null
+          error?: string | null
+          finished_at?: string | null
+          flag?: string | null
+          id?: number | null
+          margin?: number | null
+          odoo_changes?: Json | null
+          odoo_product_id?: number | null
+          odoo_template_id?: number | null
+          option_name?: string | null
+          pour_ml?: number | null
+          price?: number | null
+          price_before_confirm?: number | null
+          price_confirmed_at?: string | null
+          price_confirmed_by?: string | null
+          price_note?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+          shopify_product_id?: string | null
+          shopify_variant_id?: string | null
+          sku?: string | null
+          staff_name?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          bom_id?: number | null
+          bottle_cost?: number | null
+          bottle_ml?: number | null
+          bottle_name?: string | null
+          bottle_product_id?: number | null
+          bottle_sku?: string | null
+          cost_per_pour?: number | null
+          created_at?: string | null
+          error?: string | null
+          finished_at?: string | null
+          flag?: string | null
+          id?: number | null
+          margin?: number | null
+          odoo_changes?: Json | null
+          odoo_product_id?: number | null
+          odoo_template_id?: number | null
+          option_name?: string | null
+          pour_ml?: number | null
+          price?: number | null
+          price_before_confirm?: number | null
+          price_confirmed_at?: string | null
+          price_confirmed_by?: string | null
+          price_note?: string | null
+          reported_at?: string | null
+          reported_by?: string | null
+          shopify_product_id?: string | null
+          shopify_variant_id?: string | null
+          sku?: string | null
+          staff_name?: string | null
+          started_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
+      bak_confirm_quotes_20261114: {
+        Row: {
+          checked_at: string | null
+          customer: string | null
+          kind: string | null
+          odoo_order: string | null
+          odoo_url: string | null
+          picking: string | null
+          shopify_order: string | null
+          shopify_status: string | null
+          shopify_url: string | null
+          since: string | null
+          state: string | null
+          taken_at: string | null
+        }
+        Insert: {
+          checked_at?: string | null
+          customer?: string | null
+          kind?: string | null
+          odoo_order?: string | null
+          odoo_url?: string | null
+          picking?: string | null
+          shopify_order?: string | null
+          shopify_status?: string | null
+          shopify_url?: string | null
+          since?: string | null
+          state?: string | null
+          taken_at?: string | null
+        }
+        Update: {
+          checked_at?: string | null
+          customer?: string | null
+          kind?: string | null
+          odoo_order?: string | null
+          odoo_url?: string | null
+          picking?: string | null
+          shopify_order?: string | null
+          shopify_status?: string | null
+          shopify_url?: string | null
+          since?: string | null
+          state?: string | null
+          taken_at?: string | null
         }
         Relationships: []
       }
@@ -143,6 +296,159 @@ export type Database = {
           id?: string | null
           issue_ref?: string | null
           resolution_summary?: string | null
+        }
+        Relationships: []
+      }
+      bak_validate_10_20261113: {
+        Row: {
+          checked_at: string | null
+          customer: string | null
+          kind: string | null
+          moves: Json | null
+          odoo_order: string | null
+          odoo_url: string | null
+          picking: string | null
+          quants_before: Json | null
+          shopify_order: string | null
+          shopify_status: string | null
+          shopify_url: string | null
+          since: string | null
+          state: string | null
+        }
+        Insert: {
+          checked_at?: string | null
+          customer?: string | null
+          kind?: string | null
+          moves?: Json | null
+          odoo_order?: string | null
+          odoo_url?: string | null
+          picking?: string | null
+          quants_before?: Json | null
+          shopify_order?: string | null
+          shopify_status?: string | null
+          shopify_url?: string | null
+          since?: string | null
+          state?: string | null
+        }
+        Update: {
+          checked_at?: string | null
+          customer?: string | null
+          kind?: string | null
+          moves?: Json | null
+          odoo_order?: string | null
+          odoo_url?: string | null
+          picking?: string | null
+          quants_before?: Json | null
+          shopify_order?: string | null
+          shopify_status?: string | null
+          shopify_url?: string | null
+          since?: string | null
+          state?: string | null
+        }
+        Relationships: []
+      }
+      bak_validate_10b_20261113: {
+        Row: {
+          dry_plan_14403: Json | null
+          odoo_14336: Json | null
+          odoo_14392: Json | null
+          so: string | null
+          taken_at: string | null
+        }
+        Insert: {
+          dry_plan_14403?: Json | null
+          odoo_14336?: Json | null
+          odoo_14392?: Json | null
+          so?: string | null
+          taken_at?: string | null
+        }
+        Update: {
+          dry_plan_14403?: Json | null
+          odoo_14336?: Json | null
+          odoo_14392?: Json | null
+          so?: string | null
+          taken_at?: string | null
+        }
+        Relationships: []
+      }
+      bak_validate_11_20261113: {
+        Row: {
+          checked_at: string | null
+          customer: string | null
+          kind: string | null
+          moves: Json | null
+          odoo_order: string | null
+          odoo_url: string | null
+          picking: string | null
+          shopify_order: string | null
+          shopify_status: string | null
+          shopify_url: string | null
+          since: string | null
+          state: string | null
+        }
+        Insert: {
+          checked_at?: string | null
+          customer?: string | null
+          kind?: string | null
+          moves?: Json | null
+          odoo_order?: string | null
+          odoo_url?: string | null
+          picking?: string | null
+          shopify_order?: string | null
+          shopify_status?: string | null
+          shopify_url?: string | null
+          since?: string | null
+          state?: string | null
+        }
+        Update: {
+          checked_at?: string | null
+          customer?: string | null
+          kind?: string | null
+          moves?: Json | null
+          odoo_order?: string | null
+          odoo_url?: string | null
+          picking?: string | null
+          shopify_order?: string | null
+          shopify_status?: string | null
+          shopify_url?: string | null
+          since?: string | null
+          state?: string | null
+        }
+        Relationships: []
+      }
+      bak_validate_121_20261112: {
+        Row: {
+          adjusted_products: string | null
+          already_done: boolean | null
+          lines: number | null
+          pickings: string | null
+          saved_at: string | null
+          scrapped_only: string | null
+          shopify_order: string | null
+          so: string | null
+          so_state: string | null
+        }
+        Insert: {
+          adjusted_products?: string | null
+          already_done?: boolean | null
+          lines?: number | null
+          pickings?: string | null
+          saved_at?: string | null
+          scrapped_only?: string | null
+          shopify_order?: string | null
+          so?: string | null
+          so_state?: string | null
+        }
+        Update: {
+          adjusted_products?: string | null
+          already_done?: boolean | null
+          lines?: number | null
+          pickings?: string | null
+          saved_at?: string | null
+          scrapped_only?: string | null
+          shopify_order?: string | null
+          so?: string | null
+          so_state?: string | null
         }
         Relationships: []
       }
@@ -184,7 +490,10 @@ export type Database = {
           from_app: boolean
           id: number
           item_count: number | null
+          items: Json | null
           path: string | null
+          product_handle: string | null
+          product_title: string | null
           session_id: string
           utm_campaign: string | null
           utm_content: string | null
@@ -192,6 +501,7 @@ export type Database = {
           utm_source: string | null
           utm_term: string | null
           value: number | null
+          variant_id: string | null
         }
         Insert: {
           created_at?: string
@@ -200,7 +510,10 @@ export type Database = {
           from_app?: boolean
           id?: never
           item_count?: number | null
+          items?: Json | null
           path?: string | null
+          product_handle?: string | null
+          product_title?: string | null
           session_id: string
           utm_campaign?: string | null
           utm_content?: string | null
@@ -208,6 +521,7 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           value?: number | null
+          variant_id?: string | null
         }
         Update: {
           created_at?: string
@@ -216,7 +530,10 @@ export type Database = {
           from_app?: boolean
           id?: never
           item_count?: number | null
+          items?: Json | null
           path?: string | null
+          product_handle?: string | null
+          product_title?: string | null
           session_id?: string
           utm_campaign?: string | null
           utm_content?: string | null
@@ -224,6 +541,97 @@ export type Database = {
           utm_source?: string | null
           utm_term?: string | null
           value?: number | null
+          variant_id?: string | null
+        }
+        Relationships: []
+      }
+      bf_products: {
+        Row: {
+          available: boolean
+          compare_at_price: number | null
+          discount_percent: number
+          handle: string
+          image_url: string | null
+          main_category: string
+          price: number
+          product_id: string
+          product_type: string | null
+          saved_amount: number
+          shopify_created_at: string | null
+          sub_category: string | null
+          title: string
+          updated_at: string
+          variant_id: string
+          variant_title: string | null
+          vendor: string | null
+        }
+        Insert: {
+          available: boolean
+          compare_at_price?: number | null
+          discount_percent?: number
+          handle: string
+          image_url?: string | null
+          main_category: string
+          price: number
+          product_id: string
+          product_type?: string | null
+          saved_amount?: number
+          shopify_created_at?: string | null
+          sub_category?: string | null
+          title: string
+          updated_at?: string
+          variant_id: string
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          available?: boolean
+          compare_at_price?: number | null
+          discount_percent?: number
+          handle?: string
+          image_url?: string | null
+          main_category?: string
+          price?: number
+          product_id?: string
+          product_type?: string | null
+          saved_amount?: number
+          shopify_created_at?: string | null
+          sub_category?: string | null
+          title?: string
+          updated_at?: string
+          variant_id?: string
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      bf_reports: {
+        Row: {
+          created_at: string
+          id: string
+          is_campaign: boolean
+          period_from: string
+          period_to: string
+          report: Json
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_campaign?: boolean
+          period_from: string
+          period_to: string
+          report: Json
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_campaign?: boolean
+          period_from?: string
+          period_to?: string
+          report?: Json
+          title?: string
         }
         Relationships: []
       }
@@ -242,6 +650,33 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: Json
+        }
+        Relationships: []
+      }
+      btg_people: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: number
+          name: string
+          pin_hash: string
+          pin_length: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: never
+          name: string
+          pin_hash: string
+          pin_length: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: never
+          name?: string
+          pin_hash?: string
+          pin_length?: number
         }
         Relationships: []
       }
@@ -527,6 +962,33 @@ export type Database = {
           matched_how?: string
           shopify_customer_id?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      customer_tier_changes: {
+        Row: {
+          changed_on: string
+          observed_at: string
+          points_at_change: number | null
+          shopify_customer_id: string
+          tier_from: string | null
+          tier_to: string
+        }
+        Insert: {
+          changed_on: string
+          observed_at?: string
+          points_at_change?: number | null
+          shopify_customer_id: string
+          tier_from?: string | null
+          tier_to: string
+        }
+        Update: {
+          changed_on?: string
+          observed_at?: string
+          points_at_change?: number | null
+          shopify_customer_id?: string
+          tier_from?: string | null
+          tier_to?: string
         }
         Relationships: []
       }
@@ -845,6 +1307,30 @@ export type Database = {
         }
         Relationships: []
       }
+      inv_correction_keys: {
+        Row: {
+          at: string
+          done_at: string | null
+          issue_ref: string | null
+          result: Json | null
+          submission_key: string
+        }
+        Insert: {
+          at?: string
+          done_at?: string | null
+          issue_ref?: string | null
+          result?: Json | null
+          submission_key: string
+        }
+        Update: {
+          at?: string
+          done_at?: string | null
+          issue_ref?: string | null
+          result?: Json | null
+          submission_key?: string
+        }
+        Relationships: []
+      }
       inv_employees: {
         Row: {
           active: boolean
@@ -1075,6 +1561,13 @@ export type Database = {
           issue_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "inv_issue_events_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "inv_count_ledger"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inv_issue_events_issue_id_fkey"
             columns: ["issue_id"]
@@ -1593,6 +2086,7 @@ export type Database = {
       }
       inv_recount_requests: {
         Row: {
+          asked_by: string | null
           done_at: string | null
           done_issue_ref: string | null
           id: number
@@ -1605,6 +2099,7 @@ export type Database = {
           times_sent: number
         }
         Insert: {
+          asked_by?: string | null
           done_at?: string | null
           done_issue_ref?: string | null
           id?: never
@@ -1617,6 +2112,7 @@ export type Database = {
           times_sent?: number
         }
         Update: {
+          asked_by?: string | null
           done_at?: string | null
           done_issue_ref?: string | null
           id?: never
@@ -1629,6 +2125,13 @@ export type Database = {
           times_sent?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "inv_recount_requests_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "inv_count_ledger"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inv_recount_requests_issue_id_fkey"
             columns: ["issue_id"]
@@ -1763,6 +2266,13 @@ export type Database = {
           variant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "inv_sync_failures_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "inv_count_ledger"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inv_sync_failures_issue_id_fkey"
             columns: ["issue_id"]
@@ -2288,6 +2798,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ll_member_tier: {
+        Row: {
+          ll_customer_id: string | null
+          points_approved: number | null
+          shopify_customer_id: string
+          tier: string
+          updated_at: string
+        }
+        Insert: {
+          ll_customer_id?: string | null
+          points_approved?: number | null
+          shopify_customer_id: string
+          tier: string
+          updated_at?: string
+        }
+        Update: {
+          ll_customer_id?: string | null
+          points_approved?: number | null
+          shopify_customer_id?: string
+          tier?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ll_rewards: {
         Row: {
           amount: number | null
@@ -2477,6 +3011,396 @@ export type Database = {
           tag_id?: number | null
           tag_name?: string | null
           template_id?: number | null
+        }
+        Relationships: []
+      }
+      margin_audit: {
+        Row: {
+          audited_at: string | null
+          compare_at: number | null
+          odoo_cost: number | null
+          odoo_found: boolean | null
+          price: number | null
+          product_id: number | null
+          product_type: string | null
+          shopify_cost: number | null
+          shopify_mrg: number | null
+          sku: string | null
+          status: string | null
+          title: string | null
+          true_mrg: number | null
+          variant_id: number
+          vendor: string | null
+          verdict: string | null
+        }
+        Insert: {
+          audited_at?: string | null
+          compare_at?: number | null
+          odoo_cost?: number | null
+          odoo_found?: boolean | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          shopify_cost?: number | null
+          shopify_mrg?: number | null
+          sku?: string | null
+          status?: string | null
+          title?: string | null
+          true_mrg?: number | null
+          variant_id: number
+          vendor?: string | null
+          verdict?: string | null
+        }
+        Update: {
+          audited_at?: string | null
+          compare_at?: number | null
+          odoo_cost?: number | null
+          odoo_found?: boolean | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          shopify_cost?: number | null
+          shopify_mrg?: number | null
+          sku?: string | null
+          status?: string | null
+          title?: string | null
+          true_mrg?: number | null
+          variant_id?: number
+          vendor?: string | null
+          verdict?: string | null
+        }
+        Relationships: []
+      }
+      margin_sync_log: {
+        Row: {
+          action: string | null
+          cost_after: number | null
+          cost_before: number | null
+          dry_run: boolean | null
+          id: number
+          mrg_after: number | null
+          mrg_before: number | null
+          price: number | null
+          result: string | null
+          run_at: string | null
+          sku: string | null
+          title: string | null
+          variant_id: number | null
+        }
+        Insert: {
+          action?: string | null
+          cost_after?: number | null
+          cost_before?: number | null
+          dry_run?: boolean | null
+          id?: number
+          mrg_after?: number | null
+          mrg_before?: number | null
+          price?: number | null
+          result?: string | null
+          run_at?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+        }
+        Update: {
+          action?: string | null
+          cost_after?: number | null
+          cost_before?: number | null
+          dry_run?: boolean | null
+          id?: number
+          mrg_after?: number | null
+          mrg_before?: number | null
+          price?: number | null
+          result?: string | null
+          run_at?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+        }
+        Relationships: []
+      }
+      mkt_code_rules: {
+        Row: {
+          code: string
+          counts: boolean
+          is_automatic: boolean
+          match_kind: string
+          note: string | null
+          programme: string | null
+          set_at: string
+          set_by: string | null
+        }
+        Insert: {
+          code: string
+          counts?: boolean
+          is_automatic?: boolean
+          match_kind?: string
+          note?: string | null
+          programme?: string | null
+          set_at?: string
+          set_by?: string | null
+        }
+        Update: {
+          code?: string
+          counts?: boolean
+          is_automatic?: boolean
+          match_kind?: string
+          note?: string | null
+          programme?: string | null
+          set_at?: string
+          set_by?: string | null
+        }
+        Relationships: []
+      }
+      mkt_ga_purchases: {
+        Row: {
+          date: string
+          id: string
+          property_id: string
+          purchases: number
+          revenue_jod: number
+          row_key: string
+          session_campaign: string | null
+          session_medium: string | null
+          session_source: string | null
+          synced_at: string
+          transaction_id: string
+        }
+        Insert: {
+          date: string
+          id?: string
+          property_id: string
+          purchases?: number
+          revenue_jod?: number
+          row_key: string
+          session_campaign?: string | null
+          session_medium?: string | null
+          session_source?: string | null
+          synced_at?: string
+          transaction_id: string
+        }
+        Update: {
+          date?: string
+          id?: string
+          property_id?: string
+          purchases?: number
+          revenue_jod?: number
+          row_key?: string
+          session_campaign?: string | null
+          session_medium?: string | null
+          session_source?: string | null
+          synced_at?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      mkt_klaviyo_attribution: {
+        Row: {
+          attr_key: string
+          attributed_at: string | null
+          attributed_event_id: string | null
+          attributed_metric: string | null
+          campaign_id: string | null
+          campaign_name: string | null
+          channel: string
+          flow_id: string | null
+          flow_message_id: string | null
+          flow_name: string | null
+          hours_before: number | null
+          id: string
+          kind: string
+          message_label: string | null
+          order_id: string
+          placed_at: string
+          placed_event_id: string
+          placed_on: string
+          synced_at: string
+          value_jod: number | null
+        }
+        Insert: {
+          attr_key: string
+          attributed_at?: string | null
+          attributed_event_id?: string | null
+          attributed_metric?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          channel: string
+          flow_id?: string | null
+          flow_message_id?: string | null
+          flow_name?: string | null
+          hours_before?: number | null
+          id?: string
+          kind: string
+          message_label?: string | null
+          order_id: string
+          placed_at: string
+          placed_event_id: string
+          placed_on: string
+          synced_at?: string
+          value_jod?: number | null
+        }
+        Update: {
+          attr_key?: string
+          attributed_at?: string | null
+          attributed_event_id?: string | null
+          attributed_metric?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          channel?: string
+          flow_id?: string | null
+          flow_message_id?: string | null
+          flow_name?: string | null
+          hours_before?: number | null
+          id?: string
+          kind?: string
+          message_label?: string | null
+          order_id?: string
+          placed_at?: string
+          placed_event_id?: string
+          placed_on?: string
+          synced_at?: string
+          value_jod?: number | null
+        }
+        Relationships: []
+      }
+      mkt_klaviyo_placed: {
+        Row: {
+          order_id: string
+          placed_at: string
+          placed_on: string
+          synced_at: string
+          value_jod: number | null
+        }
+        Insert: {
+          order_id: string
+          placed_at: string
+          placed_on: string
+          synced_at?: string
+          value_jod?: number | null
+        }
+        Update: {
+          order_id?: string
+          placed_at?: string
+          placed_on?: string
+          synced_at?: string
+          value_jod?: number | null
+        }
+        Relationships: []
+      }
+      mkt_message_rules: {
+        Row: {
+          counts: boolean
+          message_label: string
+          reason: string | null
+          set_at: string
+          set_by: string | null
+        }
+        Insert: {
+          counts?: boolean
+          message_label: string
+          reason?: string | null
+          set_at?: string
+          set_by?: string | null
+        }
+        Update: {
+          counts?: boolean
+          message_label?: string
+          reason?: string | null
+          set_at?: string
+          set_by?: string | null
+        }
+        Relationships: []
+      }
+      mkt_orders: {
+        Row: {
+          cancelled_at: string | null
+          channel_app: string | null
+          code_list: string[]
+          financial_status: string | null
+          gross_jod: number
+          is_test: boolean
+          journey_campaign: string | null
+          journey_medium: string | null
+          journey_referrer: string | null
+          journey_source: string | null
+          journey_source_type: string | null
+          manual_discount_titles: string[]
+          order_id: string
+          order_number: string
+          ordered_at: string
+          ordered_on: string
+          refunded_jod: number
+          source_name: string | null
+          sub_channel: string
+          synced_at: string
+        }
+        Insert: {
+          cancelled_at?: string | null
+          channel_app?: string | null
+          code_list?: string[]
+          financial_status?: string | null
+          gross_jod?: number
+          is_test?: boolean
+          journey_campaign?: string | null
+          journey_medium?: string | null
+          journey_referrer?: string | null
+          journey_source?: string | null
+          journey_source_type?: string | null
+          manual_discount_titles?: string[]
+          order_id: string
+          order_number: string
+          ordered_at: string
+          ordered_on: string
+          refunded_jod?: number
+          source_name?: string | null
+          sub_channel: string
+          synced_at?: string
+        }
+        Update: {
+          cancelled_at?: string | null
+          channel_app?: string | null
+          code_list?: string[]
+          financial_status?: string | null
+          gross_jod?: number
+          is_test?: boolean
+          journey_campaign?: string | null
+          journey_medium?: string | null
+          journey_referrer?: string | null
+          journey_source?: string | null
+          journey_source_type?: string | null
+          manual_discount_titles?: string[]
+          order_id?: string
+          order_number?: string
+          ordered_at?: string
+          ordered_on?: string
+          refunded_jod?: number
+          source_name?: string | null
+          sub_channel?: string
+          synced_at?: string
+        }
+        Relationships: []
+      }
+      mkt_settings: {
+        Row: {
+          key: string
+          note: string | null
+          updated_at: string
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          key: string
+          note?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          key?: string
+          note?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          value?: Json
         }
         Relationships: []
       }
@@ -2846,6 +3770,105 @@ export type Database = {
         }
         Relationships: []
       }
+      odoo_hand_adjustments: {
+        Row: {
+          checked_at: string
+          day: string
+          done_at: string | null
+          kind: string
+          move_id: number
+          odoo_now: number | null
+          product: string | null
+          qty: number
+          reference: string | null
+          sku: string | null
+          who: string | null
+        }
+        Insert: {
+          checked_at?: string
+          day: string
+          done_at?: string | null
+          kind: string
+          move_id: number
+          odoo_now?: number | null
+          product?: string | null
+          qty: number
+          reference?: string | null
+          sku?: string | null
+          who?: string | null
+        }
+        Update: {
+          checked_at?: string
+          day?: string
+          done_at?: string | null
+          kind?: string
+          move_id?: number
+          odoo_now?: number | null
+          product?: string | null
+          qty?: number
+          reference?: string | null
+          sku?: string | null
+          who?: string | null
+        }
+        Relationships: []
+      }
+      odoo_late_addbacks: {
+        Row: {
+          after: number | null
+          at: string
+          before: number | null
+          counted_on: string[] | null
+          error: string | null
+          move_id: number
+          picking: string | null
+          product: string | null
+          qty: number | null
+          shipped: string | null
+          shopify: string | null
+          shopify_synced: string | null
+          sku: string | null
+          so: string | null
+          status: string
+          validated: string | null
+        }
+        Insert: {
+          after?: number | null
+          at?: string
+          before?: number | null
+          counted_on?: string[] | null
+          error?: string | null
+          move_id: number
+          picking?: string | null
+          product?: string | null
+          qty?: number | null
+          shipped?: string | null
+          shopify?: string | null
+          shopify_synced?: string | null
+          sku?: string | null
+          so?: string | null
+          status?: string
+          validated?: string | null
+        }
+        Update: {
+          after?: number | null
+          at?: string
+          before?: number | null
+          counted_on?: string[] | null
+          error?: string | null
+          move_id?: number
+          picking?: string | null
+          product?: string | null
+          qty?: number | null
+          shipped?: string | null
+          shopify?: string | null
+          shopify_synced?: string | null
+          sku?: string | null
+          so?: string | null
+          status?: string
+          validated?: string | null
+        }
+        Relationships: []
+      }
       odoo_product_costs: {
         Row: {
           active: boolean | null
@@ -2870,6 +3893,42 @@ export type Database = {
           product_id?: number
           sku?: string | null
           standard_price?: number | null
+        }
+        Relationships: []
+      }
+      odoo_return_log: {
+        Row: {
+          at: string
+          delivery: string | null
+          detail: Json | null
+          dry: boolean
+          id: number
+          odoo_order: string | null
+          result: string
+          return_picking: string | null
+          shopify_order: string
+        }
+        Insert: {
+          at?: string
+          delivery?: string | null
+          detail?: Json | null
+          dry?: boolean
+          id?: number
+          odoo_order?: string | null
+          result: string
+          return_picking?: string | null
+          shopify_order: string
+        }
+        Update: {
+          at?: string
+          delivery?: string | null
+          detail?: Json | null
+          dry?: boolean
+          id?: number
+          odoo_order?: string | null
+          result?: string
+          return_picking?: string | null
+          shopify_order?: string
         }
         Relationships: []
       }
@@ -3851,6 +4910,153 @@ export type Database = {
         }
         Relationships: []
       }
+      tmp_val_adj: {
+        Row: {
+          x: Json | null
+        }
+        Insert: {
+          x?: Json | null
+        }
+        Update: {
+          x?: Json | null
+        }
+        Relationships: []
+      }
+      tmp_val_after: {
+        Row: {
+          c: Json | null
+        }
+        Insert: {
+          c?: Json | null
+        }
+        Update: {
+          c?: Json | null
+        }
+        Relationships: []
+      }
+      tmp_val_check: {
+        Row: {
+          c: Json | null
+        }
+        Insert: {
+          c?: Json | null
+        }
+        Update: {
+          c?: Json | null
+        }
+        Relationships: []
+      }
+      tmp_val_cmp: {
+        Row: {
+          onhand: number | null
+          pname: string | null
+          reserved: number | null
+          sku: string | null
+        }
+        Insert: {
+          onhand?: number | null
+          pname?: string | null
+          reserved?: number | null
+          sku?: string | null
+        }
+        Update: {
+          onhand?: number | null
+          pname?: string | null
+          reserved?: number | null
+          sku?: string | null
+        }
+        Relationships: []
+      }
+      tmp_val_go: {
+        Row: {
+          shopify_order: string | null
+          skip_negative: boolean | null
+          so: string | null
+          so_state: string | null
+        }
+        Insert: {
+          shopify_order?: string | null
+          skip_negative?: boolean | null
+          so?: string | null
+          so_state?: string | null
+        }
+        Update: {
+          shopify_order?: string | null
+          skip_negative?: boolean | null
+          so?: string | null
+          so_state?: string | null
+        }
+        Relationships: []
+      }
+      tmp_val_live: {
+        Row: {
+          so: string
+        }
+        Insert: {
+          so: string
+        }
+        Update: {
+          so?: string
+        }
+        Relationships: []
+      }
+      tmp_val_result: {
+        Row: {
+          adjusted_products: string | null
+          already_done: boolean | null
+          lines: number | null
+          pickings: string | null
+          scrapped_only: string | null
+          shopify_order: string | null
+          so: string | null
+          so_state: string | null
+        }
+        Insert: {
+          adjusted_products?: string | null
+          already_done?: boolean | null
+          lines?: number | null
+          pickings?: string | null
+          scrapped_only?: string | null
+          shopify_order?: string | null
+          so?: string | null
+          so_state?: string | null
+        }
+        Update: {
+          adjusted_products?: string | null
+          already_done?: boolean | null
+          lines?: number | null
+          pickings?: string | null
+          scrapped_only?: string | null
+          shopify_order?: string | null
+          so?: string | null
+          so_state?: string | null
+        }
+        Relationships: []
+      }
+      tmp_val_scrap: {
+        Row: {
+          so: string
+        }
+        Insert: {
+          so: string
+        }
+        Update: {
+          so?: string
+        }
+        Relationships: []
+      }
+      tmp_val_stock: {
+        Row: {
+          c: Json | null
+        }
+        Insert: {
+          c?: Json | null
+        }
+        Update: {
+          c?: Json | null
+        }
+        Relationships: []
+      }
       wk_odoo_products: {
         Row: {
           active: boolean | null
@@ -3916,6 +5122,39 @@ export type Database = {
           odoo_variant_id?: number | null
           shopify_product_id?: number | null
           shopify_variant_id?: number
+          sku?: string | null
+        }
+        Relationships: []
+      }
+      wk_product_map_prev: {
+        Row: {
+          inventory_item_id: number | null
+          loaded_at: string | null
+          name: string | null
+          odoo_product_id: number | null
+          odoo_variant_id: number | null
+          shopify_product_id: number | null
+          shopify_variant_id: number | null
+          sku: string | null
+        }
+        Insert: {
+          inventory_item_id?: number | null
+          loaded_at?: string | null
+          name?: string | null
+          odoo_product_id?: number | null
+          odoo_variant_id?: number | null
+          shopify_product_id?: number | null
+          shopify_variant_id?: number | null
+          sku?: string | null
+        }
+        Update: {
+          inventory_item_id?: number | null
+          loaded_at?: string | null
+          name?: string | null
+          odoo_product_id?: number | null
+          odoo_variant_id?: number | null
+          shopify_product_id?: number | null
+          shopify_variant_id?: number | null
           sku?: string | null
         }
         Relationships: []
@@ -4118,6 +5357,39 @@ export type Database = {
         }
         Relationships: []
       }
+      inv_count_ledger: {
+        Row: {
+          diff_physical_vs_odoo: number | null
+          hand_adjusted: number | null
+          id: string | null
+          issue_ref: string | null
+          location_name: string | null
+          odoo_qty: number | null
+          physical_qty: number | null
+          product_title: string | null
+          provisional: boolean | null
+          sku: string | null
+          status: string | null
+          submitted_at: string | null
+          unexplained: number | null
+          variant_title: string | null
+        }
+        Relationships: []
+      }
+      inv_minus_now: {
+        Row: {
+          below_zero_since: string | null
+          odoo_on_hand: number | null
+          product: string | null
+          product_status: string | null
+          product_type: string | null
+          shopify_on_hand: number | null
+          sku: string | null
+          snapshots_from: string | null
+          variant: string | null
+        }
+        Relationships: []
+      }
       inv_product_dates: {
         Row: {
           first_po_at: string | null
@@ -4161,6 +5433,75 @@ export type Database = {
           month: string | null
           redeemers: number | null
           redeemers_in_base: number | null
+        }
+        Relationships: []
+      }
+      mkt_klaviyo_counted: {
+        Row: {
+          attr_key: string | null
+          attributed_at: string | null
+          attributed_event_id: string | null
+          attributed_metric: string | null
+          campaign_id: string | null
+          campaign_name: string | null
+          channel: string | null
+          flow_id: string | null
+          flow_message_id: string | null
+          flow_name: string | null
+          hours_before: number | null
+          id: string | null
+          kind: string | null
+          message_label: string | null
+          order_id: string | null
+          placed_at: string | null
+          placed_event_id: string | null
+          placed_on: string | null
+          synced_at: string | null
+          value_jod: number | null
+        }
+        Insert: {
+          attr_key?: string | null
+          attributed_at?: string | null
+          attributed_event_id?: string | null
+          attributed_metric?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          channel?: string | null
+          flow_id?: string | null
+          flow_message_id?: string | null
+          flow_name?: string | null
+          hours_before?: number | null
+          id?: string | null
+          kind?: string | null
+          message_label?: string | null
+          order_id?: string | null
+          placed_at?: string | null
+          placed_event_id?: string | null
+          placed_on?: string | null
+          synced_at?: string | null
+          value_jod?: number | null
+        }
+        Update: {
+          attr_key?: string | null
+          attributed_at?: string | null
+          attributed_event_id?: string | null
+          attributed_metric?: string | null
+          campaign_id?: string | null
+          campaign_name?: string | null
+          channel?: string | null
+          flow_id?: string | null
+          flow_message_id?: string | null
+          flow_name?: string | null
+          hours_before?: number | null
+          id?: string | null
+          kind?: string | null
+          message_label?: string | null
+          order_id?: string | null
+          placed_at?: string | null
+          placed_event_id?: string | null
+          placed_on?: string | null
+          synced_at?: string | null
+          value_jod?: number | null
         }
         Relationships: []
       }
@@ -4245,6 +5586,9 @@ export type Database = {
           visits: number
         }[]
       }
+      bf_card: { Args: { b: Json; p_state: string }; Returns: Json }
+      bf_catalog: { Args: { p: Json }; Returns: Json }
+      bf_catalog_facets: { Args: { p: Json }; Returns: Json }
       bf_first_order_dates: {
         Args: { p_customer_ids: string[] }
         Returns: {
@@ -4252,6 +5596,7 @@ export type Database = {
           shopify_customer_id: string
         }[]
       }
+      bf_sale_state: { Args: never; Returns: Json }
       bf_source_funnel: {
         Args: { p_since: string; p_until: string }
         Returns: {
@@ -4264,9 +5609,75 @@ export type Database = {
           utm_source: string
         }[]
       }
+      bf_upto: {
+        Args: { p_min: number; p_percents: number[] }
+        Returns: number
+      }
+      bf_visible: {
+        Args: {
+          p_band: number
+          p_main: string
+          p_q: string
+          p_state: string
+          p_sub: string
+        }
+        Returns: {
+          available: boolean
+          compare_at_price: number | null
+          discount_percent: number
+          handle: string
+          image_url: string | null
+          main_category: string
+          price: number
+          product_id: string
+          product_type: string | null
+          saved_amount: number
+          shopify_created_at: string | null
+          sub_category: string | null
+          title: string
+          updated_at: string
+          variant_id: string
+          variant_title: string | null
+          vendor: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "bf_products"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       btg_claim_next: {
         Args: { gap_seconds: number; stuck_minutes: number }
         Returns: number
+      }
+      count_request_add: { Args: { p_sku: string }; Returns: string }
+      count_request_list: {
+        Args: never
+        Returns: {
+          asked_by: string
+          done_at: string
+          done_issue_ref: string
+          id: number
+          issue_ref: string
+          last_sent_at: string
+          name: string
+          requested_at: string
+          sku: string
+          times_sent: number
+        }[]
+      }
+      count_request_remove: { Args: { p_id: number }; Returns: undefined }
+      count_request_search: {
+        Args: { p_q: string }
+        Returns: {
+          name: string
+          odoo_on_hand: number
+          product_type: string
+          shopify_on_hand: number
+          sku: string
+          waiting: boolean
+        }[]
       }
       inv_can_view: { Args: never; Returns: boolean }
       inv_compare_trend: {
@@ -4318,6 +5729,10 @@ export type Database = {
         }[]
       }
       inv_purge_test_data: { Args: never; Returns: number }
+      inv_recently_counted: {
+        Args: { p_not_issue?: string; p_sku: string }
+        Returns: boolean
+      }
       inv_recently_resolved: {
         Args: { p_test?: boolean }
         Returns: {
@@ -4347,8 +5762,106 @@ export type Database = {
           total_unique: number
         }[]
       }
+      mkt_channel_label: {
+        Args: {
+          p_channel_app: string
+          p_source_name: string
+          p_sub_channel: string
+        }
+        Returns: string
+      }
+      mkt_code_counts: { Args: { p_code: string }; Returns: string }
+      mkt_code_family: { Args: { p_code: string }; Returns: string }
+      mkt_code_group: { Args: { p_code: string }; Returns: string }
+      mkt_code_list: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          at_stake_jod: number
+          code: string
+          codes_in_family: number
+          counts: boolean
+          example: string
+          has_rule: boolean
+          is_automatic: boolean
+          is_family: boolean
+          label: string
+          match_kind: string
+          net_jod: number
+          note: string
+          orders: number
+          rests_on_this: number
+          set_at: string
+          set_by: string
+          times_used: number
+        }[]
+      }
+      mkt_code_programme: { Args: { p_code: string }; Returns: string }
+      mkt_code_rule_for: { Args: { p_code: string }; Returns: string }
+      mkt_code_set: {
+        Args: {
+          p_code: string
+          p_counts: boolean
+          p_note?: string
+          p_programme?: string
+        }
+        Returns: string
+      }
+      mkt_ga_is_marketing: {
+        Args: { p_medium: string; p_source: string }
+        Returns: boolean
+      }
+      mkt_influence_coverage: {
+        Args: { p_from: string; p_to: string }
+        Returns: Json
+      }
+      mkt_influence_meta: { Args: never; Returns: Json }
+      mkt_influence_orders: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          channel: string
+          code_programmes: string[]
+          codes_counted: string[]
+          codes_other: string[]
+          ga_campaign: string
+          ga_medium: string
+          ga_property: string
+          ga_source: string
+          gross_jod: number
+          influenced: boolean
+          klaviyo_channel: string
+          klaviyo_kind: string
+          klaviyo_message: string
+          klaviyo_what: string
+          main_reason: string
+          net_jod: number
+          order_id: string
+          order_number: string
+          ordered_at: string
+          ordered_on: string
+          reasons: string[]
+          refunded_jod: number
+          sub_channel: string
+          visit_medium: string
+          visit_source: string
+        }[]
+      }
+      mkt_message_counts: { Args: { p_label: string }; Returns: boolean }
+      order_links_backfill_step: { Args: never; Returns: string }
       order_watch_checked_at: { Args: never; Returns: string }
       phone_key: { Args: { p: string }; Returns: string }
+      pulse_job_status: {
+        Args: never
+        Returns: {
+          active: boolean
+          failed_24h: number
+          jobname: string
+          last_message: string
+          last_start: string
+          last_status: string
+          runs_24h: number
+          schedule: string
+        }[]
+      }
       reach_coverage: {
         Args: never
         Returns: {
@@ -4356,6 +5869,52 @@ export type Database = {
           covers_to: string
           rows: number
         }[]
+      }
+      record_tier_changes: { Args: { as_of?: string }; Returns: number }
+      stock_balance_ledger: {
+        Args: never
+        Returns: {
+          diff_physical_vs_odoo: number | null
+          hand_adjusted: number | null
+          id: string | null
+          issue_ref: string | null
+          location_name: string | null
+          odoo_qty: number | null
+          physical_qty: number | null
+          product_title: string | null
+          provisional: boolean | null
+          sku: string | null
+          status: string | null
+          submitted_at: string | null
+          unexplained: number | null
+          variant_title: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "inv_count_ledger"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      stock_balance_minus: {
+        Args: never
+        Returns: {
+          below_zero_since: string | null
+          odoo_on_hand: number | null
+          product: string | null
+          product_status: string | null
+          product_type: string | null
+          shopify_on_hand: number | null
+          sku: string | null
+          snapshots_from: string | null
+          variant: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "inv_minus_now"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       system_status: {
         Args: never
