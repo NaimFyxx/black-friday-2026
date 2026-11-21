@@ -545,6 +545,60 @@ export type Database = {
         }
         Relationships: []
       }
+      bf_live_pages: {
+        Row: {
+          page: number
+          resp_id: number | null
+        }
+        Insert: {
+          page: number
+          resp_id?: number | null
+        }
+        Update: {
+          page?: number
+          resp_id?: number | null
+        }
+        Relationships: []
+      }
+      bf_live_variants: {
+        Row: {
+          compare_at: number | null
+          n_variants: number | null
+          price: number | null
+          product_id: number | null
+          product_type: string | null
+          sku: string | null
+          title: string | null
+          variant_id: number | null
+          variant_title: string | null
+          vendor: string | null
+        }
+        Insert: {
+          compare_at?: number | null
+          n_variants?: number | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          compare_at?: number | null
+          n_variants?: number | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       bf_products: {
         Row: {
           available: boolean
@@ -635,6 +689,156 @@ export type Database = {
         }
         Relationships: []
       }
+      bf_review_list: {
+        Row: {
+          built_at: string | null
+          compare_at: number | null
+          cost: number | null
+          cost_15nov: number | null
+          cost_dupes: number | null
+          cost_live: number | null
+          cuban: boolean | null
+          fodc: number | null
+          fwh: number | null
+          ladder: string | null
+          live: boolean | null
+          odoo_found: boolean | null
+          price: number | null
+          product_id: number | null
+          product_type: string | null
+          sku: string | null
+          title: string | null
+          variant_id: number | null
+          variant_title: string | null
+          vendor: string | null
+        }
+        Insert: {
+          built_at?: string | null
+          compare_at?: number | null
+          cost?: number | null
+          cost_15nov?: number | null
+          cost_dupes?: number | null
+          cost_live?: number | null
+          cuban?: boolean | null
+          fodc?: number | null
+          fwh?: number | null
+          ladder?: string | null
+          live?: boolean | null
+          odoo_found?: boolean | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          built_at?: string | null
+          compare_at?: number | null
+          cost?: number | null
+          cost_15nov?: number | null
+          cost_dupes?: number | null
+          cost_live?: number | null
+          cuban?: boolean | null
+          fodc?: number | null
+          fwh?: number | null
+          ladder?: string | null
+          live?: boolean | null
+          odoo_found?: boolean | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      bf_review_removed: {
+        Row: {
+          built_at: string | null
+          compare_at: number | null
+          cost: number | null
+          cost_15nov: number | null
+          cost_dupes: number | null
+          cost_live: number | null
+          cuban: boolean | null
+          fodc: number | null
+          fwh: number | null
+          ladder: string | null
+          odoo_found: boolean | null
+          price: number | null
+          product_id: number | null
+          product_type: string | null
+          removed_at: string | null
+          sku: string | null
+          title: string | null
+          variant_id: number | null
+          variant_title: string | null
+          vendor: string | null
+        }
+        Insert: {
+          built_at?: string | null
+          compare_at?: number | null
+          cost?: number | null
+          cost_15nov?: number | null
+          cost_dupes?: number | null
+          cost_live?: number | null
+          cuban?: boolean | null
+          fodc?: number | null
+          fwh?: number | null
+          ladder?: string | null
+          odoo_found?: boolean | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          removed_at?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          built_at?: string | null
+          compare_at?: number | null
+          cost?: number | null
+          cost_15nov?: number | null
+          cost_dupes?: number | null
+          cost_live?: number | null
+          cuban?: boolean | null
+          fodc?: number | null
+          fwh?: number | null
+          ladder?: string | null
+          odoo_found?: boolean | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          removed_at?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      bf_review_unlisted: {
+        Row: {
+          product_id: number
+        }
+        Insert: {
+          product_id: number
+        }
+        Update: {
+          product_id?: number
+        }
+        Relationships: []
+      }
       bf_settings: {
         Row: {
           key: string
@@ -650,6 +854,30 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: Json
+        }
+        Relationships: []
+      }
+      bf_spins: {
+        Row: {
+          created_at: string
+          device_id: string | null
+          email: string
+          id: number
+          points: number
+        }
+        Insert: {
+          created_at?: string
+          device_id?: string | null
+          email: string
+          id?: never
+          points: number
+        }
+        Update: {
+          created_at?: string
+          device_id?: string | null
+          email?: string
+          id?: never
+          points?: number
         }
         Relationships: []
       }
@@ -5197,6 +5425,13 @@ export type Database = {
       }
     }
     Views: {
+      bf_review_export: {
+        Row: {
+          line: string | null
+          rn: number | null
+        }
+        Relationships: []
+      }
       cust_odoo_k: {
         Row: {
           active: boolean | null
@@ -5596,6 +5831,10 @@ export type Database = {
           shopify_customer_id: string
         }[]
       }
+      bf_main_image: {
+        Args: { p_handle: string; p_main: string }
+        Returns: string
+      }
       bf_sale_state: { Args: never; Returns: Json }
       bf_source_funnel: {
         Args: { p_since: string; p_until: string }
@@ -5609,6 +5848,9 @@ export type Database = {
           utm_source: string
         }[]
       }
+      bf_spin: { Args: { p_device: string; p_email: string }; Returns: Json }
+      bf_spin_config: { Args: never; Returns: Json }
+      bf_teaser: { Args: never; Returns: Json }
       bf_upto: {
         Args: { p_min: number; p_percents: number[] }
         Returns: number
@@ -5616,6 +5858,7 @@ export type Database = {
       bf_visible: {
         Args: {
           p_band: number
+          p_disc: number
           p_main: string
           p_q: string
           p_state: string
