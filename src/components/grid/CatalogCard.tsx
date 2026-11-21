@@ -104,8 +104,10 @@ export const CatalogCard = memo(function CatalogCard({
           </p>
           <h3
             className={cn(
-              "ff-subline mt-1 line-clamp-2 h-[2.5em] leading-tight text-ff-black",
-              compact ? "text-sm" : "text-base md:text-lg",
+              // Room for three full lines on every card (size/line-height set
+              // together, so the reserved height always matches the text).
+              "ff-subline mt-1 line-clamp-3 text-ff-black",
+              compact ? "h-[60px] text-sm/5" : "h-[60px] text-[15px]/5 md:h-[72px] md:text-lg/6",
             )}
           >
             {item.title}
