@@ -28,8 +28,8 @@ export const adminSignOut = createServerFn({ method: "POST" }).handler(async () 
 });
 
 export const checkAdminAccess = createServerFn({ method: "GET" }).handler(async () => {
-  const { isAdmin } = await import("./admin-session.server");
-  return { isAdmin: await isAdmin() };
+  const { isAdminAndRenew } = await import("./admin-session.server");
+  return { isAdmin: await isAdminAndRenew() };
 });
 
 // ── Tracking switches (/admin → Tracking) ─────────────────────────────
