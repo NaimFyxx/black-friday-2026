@@ -143,9 +143,6 @@ export const CatalogCard = memo(function CatalogCard({
           )}
         </div>
         <div className="mt-3">
-          <p className="ff-small truncate text-[10px] leading-4 tracking-[0.16em] text-ff-red uppercase">
-            {item.sub_category ?? item.main_category}
-          </p>
           <h3
             className={cn(
               // Room for three full lines on every card (size/line-height set
