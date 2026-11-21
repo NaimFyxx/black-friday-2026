@@ -10,8 +10,10 @@
 // (bf_events) with the visitor's first-touch source, for the /admin dashboards.
 
 import type { TrackedEventName } from "@/lib/campaign-config";
+import { primaryImage } from "@/lib/shopify";
 import { recordEvent } from "@/lib/track.functions";
 import { getStoredUtm } from "@/lib/utm-attribution";
+import { useCartStore } from "@/stores/cartStore";
 
 export const CAMPAIGN_NAME = "black_friday_2026";
 
@@ -20,6 +22,8 @@ type EventParams = Record<string, unknown>;
 type TrackerWindow = Window & {
   gtag?: (...args: unknown[]) => void;
   fbq?: (...args: unknown[]) => void;
+  klaviyo?: { push?: (args: unknown[]) => void };
+  _klOnsite?: unknown[][];
 };
 
 function tw(): TrackerWindow | null {
@@ -37,6 +41,21 @@ export function trackEvent(name: string, params: EventParams = {}): void {
 export function trackPixel(name: string, params: EventParams = {}): void {
   if (name === "Purchase") return;
   tw()?.fbq?.("track", name, params);
+}
+
+/** Send an event to Klaviyo (klaviyo.js). Klaviyo loads a few seconds after
+ *  the page, so until then events wait in its _klOnsite queue, which
+ *  klaviyo.js reads when it loads. Klaviyo only keeps events for shoppers it
+ *  already knows (came from a Klaviyo email, or signed up on a Klaviyo form). */
+function trackKlaviyo(name: string, props: EventParams): void {
+  const w = tw();
+  if (!w || trackingOff()) return;
+  try {
+    if (typeof w.klaviyo?.push === "function") w.klaviyo.push(["track", name, props]);
+    else (w._klOnsite = w._klOnsite || []).push(["track", name, props]);
+  } catch {
+    // never break the add to cart over analytics
+  }
 }
 
 /** Meta PageView for a client-side page change (the first is in the base code). */
@@ -162,6 +181,9 @@ export function trackShare(method: string, contentName: string): void {
 export function trackCampaignView(): void {
   trackEvent("campaign_view", { ...(getStoredUtm() ?? {}) });
   // Count one "visit" per browser session in Supabase.
+  // Tracking off for this page load: don't mark the visit as logged, so a
+  // reload after tracking is switched back on still counts it.
+  if (trackingOff()) return;
   try {
     if (window.sessionStorage.getItem(VISIT_KEY)) return;
     window.sessionStorage.setItem(VISIT_KEY, "1");
@@ -236,6 +258,51 @@ export function trackAddToCart(item: TrackedItem): void {
     currency: item.currency,
     itemCount: item.quantity,
     product: item,
+  });
+  trackKlaviyoAddedToCart(item);
+}
+
+/** Klaviyo "Added to Cart" in Klaviyo's recommended format, with the whole
+ *  cart, so a Klaviyo flow can email the shopper what they left behind.
+ *  Call AFTER the cart store was updated, so the new item is included. */
+function trackKlaviyoAddedToCart(item: TrackedItem): void {
+  if (typeof window === "undefined") return;
+  const origin = window.location.origin;
+  const url = (handle?: string) => (handle ? `${origin}/product/${handle}` : origin);
+  const cart = useCartStore.getState();
+  const lines = cart.items.map((i) => {
+    const price = Number(i.price.amount) || 0;
+    return {
+      ProductID: shopifyVariantId(i.product.node.id),
+      VariantID: shopifyVariantId(i.variantId),
+      ProductName: i.product.node.title,
+      VariantName: i.variantTitle || undefined,
+      Quantity: i.quantity,
+      ItemPrice: money(price),
+      RowTotal: money(price * i.quantity),
+      ProductURL: url(i.product.node.handle),
+      ImageURL: primaryImage(i.product.node)?.url,
+      ProductCategories: i.product.node.productType ? [i.product.node.productType] : [],
+    };
+  });
+  const added = cart.items.find((i) => i.variantId === item.id);
+  trackKlaviyo("Added to Cart", {
+    $value: money(lines.reduce((sum, l) => sum + l.RowTotal, 0)),
+    AddedItemProductName: item.name,
+    AddedItemProductID: added ? shopifyVariantId(added.product.node.id) : undefined,
+    AddedItemVariantID: shopifyVariantId(item.id),
+    AddedItemVariantName: item.variant || undefined,
+    AddedItemPrice: money(item.price),
+    AddedItemQuantity: item.quantity,
+    AddedItemURL: url(item.handle),
+    AddedItemImageURL: added ? primaryImage(added.product.node)?.url : undefined,
+    AddedItemCategories: added?.product.node.productType ? [added.product.node.productType] : [],
+    ItemNames: lines.map((l) => l.ProductName),
+    Items: lines,
+    // From the Storefront API cart response (never built by hand).
+    CheckoutURL: cart.checkoutUrl ?? undefined,
+    Currency: PIXEL_CURRENCY,
+    campaign_name: CAMPAIGN_NAME,
   });
 }
 
