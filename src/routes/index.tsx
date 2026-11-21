@@ -58,22 +58,22 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Black Friday 2026 at Fyxx: browse every wine, spirit and cigar in our Amman cellar and check out securely with Shopify.",
+          "Black Friday 2026 at Fyxx: browse every wine, spirit and cigar in our Amman cellar and check out securely.",
       },
       { property: "og:title", content: "Fyxx Friday: Black Friday 2026" },
       {
         property: "og:description",
         content:
-          "Every wine, spirit and cigar from our Amman cellar, in one browsable list. Add to cart and check out with Shopify.",
+          "Every wine, spirit and cigar from our Amman cellar, in one browsable list. Add to cart and check out in a few taps.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Storefront,
-  errorComponent: ({ error }) => (
+  errorComponent: () => (
     <div role="alert" className="mx-auto max-w-6xl px-6 py-24 text-sm text-muted-foreground">
-      The catalog could not be loaded. {error instanceof Error ? error.message : String(error)}
+      The shop could not be loaded. Please refresh the page or try again in a moment.
     </div>
   ),
 });

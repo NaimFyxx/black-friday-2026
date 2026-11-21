@@ -196,9 +196,9 @@ export async function storefrontApiRequest<T>(
   if (response.status === 402) {
     if (typeof window !== "undefined") {
       const { toast } = await import("sonner");
-      toast.error("Shopify: Payment required", {
-        description:
-          "Shopify API access needs an active billing plan. Visit admin.shopify.com to upgrade the store.",
+      // Shown to shoppers: no mention of the shop platform.
+      toast.error("The shop is unavailable right now", {
+        description: "Please try again in a few minutes.",
       });
     }
     return null;

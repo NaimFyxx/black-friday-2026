@@ -89,7 +89,7 @@ export function CartDrawer() {
           <SheetDescription className="text-xs tracking-[0.18em] uppercase">
             {totalItems === 0
               ? "Nothing in here yet"
-              : `${totalItems} item${totalItems !== 1 ? "s" : ""} held in Shopify`}
+              : `${totalItems} item${totalItems !== 1 ? "s" : ""}`}
           </SheetDescription>
           <TeaserCartNote />
         </SheetHeader>

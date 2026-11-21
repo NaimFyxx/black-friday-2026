@@ -56,9 +56,9 @@ export const Route = createFileRoute("/product/$handle")({
       </Link>
     </main>
   ),
-  errorComponent: ({ error }) => (
+  errorComponent: () => (
     <div role="alert" className="mx-auto max-w-6xl px-6 py-24 text-sm text-muted-foreground">
-      This product could not be loaded. {error instanceof Error ? error.message : String(error)}
+      This product could not be loaded. Please refresh the page or try again in a moment.
     </div>
   ),
 });

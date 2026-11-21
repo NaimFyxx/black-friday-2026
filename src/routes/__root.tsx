@@ -263,13 +263,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Fyxx Black Friday 2026: browse the full Amman cellar of wine, spirits and cigars and check out with Shopify.",
+          "Fyxx Black Friday 2026: browse the full Amman cellar of wine, spirits and cigars and check out in a few taps.",
       },
       { property: "og:title", content: "Fyxx: Wine, Spirits & Cigars in Amman" },
       {
         property: "og:description",
         content:
-          "Browse every wine, spirit and cigar in the Fyxx cellar and check out securely through Shopify.",
+          "Browse every wine, spirit and cigar in the Fyxx cellar and check out securely.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
