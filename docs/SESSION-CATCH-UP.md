@@ -64,6 +64,22 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026 (later): Spin & win is now a real slot machine, no email
+
+- `src/components/spin/SpinWidget.tsx` rebuilt: cabinet with blinking bulbs,
+  three reels (wine 5, beer 10, cocktail 15, star 20, seven 25), a lever and
+  a Spin button. Reels stop one by one on three matching symbols, then the
+  points show. No email field; the "one spin per person / 5 to 25" line is
+  gone. Sticker is a mini slot machine (7 7 7).
+- The prize is now drawn IN THE BROWSER (ODDS constant in SpinWidget, same
+  40/30/15/10/5 as `spin_odds`) and remembered in that browser only. Nothing
+  is written to `bf_spins`, so nobody can be credited yet. Naim owns the
+  Supabase side and will decide how points reach customers.
+- `spin_copy.win_note` in bf_settings still says "We will add the points to
+  your Fyxx account": needs new wording (in /admin/spins) once the crediting
+  plan is known.
+
+
 ### 21 Nov 2026: Spin & win (Fyxx points slot machine)
 
 Design (front end):
