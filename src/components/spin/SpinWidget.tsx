@@ -9,6 +9,7 @@ import {
   savedPoints,
   savePoints,
   spinConfigQueryOptions,
+  wasSeen,
 } from "@/lib/spin";
 import { cn } from "@/lib/utils";
 
@@ -66,8 +67,16 @@ export function SpinWidget({ raised }: { raised: boolean }) {
     setWon(savedPoints());
   }, []);
 
-  // The popup never opens on its own: it only appears when the shopper taps
-  // the sticker. (It used to open by itself 2.5s after a first visit.)
+  // First visit: open by itself after a moment.
+  useEffect(() => {
+    if (!config?.enabled || wasSeen() || savedPoints()) return;
+    const t = setTimeout(() => {
+      setOpen(true);
+      markSeen();
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [config?.enabled]);
+
   if (!mounted || !config?.enabled) return null;
   const copy = config.copy;
 
