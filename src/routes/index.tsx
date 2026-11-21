@@ -10,7 +10,6 @@ import { FilterBar } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { TeaserHero } from "@/components/hero/TeaserHero";
-import { SpinWidget } from "@/components/spin/SpinWidget";
 import { Input } from "@/components/ui/input";
 import {
   catalogQueryOptions,
@@ -263,7 +262,6 @@ function Storefront() {
 
       <FloatingCart sale={sale} />
       <BackToTop raised={mounted && cartCount > 0} />
-      {state !== "ended" && <SpinWidget raised={mounted && cartCount > 0} />}
     </main>
   );
 }
