@@ -63,7 +63,7 @@ export const CatalogCard = memo(function CatalogCard({
 
   return (
     <article
-      className={cn("flex flex-col", compact && "w-40 shrink-0 snap-start md:w-48")}
+      className={cn("flex h-full flex-col", compact && "w-40 shrink-0 snap-start md:w-48")}
       // Off-screen cards skip layout and paint: keeps long grids smooth on phones.
       style={
         compact ? undefined : { contentVisibility: "auto", containIntrinsicSize: "auto 420px" }
@@ -72,7 +72,7 @@ export const CatalogCard = memo(function CatalogCard({
       <Link
         to="/product/$handle"
         params={{ handle: item.handle }}
-        className="block focus-visible:outline-none"
+        className="block flex-1 focus-visible:outline-none"
       >
         <div className="relative aspect-4/5 overflow-hidden rounded-lg border border-ff-black/15 bg-ff-cream">
           {item.image_url ? (
@@ -99,18 +99,18 @@ export const CatalogCard = memo(function CatalogCard({
           )}
         </div>
         <div className="mt-3">
-          <p className="ff-small text-[10px] tracking-[0.16em] text-ff-red uppercase">
+          <p className="ff-small truncate text-[10px] leading-4 tracking-[0.16em] text-ff-red uppercase">
             {item.sub_category ?? item.main_category}
           </p>
           <h3
             className={cn(
-              "ff-subline mt-1 line-clamp-2 leading-tight text-ff-black",
+              "ff-subline mt-1 line-clamp-2 h-[2.5em] leading-tight text-ff-black",
               compact ? "text-sm" : "text-base md:text-lg",
             )}
           >
             {item.title}
           </h3>
-          <p className="mt-1 flex flex-wrap items-baseline gap-x-2">
+          <p className="mt-1 flex min-h-6 flex-wrap items-baseline gap-x-2 leading-6">
             <span
               className={cn(
                 "ff-num",

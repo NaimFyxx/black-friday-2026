@@ -27,7 +27,7 @@ export function FilterBar({
   const sale = facets.state === "sale";
 
   return (
-    <div className="sticky top-16 z-30 -mx-5 border-b border-ff-black/15 bg-ff-cream/95 px-5 py-2 md:top-[88px] md:-mx-10 md:px-10">
+    <div className="sticky top-16 z-30 -mx-5 border-b border-ff-black/15 bg-ff-cream px-5 py-2 md:top-[88px] md:-mx-10 md:px-10">
       <Row label="Category">
         <ChipButton
           active={!filters.main}
