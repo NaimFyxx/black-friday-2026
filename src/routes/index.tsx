@@ -282,17 +282,30 @@ function Storefront() {
 
 function CatalogSearch({ value, onSearch }: { value: string | undefined; onSearch: (q: string | undefined) => void }) {
   const [term, setTerm] = useState(value ?? "");
+  // The last search we sent. When the page's search changes to that value it
+  // is our own search coming back: never write it into the box, or letters
+  // typed while it was loading would be wiped (felt like lag on phones).
+  const sent = useRef(value ?? "");
 
+  // Only a change from elsewhere (removing the search tag, "Clear all", going
+  // back) updates the box.
   useEffect(() => {
-    setTerm(value ?? "");
+    const v = value ?? "";
+    if (v === sent.current) return;
+    sent.current = v;
+    setTerm(v);
   }, [value]);
 
   // Search works together with the category, price and sort filters.
   useEffect(() => {
-    if (term.trim() === (value ?? "")) return;
-    const timer = setTimeout(() => onSearch(term.trim() || undefined), 300);
+    const t = term.trim();
+    if (t === sent.current) return;
+    const timer = setTimeout(() => {
+      sent.current = t;
+      onSearch(t || undefined);
+    }, 300);
     return () => clearTimeout(timer);
-  }, [term, value, onSearch]);
+  }, [term, onSearch]);
 
   return (
     <label className="relative block w-full max-w-sm">
