@@ -34,13 +34,6 @@ export function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <Link
-            {...HOME}
-            hash="catalog"
-            className="hidden border border-ff-cream px-4 py-2 text-[10px] font-bold tracking-wider uppercase transition-colors hover:bg-ff-cream hover:text-ff-burgundy sm:inline-block"
-          >
-            Shop now
-          </Link>
           <CartDrawer />
         </div>
       </div>
