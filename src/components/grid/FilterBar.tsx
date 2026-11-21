@@ -202,19 +202,22 @@ function FilterSheet({
             <Option active={draft.band === undefined} onClick={() => set({ band: undefined })}>
               Any price
             </Option>
-            {f?.bands.map((b) => (
-              <Option
-                key={b.index}
-                active={draft.band === b.index}
-                count={b.count}
-                onClick={() => set({ band: b.index })}
-              >
-                {bandLabel(b)}
-              </Option>
-            ))}
+            {/* Only price ranges that have products (or the one already picked). */}
+            {f?.bands
+              .filter((b) => b.count > 0 || draft.band === b.index)
+              .map((b) => (
+                <Option
+                  key={b.index}
+                  active={draft.band === b.index}
+                  count={b.count}
+                  onClick={() => set({ band: b.index })}
+                >
+                  {bandLabel(b)}
+                </Option>
+              ))}
           </Section>
 
-          {sale && f && f.discounts.length > 0 && (
+          {sale && f && f.discounts.some((d) => d.count > 0 || draft.disc === d.min) && (
             <Section title="Discount">
               <Option active={!draft.disc} onClick={() => set({ disc: undefined })}>
                 Any discount
