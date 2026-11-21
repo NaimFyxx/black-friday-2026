@@ -64,6 +64,17 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: cart shows live prices and "You save"
+
+- `syncCart` (cartStore) now reads every cart line's current price and
+  compare-at price from Shopify (`fetchCartLines` in `shopify-cart.ts`) and
+  updates the local cart; it also runs right after each add. So a cart filled
+  before the sale shows the sale prices on the 27th, and the teaser cart note
+  ("Your cart updates automatically") is true. Checkout handoff unchanged.
+- Floating cart bar and cart drawer show "You save JOD X" whenever Shopify has
+  a compare-at price above the price (any phase, not only during the sale).
+
+
 ### 21 Nov 2026: favicon and link preview
 
 - Favicon from the Fyxx Friday logo (cream on burgundy): `public/favicon.svg`,

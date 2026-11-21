@@ -209,6 +209,72 @@ export async function removeLineFromShopifyCart(
   return { success: true };
 }
 
+const CART_LINES_QUERY = `
+  query cartLines($id: ID!) {
+    cart(id: $id) {
+      id
+      totalQuantity
+      lines(first: 100) {
+        nodes {
+          id
+          quantity
+          merchandise { ... on ProductVariant { id } }
+          cost {
+            amountPerQuantity { amount currencyCode }
+            compareAtAmountPerQuantity { amount currencyCode }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export type LivePrice = { amount: string; currencyCode: string };
+export interface LiveCartLine {
+  lineId: string;
+  variantId: string;
+  quantity: number;
+  price: LivePrice;
+  compareAtPrice: LivePrice | null;
+}
+
+/**
+ * The cart as Shopify holds it now: quantity and the current price and
+ * compare-at price of every line (so prices that dropped since the item was
+ * added show in the cart). null = API error (keep the local cart); a cart that
+ * no longer exists (checked out or expired) comes back with totalQuantity 0.
+ */
+export async function fetchCartLines(
+  cartId: string,
+): Promise<{ totalQuantity: number; lines: LiveCartLine[] } | null> {
+  const data = await storefrontApiRequest<{
+    cart?: {
+      totalQuantity: number;
+      lines: {
+        nodes: Array<{
+          id: string;
+          quantity: number;
+          merchandise: { id?: string };
+          cost: { amountPerQuantity: LivePrice; compareAtAmountPerQuantity: LivePrice | null };
+        }>;
+      };
+    } | null;
+  }>(CART_LINES_QUERY, { id: cartId });
+  if (!data) return null;
+  const cart = data.data?.cart;
+  if (!cart) return { totalQuantity: 0, lines: [] };
+  return {
+    totalQuantity: cart.totalQuantity,
+    lines: cart.lines.nodes.map((n) => ({
+      lineId: n.id,
+      variantId: n.merchandise.id ?? "",
+      quantity: n.quantity,
+      price: n.cost.amountPerQuantity,
+      compareAtPrice: n.cost.compareAtAmountPerQuantity,
+    })),
+  };
+}
+
 export async function fetchCartQuantity(cartId: string): Promise<number | null> {
   const data = await storefrontApiRequest<{ cart?: { id: string; totalQuantity: number } }>(
     CART_QUERY,

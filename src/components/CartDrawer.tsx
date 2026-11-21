@@ -45,6 +45,12 @@ export function CartDrawer() {
     0,
   );
   const currency = items[0]?.price.currencyCode ?? "JOD";
+  // Original (compare-at) price minus price, as Shopify reports them now.
+  const totalSaved = items.reduce((sum, item) => {
+    const cmp = item.compareAtPrice ? Number(item.compareAtPrice.amount) : 0;
+    const price = Number(item.price.amount);
+    return sum + (cmp > price ? (cmp - price) * item.quantity : 0);
+  }, 0);
 
   const handleCheckout = () => {
     const checkoutUrl = getCheckoutUrl();
@@ -169,6 +175,11 @@ export function CartDrawer() {
                     {formatJod(totalPrice, currency)}
                   </span>
                 </div>
+                {totalSaved > 0 && (
+                  <p className="ff-num mt-1 text-right text-sm text-ff-red">
+                    You save {formatJod(totalSaved, currency)}
+                  </p>
+                )}
                 <Button
                   onClick={handleCheckout}
                   size="lg"

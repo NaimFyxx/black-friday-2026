@@ -5,7 +5,12 @@ import { formatJod } from "@/lib/shopify";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 import { useCartUi } from "@/stores/cartUiStore";
 
-/** Floating cart bar: item count, total and (during the sale) what they saved. Opens the existing cart drawer. */
+/**
+ * Floating cart bar: item count, total and what the shopper saves (original
+ * Shopify compare-at price minus the price, refreshed from Shopify by the cart
+ * sync). Opens the existing cart drawer.
+ */
+
 export function FloatingCart({ sale }: { sale: boolean }) {
   const [mounted, setMounted] = useState(false);
   const items = useCartStore((s) => s.items);
@@ -33,9 +38,9 @@ export function FloatingCart({ sale }: { sale: boolean }) {
         <span className="ff-num block text-sm">
           {count} item{count === 1 ? "" : "s"} · {formatJod(total)}
         </span>
-        {sale && saved > 0 && (
-          <span className="ff-small block text-xs text-ff-cream/80">
-            You saved {formatJod(saved)}
+        {saved > 0 && (
+          <span className="ff-num block text-xs text-ff-warm-cream">
+            You save {formatJod(saved)}
           </span>
         )}
       </span>

@@ -4,7 +4,7 @@ import { createJSONStorage, persist, type StateStorage } from "zustand/middlewar
 import {
   addLineToShopifyCart,
   createShopifyCart,
-  fetchCartQuantity,
+  fetchCartLines,
   removeLineFromShopifyCart,
   updateShopifyCartLine,
   type CartItem,
@@ -86,6 +86,7 @@ export const useCartStore = create<CartStore>()(
         } finally {
           set({ isLoading: false });
         }
+        void get().syncCart();
       },
 
       updateQuantity: async (variantId, quantity) => {
@@ -147,9 +148,36 @@ export const useCartStore = create<CartStore>()(
 
         set({ isSyncing: true });
         try {
-          const totalQuantity = await fetchCartQuantity(cartId);
-          if (totalQuantity === null) return; // API error: keep the local cart
-          if (totalQuantity === 0) clearCart();
+          const live = await fetchCartLines(cartId);
+          if (live === null) return; // API error: keep the local cart
+          if (live.totalQuantity === 0) {
+            clearCart();
+            return;
+          }
+          // Take the current price, compare-at price and quantity from Shopify,
+          // so a price that drops after an item was added (e.g. when the sale
+          // starts) shows in the cart, with what the shopper saves.
+          const updated = get()
+            .items.map((item) => {
+              const line =
+                live.lines.find((l) => item.lineId && l.lineId === item.lineId) ??
+                live.lines.find((l) => l.variantId === item.variantId);
+              if (!line) return null; // removed elsewhere (another tab or device)
+              const cmp =
+                line.compareAtPrice &&
+                Number(line.compareAtPrice.amount) > Number(line.price.amount)
+                  ? line.compareAtPrice
+                  : null;
+              return {
+                ...item,
+                lineId: line.lineId,
+                price: line.price,
+                compareAtPrice: cmp,
+                quantity: line.quantity,
+              };
+            })
+            .filter((i): i is NonNullable<typeof i> => i !== null);
+          set({ items: updated });
         } catch (error) {
           console.error("Failed to sync cart with Shopify:", error);
         } finally {
