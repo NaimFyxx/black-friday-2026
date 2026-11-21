@@ -1,16 +1,15 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Beer, Martini, Star, Wine } from "lucide-react";
+import { Beer, ChevronDown, Martini, Star, Wine, X } from "lucide-react";
 
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
-  fill,
-  markSeen,
-  savedPoints,
-  savePoints,
-  spinConfigQueryOptions,
-  wasSeen,
-} from "@/lib/spin";
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { fill, markSeen, savedPoints, savePoints, spinConfigQueryOptions } from "@/lib/spin";
 import { cn } from "@/lib/utils";
 
 /*
@@ -67,16 +66,6 @@ export function SpinWidget({ raised }: { raised: boolean }) {
     setWon(savedPoints());
   }, []);
 
-  // First visit: open by itself after a moment.
-  useEffect(() => {
-    if (!config?.enabled || wasSeen() || savedPoints()) return;
-    const t = setTimeout(() => {
-      setOpen(true);
-      markSeen();
-    }, 2500);
-    return () => clearTimeout(t);
-  }, [config?.enabled]);
-
   if (!mounted || !config?.enabled) return null;
   const copy = config.copy;
 
@@ -114,7 +103,7 @@ export function SpinWidget({ raised }: { raised: boolean }) {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="w-[calc(100%-1.5rem)] max-w-sm border-0 bg-transparent p-0 shadow-none outline-none [&>button]:top-3 [&>button]:right-3 [&>button]:z-10 [&>button]:text-ff-cream"
+          className="w-[calc(100%-1.5rem)] max-w-sm border-0 bg-transparent p-0 shadow-none outline-none [&>button]:hidden"
         >
           <SlotMachine
             title={copy.title ?? "Spin & win"}
@@ -187,7 +176,14 @@ function SlotMachine({
   const done = phase === "done" && points !== null;
 
   return (
-    <div className="relative mx-auto w-full select-none">
+    <div className="relative mx-auto w-full pr-6 select-none">
+      {/* Big, easy close button */}
+      <DialogClose
+        aria-label="Close"
+        className="absolute -top-3 right-0 z-20 flex h-11 w-11 items-center justify-center rounded-full border-2 border-ff-red bg-ff-cream text-ff-burgundy shadow-lg"
+      >
+        <X className="h-6 w-6" strokeWidth={2.5} />
+      </DialogClose>
       {/* Marquee with chasing lights */}
       <div className="relative mx-6 rounded-t-[2rem] border-4 border-b-0 border-ff-red bg-ff-burgundy px-4 pt-4 pb-3 text-center">
         <Bulbs count={11} active={phase !== "ready"} />
@@ -246,22 +242,35 @@ function SlotMachine({
         <div className="mx-auto mt-3 h-3 w-2/3 rounded-full bg-ff-black/40" />
       </div>
 
-      {/* Lever on the right side */}
+      {/* Lever on the right side: big knob, "PULL" label and a gentle nudge while waiting */}
       <button
         type="button"
         onClick={start}
         disabled={phase !== "ready"}
-        aria-label="Pull the lever"
-        className="absolute top-[38%] -right-3 flex h-36 w-7 flex-col items-center"
+        aria-label="Pull the lever to spin"
+        className="group absolute top-[30%] right-0 flex w-11 flex-col items-center"
       >
         <span
-          className="flex w-7 origin-bottom flex-col items-center transition-transform duration-300"
-          style={{ transform: lever ? "scaleY(-0.55)" : "none" }}
+          className={cn(
+            "ff-headline mb-1 rounded-full bg-ff-warm-cream px-1.5 py-0.5 text-[10px] leading-none text-ff-burgundy",
+            phase !== "ready" && "invisible",
+          )}
         >
-          <span className="h-7 w-7 rounded-full border-2 border-ff-burgundy bg-ff-red shadow-md" />
-          <span className="h-20 w-1.5 rounded-full bg-ff-warm-cream" />
+          PULL
         </span>
-        <span className="h-5 w-4 rounded-r-md bg-ff-red" />
+        <span
+          className={cn(
+            "flex origin-bottom flex-col items-center transition-transform duration-300",
+            phase === "ready" && !lever && "ff-lever-nudge",
+          )}
+          style={{ transform: lever ? "scaleY(-0.55)" : undefined }}
+        >
+          <span className="flex h-11 w-11 items-center justify-center rounded-full border-[3px] border-ff-cream bg-ff-red shadow-lg group-active:scale-95">
+            <ChevronDown className="h-5 w-5 text-ff-cream" strokeWidth={3} />
+          </span>
+          <span className="h-20 w-2 rounded-full bg-ff-warm-cream" />
+        </span>
+        <span className="h-6 w-5 rounded-md bg-ff-red" />
       </button>
     </div>
   );

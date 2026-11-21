@@ -234,3 +234,17 @@ div[aria-label="FLYOUT Form"],
 div[aria-label="FULLSCREEN Form"] {
   display: none !important;
 }
+
+/* Spin & win lever: a small tug every few seconds so people see it can be pulled. */
+@keyframes ff-lever-nudge {
+  0%, 70%, 100% { transform: rotate(0deg); }
+  78% { transform: rotate(14deg); }
+  86% { transform: rotate(-4deg); }
+  92% { transform: rotate(6deg); }
+}
+.ff-lever-nudge {
+  animation: ff-lever-nudge 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ff-lever-nudge { animation: none; }
+}
