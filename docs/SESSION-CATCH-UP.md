@@ -64,6 +64,29 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: Spin & win (Fyxx points slot machine)
+
+Design (front end):
+- `src/components/spin/SpinWidget.tsx`: "Spin & win" sticker bottom left of the
+  landing page (moves up when the floating cart bar shows) and a slot machine
+  popup that opens by itself on the first visit (2.5 s). Customer enters their
+  email, the reel spins and lands on +5, +10, +15, +20 or +25.
+- `src/lib/spin.ts`: data calls and per-browser memory.
+- `/admin/spins` ("Spin & win" tab): winners list, total points, CSV download
+  for LoyaltyLion, on/off switch, chances per prize, all texts.
+
+Backend (created 21 Nov, SQL in `docs/sql/2026-11-21-bf-spins.sql`; the
+team asked that Naim owns the Supabase side from here):
+- Table `bf_spins` (one row per email and per browser), RLS on.
+- `bf_settings`: `spin_enabled`, `spin_odds` (5:40, 10:30, 15:15, 20:10,
+  25:5), `spin_copy`.
+- Public functions `bf_spin_config()` and `bf_spin(email, device)` (prize drawn
+  in the database).
+- Points are NOT credited automatically: credit them in LoyaltyLion.
+- TODO for Naim: delete the test row `spin-test-ui@example.com` from
+  `bf_spins` (cleanup was declined mid-session).
+
+
 ### 21 Nov 2026: category circles and Shopify sub categories
 
 - `category_mapping` now has 14 categories, shown as photo circles (page row

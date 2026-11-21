@@ -33,6 +33,7 @@ const TABS = [
   { to: "/admin/cohort", label: "Customers" },
   { to: "/admin/errors", label: "Errors" },
   { to: "/admin/sale", label: "Sale & products" },
+  { to: "/admin/spins", label: "Spin & win" },
   { to: "/admin/tracking", label: "Tracking" },
 ] as const;
 

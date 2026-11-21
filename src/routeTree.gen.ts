@@ -17,6 +17,7 @@ import { Route as AdminCohortRouteImport } from './routes/admin.cohort'
 import { Route as AdminErrorsRouteImport } from './routes/admin.errors'
 import { Route as AdminReportRouteImport } from './routes/admin.report'
 import { Route as AdminSaleRouteImport } from './routes/admin.sale'
+import { Route as AdminSpinsRouteImport } from './routes/admin.spins'
 import { Route as AdminTrackingRouteImport } from './routes/admin.tracking'
 import { Route as ProductHandleRouteImport } from './routes/product.$handle'
 
@@ -60,6 +61,11 @@ const AdminSaleRoute = AdminSaleRouteImport.update({
   path: '/sale',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSpinsRoute = AdminSpinsRouteImport.update({
+  id: '/spins',
+  path: '/spins',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminTrackingRoute = AdminTrackingRouteImport.update({
   id: '/tracking',
   path: '/tracking',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/report': typeof AdminReportRoute
   '/admin/sale': typeof AdminSaleRoute
+  '/admin/spins': typeof AdminSpinsRoute
   '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
   '/admin/': typeof AdminIndexRoute
@@ -90,6 +97,7 @@ export interface FileRoutesByTo {
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/report': typeof AdminReportRoute
   '/admin/sale': typeof AdminSaleRoute
+  '/admin/spins': typeof AdminSpinsRoute
   '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
   '/admin': typeof AdminIndexRoute
@@ -103,6 +111,7 @@ export interface FileRoutesById {
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/report': typeof AdminReportRoute
   '/admin/sale': typeof AdminSaleRoute
+  '/admin/spins': typeof AdminSpinsRoute
   '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
   '/admin/': typeof AdminIndexRoute
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/report'
     | '/admin/sale'
+    | '/admin/spins'
     | '/admin/tracking'
     | '/product/$handle'
     | '/admin/'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/report'
     | '/admin/sale'
+    | '/admin/spins'
     | '/admin/tracking'
     | '/product/$handle'
     | '/admin'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/admin/errors'
     | '/admin/report'
     | '/admin/sale'
+    | '/admin/spins'
     | '/admin/tracking'
     | '/product/$handle'
     | '/admin/'
@@ -209,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSaleRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/spins': {
+      id: '/admin/spins'
+      path: '/spins'
+      fullPath: '/admin/spins'
+      preLoaderRoute: typeof AdminSpinsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/tracking': {
       id: '/admin/tracking'
       path: '/tracking'
@@ -232,6 +251,7 @@ interface AdminRouteChildren {
   AdminErrorsRoute: typeof AdminErrorsRoute
   AdminReportRoute: typeof AdminReportRoute
   AdminSaleRoute: typeof AdminSaleRoute
+  AdminSpinsRoute: typeof AdminSpinsRoute
   AdminTrackingRoute: typeof AdminTrackingRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -242,6 +262,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminErrorsRoute: AdminErrorsRoute,
   AdminReportRoute: AdminReportRoute,
   AdminSaleRoute: AdminSaleRoute,
+  AdminSpinsRoute: AdminSpinsRoute,
   AdminTrackingRoute: AdminTrackingRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
