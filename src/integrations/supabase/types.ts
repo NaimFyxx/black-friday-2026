@@ -452,6 +452,99 @@ export type Database = {
         }
         Relationships: []
       }
+      bf_acc_list: {
+        Row: {
+          compare_at: number | null
+          n_variants: number | null
+          price: number | null
+          product_id: number | null
+          product_type: string | null
+          sku: string | null
+          title: string | null
+          variant_id: number | null
+          variant_title: string | null
+          vendor: string | null
+        }
+        Insert: {
+          compare_at?: number | null
+          n_variants?: number | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          compare_at?: number | null
+          n_variants?: number | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      bf_acc_review_v2: {
+        Row: {
+          compare_at: number | null
+          cost: number | null
+          fodc: number | null
+          fwh: number | null
+          odoo_found: boolean | null
+          odoo_id: number | null
+          other_wh: number | null
+          price: number | null
+          product_id: number | null
+          product_type: string | null
+          sku: string | null
+          title: string | null
+          variant_id: number | null
+          variant_title: string | null
+          vendor: string | null
+        }
+        Insert: {
+          compare_at?: number | null
+          cost?: number | null
+          fodc?: number | null
+          fwh?: number | null
+          odoo_found?: boolean | null
+          odoo_id?: number | null
+          other_wh?: number | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          compare_at?: number | null
+          cost?: number | null
+          fodc?: number | null
+          fwh?: number | null
+          odoo_found?: boolean | null
+          odoo_id?: number | null
+          other_wh?: number | null
+          price?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          sku?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+          vendor?: string | null
+        }
+        Relationships: []
+      }
       bf_error_log: {
         Row: {
           area: string
@@ -707,6 +800,7 @@ export type Database = {
           product_id: number | null
           product_type: string | null
           sku: string | null
+          storage: number | null
           title: string | null
           variant_id: number | null
           variant_title: string | null
@@ -729,6 +823,7 @@ export type Database = {
           product_id?: number | null
           product_type?: string | null
           sku?: string | null
+          storage?: number | null
           title?: string | null
           variant_id?: number | null
           variant_title?: string | null
@@ -751,6 +846,7 @@ export type Database = {
           product_id?: number | null
           product_type?: string | null
           sku?: string | null
+          storage?: number | null
           title?: string | null
           variant_id?: number | null
           variant_title?: string | null
@@ -5831,6 +5927,7 @@ export type Database = {
           shopify_customer_id: string
         }[]
       }
+      bf_group_mains: { Args: { p_group: string }; Returns: string[] }
       bf_main_image: {
         Args: { p_handle: string; p_main: string }
         Returns: string
@@ -5855,41 +5952,78 @@ export type Database = {
         Args: { p_min: number; p_percents: number[] }
         Returns: number
       }
-      bf_visible: {
-        Args: {
-          p_band: number
-          p_disc: number
-          p_main: string
-          p_q: string
-          p_state: string
-          p_sub: string
-        }
-        Returns: {
-          available: boolean
-          compare_at_price: number | null
-          discount_percent: number
-          handle: string
-          image_url: string | null
-          main_category: string
-          price: number
-          product_id: string
-          product_type: string | null
-          saved_amount: number
-          shopify_created_at: string | null
-          sub_category: string | null
-          title: string
-          updated_at: string
-          variant_id: string
-          variant_title: string | null
-          vendor: string | null
-        }[]
-        SetofOptions: {
-          from: "*"
-          to: "bf_products"
-          isOneToOne: false
-          isSetofReturn: true
-        }
-      }
+      bf_visible:
+        | {
+            Args: {
+              p_band: number
+              p_disc: number
+              p_main: string
+              p_q: string
+              p_state: string
+              p_sub: string
+            }
+            Returns: {
+              available: boolean
+              compare_at_price: number | null
+              discount_percent: number
+              handle: string
+              image_url: string | null
+              main_category: string
+              price: number
+              product_id: string
+              product_type: string | null
+              saved_amount: number
+              shopify_created_at: string | null
+              sub_category: string | null
+              title: string
+              updated_at: string
+              variant_id: string
+              variant_title: string | null
+              vendor: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "bf_products"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
+        | {
+            Args: {
+              p_band: number
+              p_disc: number
+              p_main: string
+              p_mains: string[]
+              p_q: string
+              p_state: string
+              p_sub: string
+            }
+            Returns: {
+              available: boolean
+              compare_at_price: number | null
+              discount_percent: number
+              handle: string
+              image_url: string | null
+              main_category: string
+              price: number
+              product_id: string
+              product_type: string | null
+              saved_amount: number
+              shopify_created_at: string | null
+              sub_category: string | null
+              title: string
+              updated_at: string
+              variant_id: string
+              variant_title: string | null
+              vendor: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "bf_products"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
       btg_claim_next: {
         Args: { gap_seconds: number; stuck_minutes: number }
         Returns: number
