@@ -5,8 +5,15 @@ import { toast } from "sonner";
 
 import { trackAddToCart } from "@/lib/analytics";
 import { discountBadge, sizedImage, toCartProduct, type CatalogItem } from "@/lib/catalog";
-import { formatJod } from "@/lib/shopify";
+import {
+  formatJod,
+  getProductByHandle,
+  type ShopifyProductNode,
+  type ShopifyVariant,
+} from "@/lib/shopify";
 import { cn } from "@/lib/utils";
+
+import { VariantPicker } from "./VariantPicker";
 import { useCartStore } from "@/stores/cartStore";
 
 /**
@@ -33,9 +40,46 @@ export const CatalogCard = memo(function CatalogCard({
   const variantTitle =
     item.variant_title && item.variant_title !== "Default Title" ? item.variant_title : "";
 
+  const [picker, setPicker] = useState<ShopifyProductNode | null>(null);
+
+  // Put one variant in the cart (from the picker, or the only one there is).
+  const addVariant = async (node: ShopifyProductNode, v: ShopifyVariant) => {
+    await addItem({
+      product: { node },
+      variantId: v.id,
+      variantTitle: v.title === "Default Title" ? "" : v.title,
+      price: v.price,
+      compareAtPrice: v.compareAtPrice ?? null,
+      quantity: 1,
+      selectedOptions: v.selectedOptions.filter((o) => o.name !== "Title"),
+    });
+    trackAddToCart({
+      id: v.id,
+      name: node.title,
+      handle: node.handle,
+      variant: v.title,
+      price: Number(v.price.amount),
+      currency: v.price.currencyCode,
+      quantity: 1,
+    });
+    toast.success("Added to cart", { description: node.title });
+  };
+
+  // More than one option (size, vintage, pack...): ask which one first.
   const handleAdd = async () => {
     setPending(true);
     try {
+      const node = await getProductByHandle(item.handle).catch(() => null);
+      const variants = node?.variants.edges.map((e) => e.node) ?? [];
+      if (node && variants.length > 1) {
+        setPicker(node);
+        return;
+      }
+      if (node && variants[0]) {
+        await addVariant(node, variants[0]);
+        return;
+      }
+      // Shopify lookup failed: add the variant from the catalog index.
       const money = (n: number) => ({ amount: n.toFixed(3), currencyCode: "JOD" });
       await addItem({
         product: toCartProduct(item),
@@ -147,6 +191,14 @@ export const CatalogCard = memo(function CatalogCard({
           )}
         </button>
       )}
+      <VariantPicker
+        product={picker}
+        open={picker !== null}
+        onOpenChange={(o) => {
+          if (!o) setPicker(null);
+        }}
+        onAdd={(v) => addVariant(picker!, v)}
+      />
     </article>
   );
 });

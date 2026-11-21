@@ -136,7 +136,7 @@ const PRODUCT_FIELDS = `
   vendor
   priceRange { minVariantPrice { amount currencyCode } }
   images(first: 4) { edges { node { url altText } } }
-  variants(first: 12) {
+  variants(first: 30) {
     edges {
       node {
         id

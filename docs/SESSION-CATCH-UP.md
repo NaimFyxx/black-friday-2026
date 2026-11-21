@@ -64,6 +64,16 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: choose a size before adding
+
+- "Add to cart" on a landing page card now looks the product up in Shopify
+  (`getProductByHandle`). More than one variant (244 in-stock products, e.g.
+  sizes): a bottom panel (`src/components/grid/VariantPicker.tsx`) asks which
+  one first; nothing is added until the shopper picks. Sold-out options are
+  greyed out; discounted ones show the crossed-out price. One variant: added
+  straight away as before. Product query now loads up to 30 variants.
+
+
 ### 21 Nov 2026: crossed-out prices always shown
 
 - Team decision: every discounted product shows the original price crossed out
