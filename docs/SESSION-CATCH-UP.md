@@ -64,6 +64,18 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: crossed-out prices always shown
+
+- Team decision: every discounted product shows the original price crossed out
+  and the new price in red, before and during the sale. `bf_card` now always
+  returns `compare_at_price` (migration `bf_card_compare_always`, SQL in
+  `docs/sql/2026-11-21-bf-card-compare-always.sql`); the badge fields
+  (`discount_percent`, `saved_amount`) stay sale-only, so "-25%" badges,
+  "up to X%" and Top deals still start with the sale.
+- Product page and cart lines also show the crossed-out original price
+  (from Shopify's compareAtPrice).
+
+
 ### 21 Nov 2026: cart shows live prices and "You save"
 
 - `syncCart` (cartStore) now reads every cart line's current price and

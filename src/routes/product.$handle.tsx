@@ -160,9 +160,18 @@ function ProductPage() {
             {product.productType || "Fyxx"}
           </p>
           <h1 className="mt-3 font-display text-5xl leading-[1.02]">{product.title}</h1>
-          <p className="mt-4 font-display text-3xl tabular-nums">
-            {formatPrice(selected?.price ?? product.priceRange.minVariantPrice)}
-          </p>
+          {/* Discounted: new price in red with the original price crossed out. */}
+          {(() => {
+            const price = selected?.price ?? product.priceRange.minVariantPrice;
+            const was = selected?.compareAtPrice;
+            const discounted = !!was && Number(was.amount) > Number(price.amount);
+            return (
+              <p className="mt-4 flex flex-wrap items-baseline gap-x-3 font-display tabular-nums">
+                <span className={discounted ? "text-3xl text-ff-red" : "text-3xl"}>{formatPrice(price)}</span>
+                {discounted && <s className="text-xl text-ff-black/55">{formatPrice(was!)}</s>}
+              </p>
+            );
+          })()}
 
           {variants.length > 1 && (
             <div className="mt-8">

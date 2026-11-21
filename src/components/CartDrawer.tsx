@@ -126,7 +126,17 @@ export function CartDrawer() {
                       <p className="mt-0.5 truncate text-xs text-muted-foreground">
                         {item.selectedOptions.map((o) => o.value).join(" · ") || item.variantTitle}
                       </p>
-                      <p className="mt-1 text-sm tabular-nums">{formatPrice(item.price)}</p>
+                      <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm tabular-nums">
+                        {item.compareAtPrice &&
+                        Number(item.compareAtPrice.amount) > Number(item.price.amount) ? (
+                          <>
+                            <span className="text-ff-red">{formatPrice(item.price)}</span>
+                            <s className="text-xs text-ff-black/55">{formatPrice(item.compareAtPrice)}</s>
+                          </>
+                        ) : (
+                          formatPrice(item.price)
+                        )}
+                      </p>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-2">
                       <Button
