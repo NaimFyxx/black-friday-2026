@@ -52,22 +52,34 @@ export const Route = createFileRoute("/")({
     ]);
     return dehydrate(context.queryClient);
   },
+  // Link preview (WhatsApp, Instagram, Facebook): image public/brand/og-fyxx-friday.jpg
+  // (1200 x 630, option A chosen 21 Nov). Shared links need the full address.
   head: () => ({
     meta: [
-      { title: "Fyxx Friday: Black Friday 2026 at Fyxx, Wine, Spirits & Cigars in Amman" },
+      { title: "Fyxx Friday | 27 November" },
       {
         name: "description",
-        content:
-          "Black Friday 2026 at Fyxx: browse every wine, spirit and cigar in our Amman cellar and check out securely.",
+        content: "One day. The biggest deals of the year on wine, spirits and cigars. Delivered in Amman.",
       },
-      { property: "og:title", content: "Fyxx Friday: Black Friday 2026" },
+      { property: "og:title", content: "Fyxx Friday | 27 November" },
       {
         property: "og:description",
-        content:
-          "Every wine, spirit and cigar from our Amman cellar, in one browsable list. Add to cart and check out in a few taps.",
+        content: "One day. The biggest deals of the year on wine, spirits and cigars. Delivered in Amman.",
       },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
+      { property: "og:url", content: "https://friday.myfyxx.com/" },
+      { property: "og:site_name", content: "Fyxx" },
+      { property: "og:image", content: "https://friday.myfyxx.com/brand/og-fyxx-friday.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "Fyxx Friday, November 27: one day only, special offers, best deals" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Fyxx Friday | 27 November" },
+      {
+        name: "twitter:description",
+        content: "One day. The biggest deals of the year on wine, spirits and cigars. Delivered in Amman.",
+      },
+      { name: "twitter:image", content: "https://friday.myfyxx.com/brand/og-fyxx-friday.jpg" },
     ],
   }),
   component: Storefront,

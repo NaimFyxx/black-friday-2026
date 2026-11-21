@@ -64,6 +64,19 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: favicon and link preview
+
+- Favicon from the Fyxx Friday logo (cream on burgundy): `public/favicon.svg`,
+  `favicon.ico` (16/32/48), `favicon-32.png`, `apple-touch-icon.png`,
+  `icon-192.png`, `icon-512.png`; links in `src/routes/__root.tsx`.
+- Link preview (option A, burgundy + bottles): `public/brand/og-fyxx-friday.jpg`
+  1200 x 630, 76 KB. Title "Fyxx Friday | 27 November", description "One day.
+  The biggest deals of the year on wine, spirits and cigars. Delivered in
+  Amman." Set in `src/routes/index.tsx` head(). Render script:
+  `docs/og-image-render.cjs` (Playwright; served from the site address so the
+  Adobe font kit loads).
+
+
 ### 21 Nov 2026: Klaviyo popups off on this site
 
 - Klaviyo signup forms (the "Fyxx Friday is Almost Here" popup and the
