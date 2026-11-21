@@ -27,6 +27,7 @@ type Form = {
   top_deals_count: string;
   batch_size: string;
   price_bands: string;
+  discount_filters: string;
   category_mapping: string;
   exclusions: string;
   teaser_headline: string;
@@ -56,6 +57,9 @@ function SalePage() {
       top_deals_count: String(s["top_deals_count"] ?? 12),
       batch_size: String(s["batch_size"] ?? 24),
       price_bands: ((s["price_bands"] as number[] | undefined) ?? [20, 50, 100]).join(", "),
+      discount_filters: ((s["discount_filters"] as number[] | undefined) ?? [10, 20, 30]).join(
+        ", ",
+      ),
       category_mapping: JSON.stringify(s["category_mapping"] ?? [], null, 2),
       exclusions: JSON.stringify(s["exclusions"] ?? {}, null, 2),
       teaser_headline: String(s["teaser_headline"] ?? ""),
@@ -98,6 +102,11 @@ function SalePage() {
         .split(",")
         .map((v) => Number(v.trim()))
         .filter((v) => v > 0),
+      discount_filters: form.discount_filters
+        .split(",")
+        .map((v) => Number(v.trim()))
+        .filter((v) => v > 0)
+        .sort((a, b) => a - b),
       category_mapping: mapping,
       exclusions,
       teaser_headline: form.teaser_headline,
@@ -268,6 +277,15 @@ function SalePage() {
               <Input
                 value={form.price_bands}
                 onChange={(e) => set("price_bands")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Discount filter steps in %, comma separated"
+              hint="10, 20, 30 makes: 10% off or more, 20% off or more, 30% off or more. Shown during the sale only."
+            >
+              <Input
+                value={form.discount_filters}
+                onChange={(e) => set("discount_filters")(e.target.value)}
               />
             </Field>
           </Panel>

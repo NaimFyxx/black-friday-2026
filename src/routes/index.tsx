@@ -5,7 +5,7 @@ import { Loader2, Search } from "lucide-react";
 
 import { BackToTop } from "@/components/grid/BackToTop";
 import { CatalogCard } from "@/components/grid/CatalogCard";
-import { FilterBar, SortMenu } from "@/components/grid/FilterBar";
+import { FilterBar } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { TeaserHero } from "@/components/hero/TeaserHero";
@@ -27,12 +27,14 @@ export const Route = createFileRoute("/")({
   // returns to the same view (and the router restores the scroll position).
   validateSearch: (search: Record<string, unknown>): CatalogFilters => {
     const band = Number(search["band"]);
+    const disc = Number(search["disc"]);
     const sort = search["sort"];
     const main = text(search["main"]);
     return {
       main,
       sub: main ? text(search["sub"]) : undefined,
       band: Number.isInteger(band) && band >= 0 && band < 10 ? band : undefined,
+      disc: Number.isInteger(disc) && disc > 0 && disc < 100 ? disc : undefined,
       q: text(search["q"]),
       sort: SORTS.includes(sort as SortKey) ? (sort as SortKey) : undefined,
     };
@@ -92,7 +94,6 @@ function Storefront() {
     catalogQueryOptions(filters),
   );
   const items = (data?.pages ?? []).flatMap((page) => page.items);
-  const total = data?.pages[0]?.total ?? 0;
   const state = facets?.state ?? data?.pages[0]?.state ?? "preview";
   const sale = state === "sale";
   // Teaser phase (before sale_start): the big hero replaces the small logo banner.
@@ -205,12 +206,9 @@ function Storefront() {
               <div ref={filtersAnchor} aria-hidden="true" />
               {facets && <FilterBar facets={facets} filters={filters} onChange={setFilters} />}
 
-              <div ref={gridTop} className="ff-small mt-4 flex items-center gap-2 text-xs text-ff-black/70">
-                <span className="tabular-nums">{total} products</span>
-                {isFetching && !isFetchingNextPage && <Loader2 className="h-3 w-3 animate-spin" />}
-                <span className="ml-auto">
-                  <SortMenu sale={sale} value={filters.sort} onChange={(sort) => setFilters({ sort })} />
-                </span>
+              {/* Product count and sort live in the filter bar; this marks the top of the grid. */}
+              <div ref={gridTop} className="flex h-4 items-center justify-center">
+                {isFetching && !isFetchingNextPage && <Loader2 className="h-3 w-3 animate-spin text-ff-black/50" />}
               </div>
 
               {items.length === 0 ? (

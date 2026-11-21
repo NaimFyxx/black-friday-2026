@@ -64,6 +64,23 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: simpler filters
+
+- Filter bar is now: category tabs (All / Wine / Spirits / Cigars, "up to X%"
+  under each during the sale), one "Filter & sort" button, product count, and
+  removable tags for the filters in use. The button opens a bottom panel with
+  Category, Type, Price, Discount (sale only) and Sort; choices apply on
+  "Show N products". (`src/components/grid/FilterBar.tsx`)
+- New discount filter "X% off or more" (URL `disc`), steps in
+  `bf_settings.discount_filters` ([10, 20, 30]), editable on /admin.
+- SQL in `docs/sql/2026-11-21-bf-discount-filter.sql` (migration
+  `bf_discount_filter`): `bf_visible` gained a `p_disc` argument (old 5-arg
+  version dropped); `bf_catalog` reads `disc`; `bf_catalog_facets` adds `total`
+  and `discounts`.
+- Tested the sale state by moving `sale_start` to 1 Nov, then put it back to
+  27 Nov 10:00 Amman.
+
+
 ### 21 Nov 2026: teaser hero and cart note
 
 Later the same day: `sale_start` moved to **27 Nov 10:00 Amman**
