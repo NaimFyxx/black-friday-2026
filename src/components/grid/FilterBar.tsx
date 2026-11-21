@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal, X } from "lucide-react";
 
+import { CategoryCircles } from "@/components/grid/CategoryCircles";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import {
   bandLabel,
@@ -14,12 +15,11 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Sticky filters under the header, kept simple for shoppers:
- * 1. Category tabs: All / Wine / Spirits / Cigars (during the sale each shows
- *    its "up to X%").
- * 2. One "Filter & sort" button (opens a panel from the bottom with type,
- *    price, discount and sort) and the number of products.
- * 3. The filters in use, as small tags with an x to remove each one.
+ * Sticky filters under the header, kept simple for shoppers (the category
+ * circles sit just above it on the page, see CategoryCircles):
+ * 1. One "Filter & sort" button (opens a panel from the bottom with category
+ *    circles, type, price, discount and sort) and the number of products.
+ * 2. The filters in use, as small tags with an x to remove each one.
  * Nothing links to Shopify collections.
  */
 export function FilterBar({
@@ -36,6 +36,7 @@ export function FilterBar({
   const band = facets.bands.find((b) => b.index === filters.band);
   const tags: Array<{ label: string; clear: Partial<CatalogFilters> }> = [];
   if (filters.q) tags.push({ label: `“${filters.q}”`, clear: { q: undefined } });
+  if (filters.main) tags.push({ label: filters.main, clear: { main: undefined, sub: undefined } });
   if (filters.sub) tags.push({ label: filters.sub, clear: { sub: undefined } });
   if (band) tags.push({ label: bandLabel(band), clear: { band: undefined } });
   if (sale && filters.disc)
@@ -44,30 +45,7 @@ export function FilterBar({
 
   return (
     <div className="sticky top-16 z-30 -mx-5 border-b border-ff-black/15 bg-ff-cream px-5 md:top-[88px] md:-mx-10 md:px-10">
-      {/* 1. Category tabs */}
-      <div role="group" aria-label="Category" className="grid grid-cols-4 md:flex md:gap-8">
-        <Tab
-          active={!filters.main}
-          upto={sale ? facets.headline_upto : null}
-          onClick={() => onChange({ main: undefined, sub: undefined })}
-        >
-          All
-        </Tab>
-        {facets.mains
-          .filter((m) => m.count > 0 || filters.main === m.name)
-          .map((m) => (
-            <Tab
-              key={m.name}
-              active={filters.main === m.name}
-              upto={sale ? m.upto : null}
-              onClick={() => onChange({ main: m.name, sub: undefined })}
-            >
-              {m.name}
-            </Tab>
-          ))}
-      </div>
-
-      {/* 2. Filter button + count */}
+      {/* 1. Filter button + count */}
       <div className="flex items-center justify-between gap-3 py-2">
         <button
           type="button"
@@ -87,7 +65,7 @@ export function FilterBar({
         </span>
       </div>
 
-      {/* 3. Filters in use */}
+      {/* 2. Filters in use */}
       {tags.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 pb-2">
           {tags.map((t) => (
@@ -106,7 +84,13 @@ export function FilterBar({
             <button
               type="button"
               onClick={() =>
-                onChange({ q: undefined, sub: undefined, band: undefined, disc: undefined })
+                onChange({
+                  q: undefined,
+                  main: undefined,
+                  sub: undefined,
+                  band: undefined,
+                  disc: undefined,
+                })
               }
               className="ff-small text-xs text-ff-black underline underline-offset-2"
             >
@@ -127,37 +111,6 @@ export function FilterBar({
         }}
       />
     </div>
-  );
-}
-
-function Tab({
-  active,
-  upto,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  upto?: number | null;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={cn(
-        "flex min-h-11 flex-col items-center justify-center border-b-2 px-1 pt-2 pb-1.5 transition-colors md:items-start",
-        active ? "border-ff-red text-ff-red" : "border-transparent text-ff-black hover:text-ff-red",
-      )}
-    >
-      <span className={cn("text-[15px] md:text-base", active ? "ff-headline" : "ff-subline")}>
-        {children}
-      </span>
-      {upto ? (
-        <span className="ff-num text-[10px] leading-3 text-ff-red">up to {upto}%</span>
-      ) : null}
-    </button>
   );
 }
 
@@ -203,21 +156,16 @@ function FilterSheet({
 
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-5 py-5">
           <Section title="Category">
-            <Option active={!draft.main} onClick={() => set({ main: undefined, sub: undefined })}>
-              All
-            </Option>
-            {f?.mains
-              .filter((m) => m.count > 0 || draft.main === m.name)
-              .map((m) => (
-                <Option
-                  key={m.name}
-                  active={draft.main === m.name}
-                  count={m.count}
-                  onClick={() => set({ main: m.name, sub: undefined })}
-                >
-                  {m.name}
-                </Option>
-              ))}
+            {f && (
+              <CategoryCircles
+                mains={f.mains}
+                active={draft.main}
+                sale={sale}
+                allUpto={f.headline_upto}
+                layout="grid"
+                onPick={(main) => set({ main, sub: undefined })}
+              />
+            )}
           </Section>
 
           {draft.main && f && f.subs.length > 0 && (

@@ -6,7 +6,9 @@
 // Never changes a price. Writes only bf_products and the bf_settings row
 // "products_last_refresh". Touches no Pulse table.
 //
-// Body: { key, dry_run? }. `key` must match bf_settings.edge_key.
+// Body: { key, dry_run?, mapping?, exclusions? }. `key` must match
+// bf_settings.edge_key. A dry run changes nothing and may try a mapping or
+// exclusions that are not saved yet.
 // Which products are kept, and in which category, comes from bf_settings
 // "category_mapping" and "exclusions" (editable on /admin).
 
@@ -33,8 +35,29 @@ async function sameString(a: string, b: string) {
   return d === 0;
 }
 
-type Sub = { name: string; tags?: string[]; product_types?: string[] };
-type Main = { name: string; product_types?: string[]; fallback_sub?: string; subs?: Sub[] };
+// A product joins the FIRST main (in mapping order) whose product_types include
+// its Shopify product type (and, when require_tags is set, that has one of those
+// tags), or whose handles list names it. Inside a main it gets the first sub
+// that matches by Shopify collection, tag, product type or handle; otherwise
+// fallback_sub. catch_all_types: a product of one of these types that matched
+// no main goes to this main (e.g. a wine with no style tag).
+type Sub = {
+  name: string;
+  tags?: string[];
+  product_types?: string[];
+  collections?: string[];
+  handles?: string[];
+};
+type Main = {
+  name: string;
+  product_types?: string[];
+  require_tags?: string[];
+  handles?: string[];
+  catch_all_types?: string[];
+  fallback_sub?: string;
+  image_handle?: string;
+  subs?: Sub[];
+};
 type Exclusions = {
   product_types?: string[];
   product_type_prefixes?: string[];
@@ -104,21 +127,72 @@ const anyTag = (list: string[] | undefined, tags: string[]) =>
   !!list && list.some((t) => tags.includes(t));
 const r3 = (n: number) => Math.round(n * 1000) / 1000;
 
-function classify(p: SfProduct, map: Main[], ex: Exclusions) {
+function classify(
+  p: SfProduct,
+  map: Main[],
+  ex: Exclusions,
+  inCollections: Map<string, Set<string>>,
+) {
   const type = (p.productType ?? "").trim();
   if (has(ex.product_types, type)) return null;
   if (ex.product_type_prefixes?.some((pre) => type.startsWith(pre))) return null;
   if (has(ex.vendors, p.vendor)) return null;
   if (anyTag(ex.tags, p.tags)) return null;
-  for (const m of map) {
-    const subs = m.subs ?? [];
-    const inMain = has(m.product_types, type) || subs.some((s) => has(s.product_types, type));
-    if (!inMain) continue;
+  const cols = inCollections.get(p.id) ?? new Set<string>();
+  const pick = (m: Main) => {
     if (anyTag(ex.tags_in_main?.[m.name], p.tags)) return null;
-    const sub = subs.find((s) => has(s.product_types, type) || anyTag(s.tags, p.tags));
+    const sub = (m.subs ?? []).find(
+      (s) =>
+        has(s.handles, p.handle) ||
+        (s.collections ?? []).some((c) => cols.has(c)) ||
+        anyTag(s.tags, p.tags) ||
+        has(s.product_types, type),
+    );
     return { main: m.name, sub: sub?.name ?? m.fallback_sub ?? null };
+  };
+  for (const m of map) {
+    if (has(m.handles, p.handle)) return pick(m);
   }
-  return null; // not in the mapping (accessories, glassware, tickets, ...)
+  for (const m of map) {
+    const typeOk = has(m.product_types, type);
+    if (typeOk && (!m.require_tags?.length || anyTag(m.require_tags, p.tags))) return pick(m);
+  }
+  const catchAll = map.find((m) => has(m.catch_all_types, type));
+  return catchAll ? pick(catchAll) : null; // not in the mapping (accessories, glassware, ...)
+}
+
+/** Product ids in each Shopify collection the mapping uses for sub categories. */
+async function collectionMembers(map: Main[]): Promise<Map<string, Set<string>>> {
+  const handles = new Set(map.flatMap((m) => (m.subs ?? []).flatMap((s) => s.collections ?? [])));
+  const byProduct = new Map<string, Set<string>>();
+  for (const handle of handles) {
+    let after: string | null = null;
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const r = await fetch(STOREFRONT, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "X-Shopify-Storefront-Access-Token": STOREFRONT_TOKEN,
+        },
+        body: JSON.stringify({
+          query: `query($h: String!, $a: String) { collection(handle: $h) { products(first: 250, after: $a) {
+            pageInfo { hasNextPage endCursor } nodes { id } } } }`,
+          variables: { h: handle, a: after },
+        }),
+      });
+      if (!r.ok) throw new Error(`Shopify Storefront HTTP ${r.status} (collection ${handle})`);
+      const j = await r.json();
+      const prods = j.data?.collection?.products;
+      if (!prods) break; // collection missing: ignore it
+      for (const n of prods.nodes as Array<{ id: string }>) {
+        if (!byProduct.has(n.id)) byProduct.set(n.id, new Set());
+        byProduct.get(n.id)!.add(handle);
+      }
+      if (!prods.pageInfo.hasNextPage) break;
+      after = prods.pageInfo.endCursor;
+    }
+  }
+  return byProduct;
 }
 
 function toRow(p: SfProduct, cat: { main: string; sub: string | null }) {
@@ -164,7 +238,7 @@ async function setting<T>(key: string, fallback: T): Promise<T> {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
-  let body: { key?: string; dry_run?: boolean } = {};
+  let body: { key?: string; dry_run?: boolean; mapping?: Main[]; exclusions?: Exclusions } = {};
   try {
     body = await req.json();
   } catch {
@@ -176,15 +250,19 @@ Deno.serve(async (req) => {
 
   const started = Date.now();
   try {
-    const map = await setting<Main[]>("category_mapping", []);
-    const ex = await setting<Exclusions>("exclusions", {});
+    const map =
+      body.dry_run && body.mapping ? body.mapping : await setting<Main[]>("category_mapping", []);
+    const ex =
+      body.dry_run && body.exclusions
+        ? body.exclusions
+        : await setting<Exclusions>("exclusions", {});
     if (!Array.isArray(map) || map.length === 0)
       throw new Error("bf_settings.category_mapping is empty");
 
-    const products = await fetchAll();
+    const [products, inCollections] = await Promise.all([fetchAll(), collectionMembers(map)]);
     const rows = products
       .map((p) => {
-        const c = classify(p, map, ex);
+        const c = classify(p, map, ex, inCollections);
         return c ? toRow(p, c) : null;
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
@@ -193,13 +271,27 @@ Deno.serve(async (req) => {
     for (const r of rows) counts[r.main_category] = (counts[r.main_category] ?? 0) + 1;
 
     if (body.dry_run) {
+      // In-stock counts per main / sub, and in-stock products left without a category.
+      const tree: Record<string, Record<string, number>> = {};
+      for (const r of rows.filter((x) => x.available)) {
+        tree[r.main_category] ??= {};
+        const t = tree[r.main_category]!;
+        t[r.sub_category ?? "(none)"] = (t[r.sub_category ?? "(none)"] ?? 0) + 1;
+      }
+      const kept = new Set(rows.map((r) => r.product_id));
+      const leftOut: Record<string, number> = {};
+      for (const p of products) {
+        if (kept.has(p.id) || !p.variants.nodes.some((v) => v.availableForSale)) continue;
+        leftOut[p.productType || "(no type)"] = (leftOut[p.productType || "(no type)"] ?? 0) + 1;
+      }
       return json({
         ok: true,
         dry_run: true,
         fetched: products.length,
         kept: rows.length,
         counts,
-        sample: rows.slice(0, 3),
+        tree,
+        leftOut,
       });
     }
 

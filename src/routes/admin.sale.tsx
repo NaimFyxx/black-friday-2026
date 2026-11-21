@@ -293,7 +293,7 @@ function SalePage() {
           <Panel className="space-y-4">
             <Field
               label="Category mapping (JSON)"
-              hint="Main categories in chip order. A product joins a main by its Shopify product type; its sub category is the first sub whose product types or tags match."
+              hint="Category circles in order. A product joins the first category whose product_types match its Shopify product type (require_tags: it must also have one of these tags; handles: named products). Inside it, the first sub category whose Shopify collections, tags or product types match. image_handle: the product whose photo shows in the circle."
             >
               <Textarea
                 rows={14}

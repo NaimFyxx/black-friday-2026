@@ -64,6 +64,27 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: category circles and Shopify sub categories
+
+- `category_mapping` now has 14 categories, shown as photo circles (page row
+  above the filter bar, and a grid in the Filter & sort panel): Cigars, Red
+  Wine, White Wine, Rosé & Orange, Beer, Whisky, Vodka, Tequila & Mezcal, Sake,
+  Arak, Gin, Rum, Cognac & Brandy, Liqueurs & Bitters. Dukkan is not used.
+- Beer and Cider are now INCLUDED (Naim's decision, 21 Nov); removed from
+  `exclusions.product_types`.
+- Sub categories come from Shopify collections where they exist (e.g.
+  champagne, prosecco, sparkling-wine, single-malt-whisky, blanco-tequila,
+  nicaraguan-cigars, french-wines). Mapping options: `require_tags`,
+  `handles`, `catch_all_types`, sub `collections`, `image_handle`.
+- `bf-products-sync` reads collection membership; a dry run accepts a
+  `mapping` / `exclusions` to try without saving and reports in-stock products
+  left without a category.
+- `bf_catalog_facets` returns `image` per main (`bf_main_image`), SQL in
+  `docs/sql/2026-11-21-bf-category-images.sql`.
+- Checked: every in-stock drink lands in a category; left out are only the
+  excluded groups (Cuban cigars, food, tobacco, mixers, bundles, accessories).
+
+
 ### 21 Nov 2026: simpler filters
 
 - Filter bar is now: category tabs (All / Wine / Spirits / Cigars, "up to X%"

@@ -5,6 +5,7 @@ import { Loader2, Search } from "lucide-react";
 
 import { BackToTop } from "@/components/grid/BackToTop";
 import { CatalogCard } from "@/components/grid/CatalogCard";
+import { CategoryCircles } from "@/components/grid/CategoryCircles";
 import { FilterBar } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
@@ -204,6 +205,18 @@ function Storefront() {
               {sale && facets && <TopDeals items={facets.top_deals} threshold={threshold} />}
 
               <div ref={filtersAnchor} aria-hidden="true" />
+              {facets && (
+                <div className="pt-4 pb-2">
+                  <CategoryCircles
+                    mains={facets.mains}
+                    active={filters.main}
+                    sale={sale}
+                    allUpto={facets.headline_upto}
+                    layout="row"
+                    onPick={(main) => setFilters({ main, sub: undefined })}
+                  />
+                </div>
+              )}
               {facets && <FilterBar facets={facets} filters={filters} onChange={setFilters} />}
 
               {/* Product count and sort live in the filter bar; this marks the top of the grid. */}

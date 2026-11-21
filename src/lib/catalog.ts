@@ -53,6 +53,8 @@ export interface Chip {
   name: string;
   count: number;
   upto: number | null;
+  /** Main categories only: photo for the category circle. */
+  image?: string | null;
 }
 
 export interface CatalogFacets {
