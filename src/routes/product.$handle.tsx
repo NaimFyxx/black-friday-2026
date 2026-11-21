@@ -157,7 +157,7 @@ function ProductPage() {
 
         <div className="flex flex-col">
           <p className="text-[11px] tracking-[0.22em] text-muted-foreground uppercase">
-            {product.productType || "Fyxx"} · {product.vendor}
+            {product.productType || "Fyxx"}
           </p>
           <h1 className="mt-3 font-display text-5xl leading-[1.02]">{product.title}</h1>
           <p className="mt-4 font-display text-3xl tabular-nums">
