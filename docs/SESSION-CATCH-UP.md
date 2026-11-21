@@ -66,6 +66,11 @@ and Pulse sets them.
 
 ### 21 Nov 2026: teaser hero and cart note
 
+Later the same day: `sale_start` moved to **27 Nov 10:00 Amman**
+(`2026-11-27T10:00:00+03:00`), subline now "One day only", cart note now says
+10:00, and the countdown shows seconds ("5d 03h 12m 08s"). `sale_end` is still
+1 Dec 00:00 and needs confirming.
+
 Database (SQL in `docs/sql/2026-11-21-bf-teaser.sql`, migration
 `bf_teaser_copy`):
 - New `bf_settings` keys: `teaser_headline`, `teaser_subline`,
