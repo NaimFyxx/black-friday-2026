@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { SiteHeader } from "../components/SiteHeader";
 import { Toaster } from "../components/ui/sonner";
 import { useCartSync } from "../hooks/useCartSync";
+import { useKlaviyoFormsOff } from "../hooks/useKlaviyoFormsOff";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CAMPAIGN_NAME, trackCampaignView, trackPixelPageView } from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
@@ -333,6 +334,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   useCartSync();
+  useKlaviyoFormsOff();
   // Capture utm_* / ?from=app on landing (any page), first-touch, then tag the
   // session in GA with that source.
   const isAdminPage = useRouterState({

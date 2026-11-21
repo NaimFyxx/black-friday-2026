@@ -64,6 +64,17 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: Klaviyo popups off on this site
+
+- Klaviyo signup forms (the "Fyxx Friday is Almost Here" popup and the
+  "Early Access" teaser) are hidden on friday.myfyxx.com by a CSS rule at the
+  end of `src/styles.css`; `src/hooks/useKlaviyoFormsOff.ts` (used in
+  `__root.tsx`) undoes any scroll lock a hidden Klaviyo popup sets. Spin & win
+  is the only popup. Klaviyo tracking is untouched.
+- Cleaner long term: in Klaviyo, exclude friday.myfyxx.com in the forms'
+  targeting (then these two pieces can go).
+
+
 ### 21 Nov 2026 (later): Spin & win is now a real slot machine, no email
 
 - `src/components/spin/SpinWidget.tsx` rebuilt: cabinet with blinking bulbs,

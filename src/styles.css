@@ -222,3 +222,15 @@
     animation: none;
   }
 }
+
+/* Klaviyo signup forms (popups, slide-ins, "Early Access" teasers) are off on
+   this site: Spin & win is the only popup. Every Klaviyo onsite form sits in a
+   kl-private-reset-css-* container. Tracking is unaffected. See
+   src/hooks/useKlaviyoFormsOff.ts. */
+[class*="kl-private-reset-css"],
+[class*="kl-teaser-"],
+div[aria-label="POPUP Form"],
+div[aria-label="FLYOUT Form"],
+div[aria-label="FULLSCREEN Form"] {
+  display: none !important;
+}
