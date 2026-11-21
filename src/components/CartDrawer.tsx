@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { ExternalLink, Loader2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/sheet";
 import { trackBeginCheckout } from "@/lib/analytics";
 import { formatJod, formatPrice } from "@/lib/shopify";
+import { teaserQueryOptions } from "@/lib/teaser";
 import { withStoredUtm } from "@/lib/utm-attribution";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 import { useCartUi } from "@/stores/cartUiStore";
@@ -89,6 +91,7 @@ export function CartDrawer() {
               ? "Nothing in here yet"
               : `${totalItems} item${totalItems !== 1 ? "s" : ""} held in Shopify`}
           </SheetDescription>
+          <TeaserCartNote />
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col px-6">
@@ -187,5 +190,17 @@ export function CartDrawer() {
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** Teaser phase only: tells shoppers the prices drop on the day (text from bf_settings). */
+function TeaserCartNote() {
+  const { data } = useQuery(teaserQueryOptions());
+  const note = data?.state === "preview" ? data.copy.teaser_cart_note : undefined;
+  if (!note) return null;
+  return (
+    <p className="ff-small mt-2 rounded-md bg-ff-warm-cream px-3 py-2 text-xs text-ff-burgundy">
+      {note}
+    </p>
   );
 }

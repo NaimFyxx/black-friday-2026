@@ -29,6 +29,11 @@ type Form = {
   price_bands: string;
   category_mapping: string;
   exclusions: string;
+  teaser_headline: string;
+  teaser_subline: string;
+  teaser_countdown_label: string;
+  teaser_button: string;
+  teaser_cart_note: string;
 };
 
 function SalePage() {
@@ -53,6 +58,11 @@ function SalePage() {
       price_bands: ((s["price_bands"] as number[] | undefined) ?? [20, 50, 100]).join(", "),
       category_mapping: JSON.stringify(s["category_mapping"] ?? [], null, 2),
       exclusions: JSON.stringify(s["exclusions"] ?? {}, null, 2),
+      teaser_headline: String(s["teaser_headline"] ?? ""),
+      teaser_subline: String(s["teaser_subline"] ?? ""),
+      teaser_countdown_label: String(s["teaser_countdown_label"] ?? ""),
+      teaser_button: String(s["teaser_button"] ?? ""),
+      teaser_cart_note: String(s["teaser_cart_note"] ?? ""),
     });
   }, [data, form]);
 
@@ -90,6 +100,11 @@ function SalePage() {
         .filter((v) => v > 0),
       category_mapping: mapping,
       exclusions,
+      teaser_headline: form.teaser_headline,
+      teaser_subline: form.teaser_subline,
+      teaser_countdown_label: form.teaser_countdown_label,
+      teaser_button: form.teaser_button,
+      teaser_cart_note: form.teaser_cart_note,
     });
   };
 
@@ -161,6 +176,48 @@ function SalePage() {
               Before the start: normal prices, no badges. During: only discounted products, badges,
               &quot;up to&quot; and Top deals. After the end: a thank-you message.
             </p>
+          </Panel>
+
+          <Panel className="space-y-4">
+            <p className="font-medium">Before the sale: big header and cart note</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Headline">
+                <Input
+                  value={form.teaser_headline}
+                  onChange={(e) => set("teaser_headline")(e.target.value)}
+                />
+              </Field>
+              <Field label="Line under the headline">
+                <Input
+                  value={form.teaser_subline}
+                  onChange={(e) => set("teaser_subline")(e.target.value)}
+                />
+              </Field>
+              <Field
+                label="Countdown text"
+                hint="Shown before the time left, e.g. Prices drop in 5d 03h 12m"
+              >
+                <Input
+                  value={form.teaser_countdown_label}
+                  onChange={(e) => set("teaser_countdown_label")(e.target.value)}
+                />
+              </Field>
+              <Field label="Button" hint="Scrolls down to the filters.">
+                <Input
+                  value={form.teaser_button}
+                  onChange={(e) => set("teaser_button")(e.target.value)}
+                />
+              </Field>
+            </div>
+            <Field
+              label="Note in the cart"
+              hint="Shown in the cart only before the sale starts. Leave empty to hide it."
+            >
+              <Input
+                value={form.teaser_cart_note}
+                onChange={(e) => set("teaser_cart_note")(e.target.value)}
+              />
+            </Field>
           </Panel>
 
           <Panel className="grid gap-4 sm:grid-cols-2">

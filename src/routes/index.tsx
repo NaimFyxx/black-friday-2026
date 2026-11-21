@@ -8,6 +8,7 @@ import { CatalogCard } from "@/components/grid/CatalogCard";
 import { FilterBar, SortMenu } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
+import { TeaserHero } from "@/components/hero/TeaserHero";
 import { Input } from "@/components/ui/input";
 import {
   catalogQueryOptions,
@@ -15,6 +16,7 @@ import {
   type CatalogFilters,
   type SortKey,
 } from "@/lib/catalog";
+import { teaserQueryOptions } from "@/lib/teaser";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 
 const SORTS: SortKey[] = ["discount", "price_asc", "price_desc", "newest"];
@@ -41,6 +43,7 @@ export const Route = createFileRoute("/")({
   loader: async ({ context, deps }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(facetsQueryOptions(deps)),
+      context.queryClient.ensureQueryData(teaserQueryOptions()),
       context.queryClient.ensureInfiniteQueryData(catalogQueryOptions(deps)),
     ]);
     return dehydrate(context.queryClient);
@@ -84,6 +87,7 @@ function Storefront() {
   }
 
   const { data: facets } = useQuery(facetsQueryOptions(filters));
+  const { data: teaser } = useQuery(teaserQueryOptions());
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery(
     catalogQueryOptions(filters),
   );
@@ -91,6 +95,19 @@ function Storefront() {
   const total = data?.pages[0]?.total ?? 0;
   const state = facets?.state ?? data?.pages[0]?.state ?? "preview";
   const sale = state === "sale";
+  // Teaser phase (before sale_start): the big hero replaces the small logo banner.
+  const showHero = state === "preview" && !!teaser && teaser.state === "preview";
+  const filtersAnchor = useRef<HTMLDivElement>(null);
+  const scrollToFilters = useCallback(() => {
+    const el = filtersAnchor.current;
+    if (!el) return;
+    const header = document.querySelector("header")?.getBoundingClientRect().height ?? 0;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({
+      top: el.getBoundingClientRect().top + window.scrollY - header,
+      behavior: reduce ? "auto" : "smooth",
+    });
+  }, []);
   const threshold = Number(facets?.badge_amount_threshold ?? 100);
   const cartCount = useCartStore(selectCartCount);
   const [mounted, setMounted] = useState(false);
@@ -149,15 +166,23 @@ function Storefront() {
         </div>
       </div>
 
+      {showHero && (
+        <TeaserHero
+          info={teaser}
+          onStart={scrollToFilters}
+          onSaleStarted={() => queryClient.invalidateQueries()}
+        />
+      )}
+
       <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">
         <div className="mx-auto max-w-[1320px] px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
           {/* Fyxx Friday logo + the four campaign bottles, centred. During the
               sale the headline "Up to X% off" sits under them. */}
           <div className="flex flex-col items-center gap-4 pb-5">
-            <div aria-hidden="true" className="flex items-end justify-center">
+            {!showHero && <div aria-hidden="true" className="flex items-end justify-center">
               <img src="/brand/fyxx-friday-logo-red.svg" alt="" width={2587} height={1446} fetchPriority="high" className="h-16 w-auto md:h-24" />
               <img src="/brand/fyxx-friday-bottles.webp" alt="" width={942} height={1202} fetchPriority="high" className="-ml-4 h-24 w-auto md:-ml-6 md:h-36" />
-            </div>
+            </div>}
             {sale && facets?.headline_upto ? (
               <p className="ff-headline text-3xl text-ff-red uppercase md:text-5xl">Up to {facets.headline_upto}% off</p>
             ) : null}
@@ -177,6 +202,7 @@ function Storefront() {
             <>
               {sale && facets && <TopDeals items={facets.top_deals} threshold={threshold} />}
 
+              <div ref={filtersAnchor} aria-hidden="true" />
               {facets && <FilterBar facets={facets} filters={filters} onChange={setFilters} />}
 
               <div ref={gridTop} className="ff-small mt-4 flex items-center gap-2 text-xs text-ff-black/70">

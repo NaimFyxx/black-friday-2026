@@ -24,6 +24,11 @@ const KEYS = [
   "category_mapping",
   "exclusions",
   "products_last_refresh",
+  "teaser_headline",
+  "teaser_subline",
+  "teaser_countdown_label",
+  "teaser_button",
+  "teaser_cart_note",
 ] as const;
 
 async function admin() {
@@ -118,6 +123,15 @@ const ammanLocal = z
   .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Use the date and time picker")
   .transform((v) => `${v}:00+03:00`);
 const int = (lo: number, hi: number) => z.number().int().min(lo).max(hi);
+// Shop copy: plain text, no em or en dashes (house style).
+const copy = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max)
+    .refine((v) => !/[\u2013\u2014]/.test(v), {
+      message: "Please don't use dashes like – or — in shop text",
+    });
 
 const SubSchema = z.object({
   name: z.string().min(1).max(40),
@@ -153,6 +167,11 @@ const SaveInput = z
     price_bands: z.array(z.number().positive()).min(1).max(8),
     category_mapping: MappingSchema,
     exclusions: ExclusionsSchema,
+    teaser_headline: copy(80).pipe(z.string().min(1, "The headline can't be empty")),
+    teaser_subline: copy(140),
+    teaser_countdown_label: copy(40),
+    teaser_button: copy(40).pipe(z.string().min(1, "The button text can't be empty")),
+    teaser_cart_note: copy(200),
   })
   .refine((d) => new Date(d.sale_start) < new Date(d.sale_end), {
     message: "The sale must end after it starts",

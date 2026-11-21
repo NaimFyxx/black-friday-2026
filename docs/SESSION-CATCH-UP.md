@@ -64,6 +64,32 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: teaser hero and cart note
+
+Database (SQL in `docs/sql/2026-11-21-bf-teaser.sql`, migration
+`bf_teaser_copy`):
+- New `bf_settings` keys: `teaser_headline`, `teaser_subline`,
+  `teaser_countdown_label`, `teaser_button`, `teaser_cart_note`.
+- New public function `bf_teaser()`: the sale state plus those five texts only.
+
+Site:
+- `src/components/hero/TeaserHero.tsx`: big burgundy hero shown only before
+  `sale_start` (cream logo SVG, campaign bottles, headline, subline, countdown
+  "Prices drop in 5d 03h 12m", button that smooth-scrolls to the filter bar).
+  It replaces the small logo and bottles banner in that phase; sale and ended
+  states are unchanged. When the countdown hits zero the page refetches and
+  switches to the sale state by itself.
+- New smaller bottle images `public/brand/fyxx-friday-bottles-360.webp` and
+  `-600.webp` (29 KB and 52 KB) for phones.
+- Cart drawer shows `teaser_cart_note` before the sale only.
+- `/admin/sale` edits the five texts (dashes like – and — are refused).
+- `src/lib/teaser.ts`: data and countdown format.
+
+Cart: tested add, close browser, reopen (desktop and 360x640): cart kept
+(localStorage `shopify-cart` + Shopify cart id). Shopify keeps a cart 30 days
+after its last change. Open point: the drawer shows the price saved when the
+item was added; it does not refresh prices from Shopify (checkout does).
+
 ### 19 Nov 2026: catalog, filters, sorting and discount badges
 
 Database (SQL in `docs/sql/2026-11-19-bf-products.sql`, migration
