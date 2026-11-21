@@ -3,8 +3,8 @@
 // One shared password: the BLACK_FRIDAY_ADMIN_PASSWORD secret in the Supabase
 // project. This site can't read Supabase secrets, so the `bf-admin` edge
 // function checks the password for us (see bf-edge.server.ts).
-// A correct password gets an encrypted, HttpOnly session cookie for 30 days,
-// keyed by bf_settings.admin_session_secret (change that value to sign
+// A correct password gets an encrypted, HttpOnly session cookie for 400 days,
+// renewed on every /admin visit, keyed by bf_settings.admin_session_secret (change that value to sign
 // everyone out).
 // FAIL CLOSED: if the password secret is unset/short, or anything can't be
 // reached, nobody can sign in.
@@ -22,7 +22,9 @@ async function sessionConfig() {
   return {
     name: "bf_admin",
     password: secret,
-    maxAge: 60 * 60 * 24 * 30,
+    // 400 days: the longest a browser keeps a cookie. Renewed on every /admin
+    // visit (isAdminAndRenew), so in practice you stay signed in.
+    maxAge: 60 * 60 * 24 * 400,
     cookie: { httpOnly: true, secure: true, sameSite: "lax" as const, path: "/" },
   };
 }
@@ -49,6 +51,19 @@ export async function isAdmin(): Promise<boolean> {
   try {
     const session = await openSession<AdminSession>(await sessionConfig());
     return session.data.admin === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Like isAdmin, but also restarts the 400-day clock, so anyone who opens
+ *  /admin at least once a year stays signed in. Called when /admin loads. */
+export async function isAdminAndRenew(): Promise<boolean> {
+  try {
+    const session = await openSession<AdminSession>(await sessionConfig());
+    if (session.data.admin !== true) return false;
+    await session.update({ admin: true });
+    return true;
   } catch {
     return false;
   }
