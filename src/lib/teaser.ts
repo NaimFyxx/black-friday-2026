@@ -11,6 +11,8 @@ export interface TeaserInfo {
   state: SaleState;
   sale_start: string | null;
   sale_end: string | null;
+  /** Header navigation sections (bf_settings.nav_groups). */
+  nav_groups?: string[];
   copy: {
     teaser_headline?: string;
     teaser_subline?: string;

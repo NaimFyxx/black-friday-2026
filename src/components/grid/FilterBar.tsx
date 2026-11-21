@@ -36,6 +36,11 @@ export function FilterBar({
   const band = facets.bands.find((b) => b.index === filters.band);
   const tags: Array<{ label: string; clear: Partial<CatalogFilters> }> = [];
   if (filters.q) tags.push({ label: `“${filters.q}”`, clear: { q: undefined } });
+  if (filters.group)
+    tags.push({
+      label: filters.group,
+      clear: { group: undefined, main: undefined, sub: undefined },
+    });
   if (filters.main) tags.push({ label: filters.main, clear: { main: undefined, sub: undefined } });
   if (filters.sub) tags.push({ label: filters.sub, clear: { sub: undefined } });
   if (band) tags.push({ label: bandLabel(band), clear: { band: undefined } });
@@ -44,7 +49,7 @@ export function FilterBar({
   const active = tags.filter((t) => !("q" in t.clear)).length;
 
   return (
-    <div className="sticky top-16 z-30 -mx-5 border-b border-ff-black/15 bg-ff-cream px-5 md:top-[88px] md:-mx-10 md:px-10">
+    <div className="sticky top-[100px] z-30 -mx-5 border-b border-ff-black/15 bg-ff-cream px-5 md:top-[88px] md:-mx-10 md:px-10">
       {/* 1. Filter button + count */}
       <div className="flex items-center justify-between gap-3 py-2">
         <button
@@ -86,6 +91,7 @@ export function FilterBar({
               onClick={() =>
                 onChange({
                   q: undefined,
+                  group: undefined,
                   main: undefined,
                   sub: undefined,
                   band: undefined,
@@ -158,7 +164,13 @@ function FilterSheet({
           <Section title="Category">
             {f && (
               <CategoryCircles
-                mains={f.mains}
+                mains={
+                  draft.group
+                    ? f.mains.filter((m) =>
+                        f.groups.find((g) => g.name === draft.group)?.mains.includes(m.name),
+                      )
+                    : f.mains
+                }
                 active={draft.main}
                 sale={sale}
                 allUpto={f.headline_upto}
@@ -247,6 +259,7 @@ function FilterSheet({
             disabled={!f || total === 0}
             onClick={() =>
               onApply({
+                group: draft.group,
                 main: draft.main,
                 sub: draft.sub,
                 band: draft.band,

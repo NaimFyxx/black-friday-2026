@@ -1,17 +1,52 @@
-import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useSearch } from "@tanstack/react-router";
 
 import { CartDrawer } from "@/components/CartDrawer";
+import { teaserQueryOptions } from "@/lib/teaser";
+import { cn } from "@/lib/utils";
 
 // The one site header (every shop page): burgundy with the cream Fyxx Friday
-// logo, per the brand guide. Links go to the homepage sections so they also
-// work from a product page.
-const HOME = { to: "/", search: {} } as const;
-
+// logo, per the brand guide, and the shop sections (The Cellar, The Bar, The
+// Humidor; bf_settings.nav_groups, editable on /admin). A section shows only
+// its products on the landing page. Phones get the sections as a slim second
+// row (fixed height, so nothing moves while the names load).
 export function SiteHeader() {
+  const { data } = useQuery(teaserQueryOptions());
+  // Drawn after the page loads (server and first paint match); the rows keep
+  // their height, so nothing shifts.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const groups = mounted ? (data?.nav_groups ?? []) : [];
+  const search = useSearch({ strict: false }) as { group?: string };
+  const active = search.group;
+
+  const links = groups.map((g) => (
+    <Link
+      key={g}
+      to="/"
+      search={{ group: g }}
+      hash="shop"
+      aria-current={active === g ? "page" : undefined}
+      className={cn(
+        "whitespace-nowrap border-b-2 pb-0.5 transition-colors",
+        active === g ? "border-ff-red text-ff-cream" : "border-transparent hover:text-ff-red",
+      )}
+    >
+      {g}
+    </Link>
+  ));
+
   return (
     <header className="sticky top-0 z-40 bg-ff-burgundy text-ff-cream">
-      <div className="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-5 py-3 md:gap-6 md:px-10 md:py-4">
-        <Link {...HOME} hash="top" aria-label="Fyxx Friday home" className="block shrink-0">
+      <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between gap-4 px-5 md:h-[88px] md:gap-6 md:px-10">
+        <Link
+          to="/"
+          search={{}}
+          hash="top"
+          aria-label="Fyxx Friday home"
+          className="block shrink-0"
+        >
           <img
             src="/brand/fyxx-friday-logo-cream.svg"
             alt="Fyxx Friday"
@@ -21,22 +56,25 @@ export function SiteHeader() {
           />
         </Link>
 
-        <nav className="hidden items-center gap-7 text-[11px] font-semibold tracking-wide uppercase md:flex">
-          <Link {...HOME} hash="top" className="transition-colors hover:text-ff-red">
-            Home
-          </Link>
-          <Link {...HOME} hash="catalog" className="transition-colors hover:text-ff-red">
-            The Cellar
-          </Link>
-          <Link {...HOME} hash="footer" className="transition-colors hover:text-ff-red">
-            About us
-          </Link>
+        <nav
+          aria-label="Shop sections"
+          className="ff-subline hidden items-center gap-9 text-sm tracking-wide uppercase md:flex"
+        >
+          {links}
         </nav>
 
         <div className="flex items-center gap-3">
           <CartDrawer />
         </div>
       </div>
+
+      {/* Phones: the sections on their own row */}
+      <nav
+        aria-label="Shop sections"
+        className="ff-subline flex h-9 items-center justify-center gap-7 border-t border-ff-cream/15 text-xs tracking-wide uppercase md:hidden"
+      >
+        {links}
+      </nav>
     </header>
   );
 }

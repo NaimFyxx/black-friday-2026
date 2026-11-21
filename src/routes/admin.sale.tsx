@@ -28,6 +28,7 @@ type Form = {
   batch_size: string;
   price_bands: string;
   discount_filters: string;
+  nav_groups: string;
   category_mapping: string;
   exclusions: string;
   teaser_headline: string;
@@ -57,6 +58,7 @@ function SalePage() {
       top_deals_count: String(s["top_deals_count"] ?? 12),
       batch_size: String(s["batch_size"] ?? 24),
       price_bands: ((s["price_bands"] as number[] | undefined) ?? [20, 50, 100]).join(", "),
+      nav_groups: JSON.stringify(s["nav_groups"] ?? [], null, 2),
       discount_filters: ((s["discount_filters"] as number[] | undefined) ?? [10, 20, 30]).join(
         ", ",
       ),
@@ -80,7 +82,12 @@ function SalePage() {
   const submit = () => {
     if (!form) return;
     setFormError(null);
-    let mapping: unknown, exclusions: unknown;
+    let mapping: unknown, exclusions: unknown, navGroups: unknown;
+    try {
+      navGroups = JSON.parse(form.nav_groups);
+    } catch {
+      return setFormError("Header sections is not valid JSON");
+    }
     try {
       mapping = JSON.parse(form.category_mapping);
     } catch {
@@ -102,6 +109,7 @@ function SalePage() {
         .split(",")
         .map((v) => Number(v.trim()))
         .filter((v) => v > 0),
+      nav_groups: navGroups,
       discount_filters: form.discount_filters
         .split(",")
         .map((v) => Number(v.trim()))
@@ -311,6 +319,17 @@ function SalePage() {
                 className="font-mono text-xs"
                 value={form.exclusions}
                 onChange={(e) => set("exclusions")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Header sections (JSON)"
+              hint="The links in the site header, e.g. The Cellar. Each shows the products of its main categories (names exactly as in the category mapping)."
+            >
+              <Textarea
+                rows={8}
+                className="font-mono text-xs"
+                value={form.nav_groups}
+                onChange={(e) => set("nav_groups")(e.target.value)}
               />
             </Field>
             <p className="text-xs text-muted-foreground">

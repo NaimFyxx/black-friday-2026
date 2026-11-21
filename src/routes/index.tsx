@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import {
   catalogQueryOptions,
   facetsQueryOptions,
+  type CatalogFacets,
   type CatalogFilters,
   type SortKey,
 } from "@/lib/catalog";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/")({
     const sort = search["sort"];
     const main = text(search["main"]);
     return {
+      group: text(search["group"]),
       main,
       sub: main ? text(search["sub"]) : undefined,
       band: Number.isInteger(band) && band >= 0 && band < 10 ? band : undefined,
@@ -217,11 +219,12 @@ function Storefront() {
             <>
               {sale && facets && <TopDeals items={facets.top_deals} threshold={threshold} />}
 
-              <div ref={filtersAnchor} aria-hidden="true" />
+              {/* "shop": where the header sections (The Cellar...) and the hero button land. */}
+              <div id="shop" ref={filtersAnchor} aria-hidden="true" className="scroll-mt-[100px] md:scroll-mt-[88px]" />
               {facets && (
                 <div className="pt-4 pb-2">
                   <CategoryCircles
-                    mains={facets.mains}
+                    mains={groupMains(facets, filters.group)}
                     active={filters.main}
                     sale={sale}
                     allUpto={facets.headline_upto}
@@ -278,6 +281,12 @@ function Storefront() {
       {state !== "ended" && <SpinWidget raised={mounted && cartCount > 0} />}
     </main>
   );
+}
+
+/** Inside a section (The Cellar...), only that section's category circles show. */
+function groupMains(facets: CatalogFacets, group: string | undefined) {
+  const g = group ? facets.groups.find((x) => x.name === group) : undefined;
+  return g ? facets.mains.filter((m) => g.mains.includes(m.name)) : facets.mains;
 }
 
 function CatalogSearch({ value, onSearch }: { value: string | undefined; onSearch: (q: string | undefined) => void }) {

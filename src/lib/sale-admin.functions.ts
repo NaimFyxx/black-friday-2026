@@ -22,6 +22,7 @@ const KEYS = [
   "batch_size",
   "price_bands",
   "discount_filters",
+  "nav_groups",
   "category_mapping",
   "exclusions",
   "products_last_refresh",
@@ -167,6 +168,11 @@ const SaveInput = z
     batch_size: int(6, 96),
     price_bands: z.array(z.number().positive()).min(1).max(8),
     discount_filters: z.array(z.number().int().min(1).max(95)).max(6),
+    nav_groups: z
+      .array(
+        z.object({ name: z.string().trim().min(1).max(30), mains: z.array(z.string()).min(1) }),
+      )
+      .max(6),
     category_mapping: MappingSchema,
     exclusions: ExclusionsSchema,
     teaser_headline: copy(80).pipe(z.string().min(1, "The headline can't be empty")),

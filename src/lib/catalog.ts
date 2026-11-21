@@ -17,6 +17,8 @@ export interface CatalogFilters {
   main?: string | undefined;
   sub?: string | undefined;
   band?: number | undefined;
+  /** Navigation section (The Cellar / The Bar / The Humidor): several main categories. */
+  group?: string | undefined;
   /** Sale only: discount at least this many percent. */
   disc?: number | undefined;
   q?: string | undefined;
@@ -69,6 +71,8 @@ export interface CatalogFacets {
   mains: Chip[];
   subs: Chip[];
   bands: Array<{ index: number; min: number | null; max: number | null; count: number }>;
+  /** Navigation sections with their main categories and product counts. */
+  groups: Array<{ name: string; mains: string[]; count: number }>;
   /** Products matching every current filter. */
   total: number;
   /** Sale only: "X% off or more" options, from bf_settings.discount_filters. */
@@ -88,6 +92,7 @@ const params = (f: CatalogFilters) => ({
   main: f.main ?? null,
   sub: f.sub ?? null,
   band: f.band ?? null,
+  group: f.group ?? null,
   disc: f.disc ?? null,
   q: f.q ?? null,
   sort: f.sort ?? null,
@@ -109,6 +114,7 @@ const filterKey = (f: CatalogFilters) => [
   f.main ?? "",
   f.sub ?? "",
   f.band ?? "",
+  f.group ?? "",
   f.disc ?? "",
   f.q ?? "",
   f.sort ?? "",

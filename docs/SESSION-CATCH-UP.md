@@ -64,6 +64,21 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: header sections (The Cellar / The Bar / The Humidor)
+
+- Header links Home / The Cellar / About us replaced by shop sections from
+  `bf_settings.nav_groups` (editable on /admin -> Sale & products): The Cellar
+  (Red Wine, White Wine, Rosé & Orange), The Bar (all spirits), The Humidor
+  (Cigars). Shown on desktop in the header and on phones as a second row
+  (header is now 100 px tall on phones; filter bar sticks at 100 px).
+- A section link goes to `/?group=<name>#shop`: only that section's products
+  and category circles show, with a removable tag.
+- SQL in `docs/sql/2026-11-21-bf-nav-groups.sql` (migration `bf_nav_groups`):
+  `bf_visible` 7-argument form (category list), the 6-argument form now wraps
+  it; `bf_group_mains`; `bf_catalog` / `bf_catalog_facets` accept `group` and
+  facets return `groups`; `bf_teaser` returns `nav_groups` for the header.
+
+
 ### 21 Nov 2026: beer removed again
 
 - Team decision: no beer after all. Removed the "Beer" main from
