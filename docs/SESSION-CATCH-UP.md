@@ -64,6 +64,14 @@ and Pulse sets them.
 
 ## Log
 
+### 21 Nov 2026: beer removed again
+
+- Team decision: no beer after all. Removed the "Beer" main from
+  `category_mapping` and added "Beer" and "Cider" back to
+  `exclusions.product_types`; the sync removed the 59 beer and cider rows from
+  `bf_products`. 13 category circles remain.
+
+
 ### 21 Nov 2026: choose a size before adding
 
 - "Add to cart" on a landing page card now looks the product up in Shopify
