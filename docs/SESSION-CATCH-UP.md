@@ -697,3 +697,9 @@ Migration bf_events_referrer_internal (`docs/sql/2026-11-22-bf-events-referrer-i
 - Full value = quantity x the regular price from bf_products (the higher of price and compare-at), so it stays at full price after Pulse sets the sale prices. Removals are not subtracted. SQL: docs/sql/2026-11-22-bf-cart-value.sql.
 - Next (later conversation): full value vs discounted value vs margin once prices are set. Cost stays server-side.
 - Live retests after Publish passed: reminder form shows "Done" (subscriptions 202), cart link merge (same device unchanged, second browser keeps its cart and gets all lines, higher quantity wins, runs once per tab).
+
+## 2026-11-22 late: theme snippet live on myfyxx.com
+- Shipped by the theme session (Fyxx-Store-Website, layout/theme.liquid). It is a sturdier version of docs/shopify-theme-fyxx-friday.md: the Tabarnapp app wipes cart attributes on every page load, so the block re-applies the five _bf_visit* attributes after load, after cart changes and right before checkout.
+- Tested live: Friday visitor's cart keeps all five attributes through a /cart reload; fresh visitors get none; Tabarnapp, the drawer and checkout still work.
+- The attribute names match what bf-admin's orders action reads (_bf_visit, _bf_visit_source/_medium/_campaign/_first), so "After the Friday site" on /admin will fill as orders come in.
+- Remove the block from the theme after 1 December 2026. The unpublished test theme "Fyxx Friday tracking TEST" can be deleted in Shopify admin.
