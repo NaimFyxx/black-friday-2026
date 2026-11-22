@@ -722,3 +722,11 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
   - from sale_start: "So far today" (bf-admin day_sales: all Shopify orders, cancelled/test left out, online vs Point of Sale) refreshing every 5 min, and "At this pace by midnight" = so far / last year's share by that time; "Too early to tell" before forecast_too_early_before_hour (13).
   - day_sales on 28 Nov 2025 gives 155 orders / JOD 14,268.564 vs Shopify analytics 158 / 14,245.769 (analytics counts returns and edits slightly differently).
 - My 7 live test carts from tonight are in bf_settings.test_sessions (forecast only).
+
+## 2026-11-22 late: banner, preview tracking, channels
+- Ticker: "UP TO 50% OFF" removed from bf_settings.ticker_preview and ticker_sale.
+- Tracking on previews: checked by running the site under the preview hostnames (id-preview--8fb79741-...lovable.app, 8fb79741-...lovableproject.com, localhost): no Meta, GA4, Clarity or Klaviyo requests and no bf_events, even after add to cart; friday.myfyxx.com loads all of them. The real preview URLs need a Lovable login, so they could not be opened directly.
+- bf_events.host (new column): the event's hostname. recordEvent drops any host not in tracking_hosts. Rows before 22 Nov 22:00 UTC have no host and can't be told apart from preview traffic.
+- Sales forecast now compares Fyxx Friday 2025 vs 2026 by channel, whole day 00:00 to midnight Amman: Total, Digital (website + app), Website, Mobile app, In store (Point of Sale), Staff orders (draft orders and Shopify phone app). Channel comes from the order's Shopify app (bf-admin day_sales, deployed v18 by MCP because the auto-deploy didn't pick it up).
+- Last year by this method: 155 orders, JOD 14,268.564 (website 7 / 646.130, app 55 / 4,162.180, in store 65 / 3,983.020, staff 28 / 5,477.234). Pace uses whole-day hourly shares (forecast_last_year.share_by_hour).
+- "So far today" now counts from 00:00 Amman on Friday (same window as last year). Cart estimate label: "Digital, estimate from carts". Odoo in-store data: later.

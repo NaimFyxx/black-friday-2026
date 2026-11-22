@@ -34,6 +34,7 @@ import {
   getSalesForecast,
   getSources,
   getTopAdded,
+  type Bucket,
   type DaySales,
   type SourceRow,
 } from "@/lib/admin.functions";
@@ -388,7 +389,8 @@ function LeavingSection({ range }: { range: Range }) {
 }
 
 /** "Most added to cart": adds, visits, full value, top first-touch source. */
-/** "Sales forecast": carts at Friday prices before the sale, live sales and pace on the day. */
+/** "Sales forecast": carts at Friday prices before the sale, live sales and pace on the
+ *  day, and this year vs last year by channel. */
 function SalesForecastSection() {
   const fn = useServerFn(getSalesForecast);
   const { data, isLoading, error } = useQuery({
@@ -398,15 +400,13 @@ function SalesForecastSection() {
     refetchInterval: 5 * 60_000,
     retry: 1,
   });
-  const ly = data?.lastYear ?? null;
-  const today = data?.today && data.today.status === "ok" ? (data.today as DaySales) : null;
   return (
     <Section
       title="Sales forecast"
       intro={
         data?.mode === "before"
-          ? "What the sale could bring in, from what people have in their carts now, with last year's Fyxx Friday for comparison."
-          : "Shopify sales since the sale started at 10:00, every channel, and where today is heading. Updates every 5 minutes."
+          ? "What the sale could bring in, from what people have in their carts now, and last year's Fyxx Friday by channel."
+          : "Shopify sales on Fyxx Friday, every channel, against last year. Updates every 5 minutes."
       }
     >
       {error ? (
@@ -414,11 +414,11 @@ function SalesForecastSection() {
       ) : isLoading || !data ? (
         <Loading />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-2">
           {data.mode === "before" && data.carts ? (
             <Panel className="space-y-2">
               <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
-                Online, estimate from carts
+                Digital, estimate from carts
               </p>
               <p className="font-display text-2xl tabular-nums">{formatJod(data.carts.value)}</p>
               <p className="text-xs text-muted-foreground">
@@ -428,7 +428,7 @@ function SalesForecastSection() {
                 {data.carts.rates.map((r) => (
                   <li key={r} className="flex justify-between gap-3">
                     <span>If {Math.round(r * 100)}% of carts buy</span>
-                    <span className="tabular-nums">{formatJod(data.carts!.value * r)}</span>
+                    <span className="tabular-nums">{formatJod((data.carts?.value ?? 0) * r)}</span>
                   </li>
                 ))}
               </ul>
@@ -441,13 +441,14 @@ function SalesForecastSection() {
               <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
                 {data.mode === "friday" ? "So far today" : "Fyxx Friday total"}
               </p>
-              {today ? (
+              {data.thisYear ? (
                 <>
-                  <p className="font-display text-2xl tabular-nums">{formatJod(today.total)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {today.orders} orders since 10:00, every channel.
+                  <p className="font-display text-2xl tabular-nums">
+                    {formatJod(data.thisYear.total)}
                   </p>
-                  <SplitLines s={today} />
+                  <p className="text-xs text-muted-foreground">
+                    {data.thisYear.orders} orders since 00:00, every channel.
+                  </p>
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
@@ -471,17 +472,12 @@ function SalesForecastSection() {
               )}
             </Panel>
           )}
-          {ly && (
-            <Panel className="space-y-2">
-              <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
-                Last year, Fyxx Friday 2025
-              </p>
-              <p className="font-display text-2xl tabular-nums">{formatJod(ly.total)}</p>
-              <p className="text-xs text-muted-foreground">
-                {ly.orders} orders on 28 Nov 2025, every channel.
-              </p>
-              <SplitLines s={ly} />
-            </Panel>
+          {data.lastYear && (
+            <ChannelCompare
+              lastYear={data.lastYear}
+              thisYear={data.thisYear}
+              before={data.mode === "before"}
+            />
           )}
         </div>
       )}
@@ -489,24 +485,80 @@ function SalesForecastSection() {
   );
 }
 
-function SplitLines({ s }: { s: DaySales }) {
+/** This year vs last year: total, Digital (website + app), in store, staff orders. */
+function ChannelCompare({
+  lastYear,
+  thisYear,
+  before,
+}: {
+  lastYear: DaySales;
+  thisYear: DaySales | null;
+  before: boolean;
+}) {
+  const digital = (d: DaySales) => ({
+    orders: d.channels.website.orders + d.channels.app.orders,
+    total: d.channels.website.total + d.channels.app.total,
+  });
+  const staff = (d: DaySales) => ({
+    orders: d.channels.staff.orders + d.channels.other.orders,
+    total: d.channels.staff.total + d.channels.other.total,
+  });
+  const rows: Array<{
+    label: string;
+    sub?: boolean;
+    strong?: boolean;
+    pick: (d: DaySales) => Bucket;
+  }> = [
+    { label: "Total", strong: true, pick: (d) => ({ orders: d.orders, total: d.total }) },
+    { label: "Digital (website + app)", strong: true, pick: digital },
+    { label: "Website", sub: true, pick: (d) => d.channels.website },
+    { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
+    { label: "In store (Point of Sale)", strong: true, pick: (d) => d.channels.inStore },
+    { label: "Staff orders (phone and draft)", strong: true, pick: staff },
+  ];
+  const cell = (b: Bucket | null) =>
+    b ? (
+      <>
+        {formatJod(b.total)}
+        <span className="block text-xs text-muted-foreground">{b.orders} orders</span>
+      </>
+    ) : (
+      <span className="text-muted-foreground">–</span>
+    );
   return (
-    <ul className="space-y-1 text-sm">
-      <li className="flex justify-between gap-3">
-        <span>Online (app, website, staff phone and draft orders)</span>
-        <span className="text-right tabular-nums whitespace-nowrap">
-          {formatJod(s.online.total)}
-          <span className="block text-xs text-muted-foreground">{s.online.orders} orders</span>
-        </span>
-      </li>
-      <li className="flex justify-between gap-3">
-        <span>In store (Point of Sale)</span>
-        <span className="text-right tabular-nums whitespace-nowrap">
-          {formatJod(s.inStore.total)}
-          <span className="block text-xs text-muted-foreground">{s.inStore.orders} orders</span>
-        </span>
-      </li>
-    </ul>
+    <Panel className="overflow-x-auto p-0">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-border text-left">
+            <th className={TH}>By channel</th>
+            <th className={THR}>Fyxx Friday 2025</th>
+            <th className={THR}>Fyxx Friday 2026</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.label} className={TR}>
+              <td className={TD}>
+                <span
+                  className={
+                    r.sub ? "block pl-4 text-muted-foreground" : r.strong ? "font-medium" : ""
+                  }
+                >
+                  {r.label}
+                </span>
+              </td>
+              <td className={TDR}>{cell(r.pick(lastYear))}</td>
+              <td className={TDR}>{cell(thisYear ? r.pick(thisYear) : null)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground sm:px-4">
+        Whole day, 00:00 to midnight Amman time: 28 Nov 2025 and Fri 27 Nov 2026
+        {before ? " (fills in from Friday)" : " (so far)"}. Shopify orders, cancelled ones left out.
+        In-store sales from Odoo come later.
+      </p>
+    </Panel>
   );
 }
 

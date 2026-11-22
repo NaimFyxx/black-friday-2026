@@ -628,33 +628,47 @@ export const getLeaving = createServerFn({ method: "GET" })
 
 // ── Sales forecast (box above "Most added to cart") ────────────────────
 
-export type DaySales = {
-  orders: number;
-  total: number;
-  online: { orders: number; total: number };
-  inStore: { orders: number; total: number };
+export type Bucket = { orders: number; total: number };
+export type Channels = {
+  website: Bucket;
+  app: Bucket;
+  inStore: Bucket;
+  staff: Bucket;
+  other: Bucket;
 };
-type LastYear = DaySales & {
-  day: string;
-  share_by_hour: Record<string, number>;
-};
+export type DaySales = { orders: number; total: number; channels: Channels };
 export type SalesForecast = {
   mode: "before" | "friday" | "after";
   now: string;
-  saleStart: string;
-  saleEnd: string;
-  lastYear: LastYear | null;
+  dayStart: string;
+  lastYear: (DaySales & { day: string }) | null;
   carts: { value: number; carts: number; units: number; rates: number[] } | null;
-  today:
-    (DaySales & { status: "ok" }) | { status: "not_configured" | "error"; message?: string } | null;
+  thisYear: DaySales | null;
+  thisYearError: string | null;
   pace: number | null;
   tooEarlyBefore: number;
 };
 
+const emptyBucket = (): Bucket => ({ orders: 0, total: 0 });
+function toChannels(raw: unknown): Channels {
+  const r = (raw ?? {}) as Partial<Record<keyof Channels, { orders?: unknown; total?: unknown }>>;
+  const b = (k: keyof Channels): Bucket =>
+    r[k] ? { orders: n(r[k]?.orders), total: n(r[k]?.total) } : emptyBucket();
+  return {
+    website: b("website"),
+    app: b("app"),
+    inStore: b("inStore"),
+    staff: b("staff"),
+    other: b("other"),
+  };
+}
+
 /**
- * Before the sale: cart value at Friday prices (bf_cart_forecast) and last
- * year. From sale_start: Shopify orders since then (all channels, via
- * bf-admin day_sales) and the pace by midnight. Totals only: no prices or cost.
+ * Before the sale: cart value at Friday prices (bf_cart_forecast). From the
+ * sale day: Shopify orders since 00:00 Amman that day, every channel, via
+ * bf-admin day_sales, compared with last year's Fyxx Friday (whole day, same
+ * method, bf_settings.forecast_last_year), plus the pace by midnight. Totals
+ * only: no prices or cost.
  */
 export const getSalesForecast = createServerFn({ method: "GET" }).handler(
   async (): Promise<SalesForecast> => {
@@ -677,38 +691,37 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
     const cfg = new Map<string, unknown>(
       ((rows ?? []) as Array<{ key: string; value: unknown }>).map((r) => [r.key, r.value]),
     );
-    const saleStart = String(cfg.get("sale_start") ?? "2026-11-27T10:00:00+03:00");
-    const saleEnd = String(cfg.get("sale_end") ?? "2026-11-28T00:00:00+03:00");
+    const saleStart = new Date(String(cfg.get("sale_start") ?? "2026-11-27T10:00:00+03:00"));
+    const saleEnd = new Date(String(cfg.get("sale_end") ?? "2026-11-28T00:00:00+03:00"));
+    // 00:00 Amman (UTC+3) on the sale day.
+    const a = new Date(saleStart.getTime() + 3 * 3_600_000);
+    const dayStart = new Date(
+      Date.UTC(a.getUTCFullYear(), a.getUTCMonth(), a.getUTCDate()) - 3 * 3_600_000,
+    );
     const tooEarlyBefore = n(cfg.get("forecast_too_early_before_hour")) || 13;
     const rates = Array.isArray(cfg.get("forecast_buy_rates"))
       ? (cfg.get("forecast_buy_rates") as unknown[]).map(n).filter((r) => r > 0 && r <= 1)
       : [0.2, 0.35, 0.5];
-    type Part = { orders?: unknown; total?: unknown };
     const ly = cfg.get("forecast_last_year") as
       | {
           day?: unknown;
           orders?: unknown;
           total?: unknown;
-          online?: Part;
-          in_store?: Part;
+          channels?: unknown;
           share_by_hour?: Record<string, number>;
         }
       | undefined;
-    const lastYear: LastYear | null = ly
+    const lastYear = ly
       ? {
           day: String(ly.day ?? ""),
           orders: n(ly.orders),
           total: n(ly.total),
-          online: { orders: n(ly.online?.orders), total: n(ly.online?.total) },
-          inStore: { orders: n(ly.in_store?.orders), total: n(ly.in_store?.total) },
-          share_by_hour: ly.share_by_hour ?? {},
+          channels: toChannels(ly.channels),
         }
       : null;
 
     const now = new Date();
-    const start = new Date(saleStart);
-    const end = new Date(saleEnd);
-    const mode = now < start ? "before" : now < end ? "friday" : "after";
+    const mode = now < saleStart ? "before" : now < saleEnd ? "friday" : "after";
 
     let carts: SalesForecast["carts"] = null;
     if (mode === "before") {
@@ -718,37 +731,46 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
       carts = { value: n(v.value), carts: n(v.carts), units: n(v.units), rates };
     }
 
-    let today: SalesForecast["today"] = null;
+    let thisYear: DaySales | null = null;
+    let thisYearError: string | null = null;
     let pace: number | null = null;
     if (mode !== "before") {
       const { callBfAdmin } = await import("./bf-edge.server");
-      const until = mode === "friday" ? new Date(now.getTime() + 60_000) : end;
+      const until = mode === "friday" ? new Date(now.getTime() + 60_000) : saleEnd;
       try {
-        const r = await callBfAdmin<
-          (DaySales & { status: "ok" }) | { status: "not_configured" | "error"; message?: string }
-        >({ action: "day_sales", since: start.toISOString(), until: until.toISOString() });
-        today = r;
-        if (r.status === "ok" && mode === "friday" && lastYear) {
-          pace = paceByMidnight({
-            soFar: r.total,
-            hour: ammanHour(now),
-            shareByHour: lastYear.share_by_hour,
-            tooEarlyBefore,
-          });
+        const r = await callBfAdmin<{
+          status: string;
+          message?: string;
+          orders?: unknown;
+          total?: unknown;
+          channels?: unknown;
+        }>({ action: "day_sales", since: dayStart.toISOString(), until: until.toISOString() });
+        if (r.status === "ok") {
+          thisYear = { orders: n(r.orders), total: n(r.total), channels: toChannels(r.channels) };
+          if (mode === "friday" && ly?.share_by_hour) {
+            pace = paceByMidnight({
+              soFar: thisYear.total,
+              hour: ammanHour(now),
+              shareByHour: ly.share_by_hour,
+              tooEarlyBefore,
+            });
+          }
+        } else {
+          thisYearError = r.message ?? r.status;
         }
       } catch (e) {
-        today = { status: "error", message: (e as Error).message };
+        thisYearError = (e as Error).message;
       }
     }
 
     return {
       mode,
       now: now.toISOString(),
-      saleStart,
-      saleEnd,
+      dayStart: dayStart.toISOString(),
       lastYear,
       carts,
-      today,
+      thisYear,
+      thisYearError,
       pace,
       tooEarlyBefore,
     };
