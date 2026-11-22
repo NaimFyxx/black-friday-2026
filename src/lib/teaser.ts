@@ -37,6 +37,12 @@ export interface TeaserInfo {
   /** Safety net: sale time reached but Shopify prices aren't ready yet. */
   updating?: boolean;
   reminder?: ReminderCopy | null;
+  /** "Only X left" at this many or fewer (during the sale). */
+  low_stock_max?: number;
+  /** After the sale: title, button text and link. */
+  ended?: { title?: string; button?: string; url?: string } | null;
+  /** Product pages: accessories to suggest, by Shopify product type. */
+  goes_well_with?: Array<{ product_types: string[]; main: string; sub?: string; title?: string }>;
   quick_links?: QuickLink[];
   /** Set while the hidden preview is on. */
   preview?: Preview;
@@ -51,6 +57,8 @@ export interface TeaserInfo {
     teaser_updating_note?: string;
     /** "Prices drop automatically. No code needed." */
     no_code_note?: string;
+    /** During the sale, before the countdown to sale_end: "Ends at midnight". */
+    sale_end_label?: string;
     /** Card label before the sale for products on the sale list. */
     sale_label_preview?: string;
   };

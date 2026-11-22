@@ -42,6 +42,10 @@ export interface CatalogItem {
   discount_percent: number; // 0 outside the sale
   /** On the Fyxx Friday sale list (bf_sale_flags). */
   in_sale?: boolean;
+  /** false: sold out during the sale (listed last, no add button). */
+  available?: boolean;
+  /** Units left of this variant (null when Shopify doesn't track it). */
+  stock?: number | null;
   saved_amount: number; // 0 outside the sale
 }
 
@@ -108,8 +112,9 @@ export async function fetchCatalogPage(
   offset: number,
   preview: Preview | null = null,
   sim = false,
+  limit?: number,
 ): Promise<CatalogPage> {
-  const p = { ...params(f, preview), offset };
+  const p = { ...params(f, preview), offset, ...(limit ? { limit } : {}) };
   // Admin preview with planned Friday prices; anything wrong -> public preview.
   if (sim) {
     const r = await simCatalog({ data: { p } }).catch(() => null);
@@ -180,15 +185,13 @@ export function mainInGroup(groupMains: string[] | undefined, main: string): boo
   return !!groupMains?.some((t) => t === main || t.startsWith(`${main}/`));
 }
 
-/** "-15%" under the threshold, "Save JOD 12.000" at or above it. */
+/** The real discount on the photo during the sale: "-15%". */
 export function discountBadge(
   item: Pick<CatalogItem, "price" | "discount_percent" | "saved_amount">,
-  threshold: number,
+  _threshold?: number,
 ): string | null {
   if (!(item.discount_percent > 0)) return null;
-  return item.price < threshold
-    ? `-${item.discount_percent}%`
-    : `Save ${formatJod(item.saved_amount)}`;
+  return `-${item.discount_percent}%`;
 }
 
 /** Shopify image at a given width (the CDN resizes on the fly). */
@@ -232,7 +235,7 @@ export function toCartProduct(item: CatalogItem): ShopifyProduct {
 }
 
 export const SORT_LABELS: Record<SortKey, string> = {
-  discount: "Biggest discount",
+  discount: "Biggest markdown first",
   price_asc: "Price low to high",
   price_desc: "Price high to low",
   newest: "Newest",

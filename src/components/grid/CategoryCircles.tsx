@@ -113,7 +113,8 @@ function Circle({
         {label}
       </span>
       {upto ? (
-        <span className="ff-num text-[10px] leading-3 text-ff-red">up to {upto}%</span>
+        // Categories are "marked down"; only the main headline says "Up to X% off".
+        <span className="ff-subline text-[10px] leading-3 text-ff-red">Marked down</span>
       ) : null}
     </button>
   );

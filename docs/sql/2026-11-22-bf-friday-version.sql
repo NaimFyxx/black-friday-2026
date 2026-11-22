@@ -2,11 +2,30 @@
 -- * bf_products.stock: units left of the card's variant (from the sync).
 -- * bf_card returns available + stock.
 -- * During the sale the grid also lists sold-out sale products, at the end
---   (8-argument bf_visible with p_sold_out; the 7- and 6-argument versions
+--   (only those seen in stock in the last 24 hours; 8-argument bf_visible with p_sold_out; the 7- and 6-argument versions
 --   stay in-stock only, so filters, counts, top deals and "up to" are unchanged).
 -- * bf_settings: low_stock_max (5), sale_end_label, ended_copy, goes_well_with.
 
 alter table bf_products add column if not exists stock integer;
+alter table bf_products add column if not exists last_in_stock_at timestamptz;
+update bf_products set last_in_stock_at = now() where available and last_in_stock_at is null;
+
+-- Remember when each product was last seen in stock (set on every sync while
+-- available, kept when it sells out): "sold out today" vs "out for months".
+create or replace function public.bf_products_stock_seen()
+ returns trigger language plpgsql set search_path to 'public'
+as $function$
+begin
+  if new.available then
+    new.last_in_stock_at := now();
+  elsif tg_op = 'UPDATE' then
+    new.last_in_stock_at := old.last_in_stock_at;
+  end if;
+  return new;
+end $function$;
+drop trigger if exists bf_products_stock_seen on bf_products;
+create trigger bf_products_stock_seen before insert or update on bf_products
+  for each row execute function bf_products_stock_seen();
 
 insert into bf_settings (key, value, updated_at) values
 ('low_stock_max', '5'::jsonb, now()),
@@ -24,9 +43,13 @@ declare d text;
 begin
   -- 8-argument bf_visible = the current 7-argument body + sold-out switch.
   d := pg_get_functiondef('public.bf_visible(text,text,text,integer,text,integer,text[])'::regprocedure);
-  if position('where b.available' in d) = 0 then raise exception 'bf_visible body changed'; end if;
   d := replace(d, 'p_mains text[])', 'p_mains text[], p_sold_out boolean)');
-  d := replace(d, 'where b.available', 'where (b.available or (p_sold_out and p_state = ''sale''))');
+  d := replace(d, 'b.available, b.shopify_created_at, b.updated_at, b.in_sale',
+                  'b.available, b.shopify_created_at, b.updated_at, b.in_sale, b.stock, b.last_in_stock_at');
+  -- Sold out during the sale (seen in stock in the last 24 hours) may be listed;
+  -- 901 sale-list products are long out of stock and must not flood the grid.
+  d := replace(d, 'where b.available',
+    'where (b.available or (p_sold_out and p_state = ''sale'' and b.last_in_stock_at >= least(now(), coalesce((select (value #>> ''{}'')::timestamptz from bf_settings where key = ''sale_start''), now())) - interval ''24 hours''))');
   execute d;
 end $$;
 
@@ -65,3 +88,6 @@ begin
   d := replace(d, E'    order by\n', E'    order by\n      b.available desc,\n');
   execute d;
 end $$;
+
+-- (migration bf_teaser_friday_settings) bf_teaser() also returns
+-- copy.sale_end_label, low_stock_max, ended (ended_copy) and goes_well_with.

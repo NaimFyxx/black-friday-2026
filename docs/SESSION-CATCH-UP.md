@@ -508,3 +508,43 @@ page, `?preview=off` goes back. Display only.
 - `bf_settings.no_code_note` "Prices drop automatically. No code needed." in
   the cart note and under the price on product pages (not after the sale).
 - Tested with Klaviyo mocked (no real profile created).
+
+## 2026-11-22: Klaviyo 10:00 cart email (template) and phase 3 (Friday version)
+
+Klaviyo: template **TtqUgk** "Fyxx Friday 2026 - Cart reminder 10:00 (flow)"
+(CODE). Shows {{ event.Items }} (name, size, qty, photo; no prices: they are
+from before the sale), "Your cart from this week", button "Fill your cart" to
+event.CheckoutURL + utm_source=klaviyo&utm_medium=email&utm_campaign=
+fyxx-friday-2026-11-27&utm_content=fri-27-cart-reminder, or to
+friday.myfyxx.com when there is no cart. The flow itself must be built in the
+Klaviyo UI (no API tool for flows here). Account timezone Asia/Amman.
+
+Phase 3 (switches on at sale_start; see with ?preview=friday, admins see the
+planned prices):
+- Prices: thousands separators (formatJod, "JOD 1,715.000"). Cards and
+  product pages: price in red, compare-at crossed out, real "-X%" badge
+  (discountBadge is always -X% now). Cart and floating bar: "You're saving
+  JOD X.XXX". After the sale: no crossed-out prices, badges or savings.
+- Category circles say "Marked down" (only the headline says "Up to X% off").
+- Sort label "Biggest markdown first" (default during the sale).
+- Top deals mix (bf_catalog_facets): half biggest JOD saving, half biggest %
+  under bf_settings.top_deals_cheap_under (50), max 2 per category, alternating.
+- Stock: bf-products-sync (v9, auto-deployed by Lovable) reads units left per
+  card variant from the Shopify Admin API (read only, Pulse's app like
+  bf-admin) into bf_products.stock. "Only X left" during the sale when
+  1..bf_settings.low_stock_max (5). 493 of 1,026 sale products have 5 or
+  fewer today.
+- Sold out during the sale: bf_products.last_in_stock_at (trigger) + 8-arg
+  bf_visible; bf_catalog lists sale products seen in stock in the last 24 h at
+  the end with "Sold out" and no add button (901 long-out-of-stock sale-list
+  products are not shown). Filters, counts, top deals, "up to" stay in-stock.
+- Product pages: -X% badge on the photo; "Goes well with" (bf_settings.
+  goes_well_with: wine and spirits -> up to 4 in-stock Wine accessories from
+  the sale, as specified); phone sticky Add to cart bar once the main button
+  scrolls away (scroll check, not IntersectionObserver).
+- "Ends at midnight" + countdown to sale_end under the headline
+  (bf_settings.sale_end_label).
+- After sale_end: "Fyxx Friday is over. Thank you!" + "Shop at myfyxx.com"
+  (bf_settings.ended_copy).
+- bf_teaser returns low_stock_max, ended, goes_well_with, copy.sale_end_label.
+- AGENTS.md: checkout opens in the same tab (owner's decision).

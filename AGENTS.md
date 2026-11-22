@@ -34,7 +34,8 @@ use the editor.
 - All product and cart data comes from the connected Shopify store's Storefront
   API through `src/lib/shopify.ts` and `src/lib/shopify-cart.ts`. Never add
   mock products, and never build a checkout URL by hand: it comes from the
-  Storefront API cart response and opens in a new tab.
+  Storefront API cart response and opens in the same tab (owner's decision,
+  22 Nov 2026; UTMs and fbclid are added to it).
 - A route loader that primes the TanStack Query cache returns
   `dehydrate(queryClient)` and the route component calls `hydrate` on it before
   reading, so the server render and the first client render match and the

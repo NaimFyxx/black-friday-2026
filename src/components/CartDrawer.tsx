@@ -29,6 +29,8 @@ export function CartDrawer() {
   const isOpen = useCartUi((s) => s.open);
   const setIsOpen = useCartUi((s) => s.setOpen);
   const [mounted, setMounted] = useState(false);
+  // After the sale: no crossed-out prices or savings.
+  const ended = useQuery(teaserQueryOptions(usePreview())).data?.state === "ended";
   // Checkout clicked: keep the spinner until the browser leaves for Shopify.
   const [goingToCheckout, setGoingToCheckout] = useState(false);
   useEffect(() => {
@@ -157,7 +159,8 @@ export function CartDrawer() {
                         </p>
                       )}
                       <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm tabular-nums">
-                        {item.compareAtPrice &&
+                        {!ended &&
+                        item.compareAtPrice &&
                         Number(item.compareAtPrice.amount) > Number(item.price.amount) ? (
                           <>
                             <span className="text-ff-red">{formatPrice(item.price)}</span>
@@ -218,9 +221,9 @@ export function CartDrawer() {
                     {formatJod(totalPrice, currency)}
                   </span>
                 </div>
-                {totalSaved > 0 && (
+                {totalSaved > 0 && !ended && (
                   <p className="ff-num mt-1 text-right text-sm text-ff-red">
-                    You save {formatJod(totalSaved, currency)}
+                    You're saving {formatJod(totalSaved, currency)}
                   </p>
                 )}
                 <Button

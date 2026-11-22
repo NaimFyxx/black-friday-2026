@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute, Link, notFound, useCanGoBack, useRouter } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -27,7 +27,8 @@ import { sizedImage } from "@/lib/catalog";
 import { parseDescription } from "@/lib/product-description";
 import { onlySaleVariants } from "@/lib/sale-variants.functions";
 import { simVariantPrices } from "@/lib/preview-sim.functions";
-import { usePreview } from "@/lib/preview";
+import { usePreview, useSim } from "@/lib/preview";
+import { GoesWellWith } from "@/components/grid/GoesWellWith";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { useQuery } from "@tanstack/react-query";
 import { useCartStore } from "@/stores/cartStore";
@@ -171,7 +172,31 @@ function metaLine(product: ShopifyProductNode, variant: ShopifyVariant | null) {
 
 function ProductPage() {
   const product = Route.useLoaderData();
-  const { data: teaser } = useQuery(teaserQueryOptions(usePreview()));
+  const preview = usePreview();
+  const sim = useSim();
+  const { data: teaser } = useQuery(teaserQueryOptions(preview));
+  // Sticky phone bar: shown once the main Add to cart button has scrolled up out of view.
+  const mainAdd = useRef<HTMLButtonElement>(null);
+  const [stickyBar, setStickyBar] = useState(false);
+  useEffect(() => {
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const el = mainAdd.current;
+      setStickyBar(!!el && el.getBoundingClientRect().bottom < 0);
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    check();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
   const variants = product.variants.edges.map((edge) => edge.node);
   const [selected, setSelected] = useState<ShopifyVariant | null>(
     () => variants.find((variant) => variant.availableForSale) ?? firstVariant(product),
@@ -244,7 +269,12 @@ function ProductPage() {
 
   const price = selected?.price ?? product.priceRange.minVariantPrice;
   const was = selected?.compareAtPrice;
-  const discounted = !!was && Number(was.amount) > Number(price.amount);
+  // After the sale: no crossed-out price or badge, whatever Shopify still says.
+  const ended = teaser?.state === "ended";
+  const discounted = !ended && !!was && Number(was.amount) > Number(price.amount);
+  const pct = discounted
+    ? Math.floor(((Number(was!.amount) - Number(price.amount)) / Number(was!.amount)) * 100)
+    : 0;
   const meta = metaLine(product, variants.length > 1 ? selected : (variants[0] ?? null));
 
   return (
@@ -270,7 +300,12 @@ function ProductPage() {
         <div className="mt-6 grid gap-8 md:grid-cols-2 md:gap-14">
           {/* Photo */}
           <div className="md:sticky md:top-[112px] md:self-start">
-            <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-ff-black/10 bg-ff-cream">
+            <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-ff-black/10 bg-ff-cream">
+              {teaser?.state === "sale" && pct > 0 && (
+                <span className="ff-num absolute top-3 left-3 z-10 rounded-full bg-ff-red px-3 py-1 text-sm text-ff-cream">
+                  -{pct}%
+                </span>
+              )}
               {image ? (
                 <img
                   {...productImage(image.url)}
@@ -363,6 +398,7 @@ function ProductPage() {
                 </button>
               </div>
               <button
+                ref={mainAdd}
                 type="button"
                 onClick={handleAdd}
                 disabled={!selected?.availableForSale || pending}
@@ -466,7 +502,43 @@ function ProductPage() {
             ))}
           </article>
         )}
+
+        <GoesWellWith
+          productType={product.productType}
+          productId={product.id}
+          teaser={teaser}
+          preview={preview}
+          sim={sim}
+        />
       </div>
+
+      {/* Phones: Add to cart stays at hand once the main button scrolls away. */}
+      {stickyBar && selected?.availableForSale && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 flex items-center gap-3 border-t border-ff-black/15 bg-ff-cream px-4 py-3 md:hidden"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <div className="min-w-0 flex-1">
+            <p className="ff-subline truncate text-sm">{product.title}</p>
+            <p className="flex items-baseline gap-2">
+              <span className={cn("ff-num text-base", discounted && "text-ff-red")}>
+                {formatPrice(price)}
+              </span>
+              {discounted && (
+                <s className="ff-small text-xs text-ff-black/55">{formatPrice(was!)}</s>
+              )}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={pending}
+            className="ff-subline flex h-11 shrink-0 items-center justify-center rounded-full bg-ff-red px-6 text-sm text-ff-cream disabled:opacity-50"
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add to cart"}
+          </button>
+        </div>
+      )}
     </main>
   );
 }

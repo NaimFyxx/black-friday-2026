@@ -278,7 +278,9 @@ export function formatPrice(money: ShopifyMoney): string {
 }
 
 export function formatJod(amount: number, currency = "JOD"): string {
-  return `${currency} ${amount.toFixed(3)}`;
+  // "JOD 1,715.000": thousands separators, always three decimals (fils).
+  const n = amount.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  return `${currency} ${n}`;
 }
 
 export function primaryImage(product: ShopifyProductNode): ShopifyImage | null {

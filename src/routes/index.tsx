@@ -11,6 +11,7 @@ import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { TeaserHero } from "@/components/hero/TeaserHero";
 import { QuickLinks } from "@/components/grid/QuickLinks";
+import { SaleEndCountdown } from "@/components/hero/SaleEndCountdown";
 import { usePreview, useSim } from "@/lib/preview";
 import { SpinWidget } from "@/components/spin/SpinWidget";
 import { Input } from "@/components/ui/input";
@@ -251,6 +252,13 @@ function Storefront() {
                 Up to {facets.headline_upto}% off
               </p>
             ) : null}
+            {sale && teaser?.sale_end && (
+              <SaleEndCountdown
+                end={teaser.sale_end}
+                label={teaser.copy.sale_end_label ?? "Ends at midnight"}
+                onDone={() => queryClient.invalidateQueries()}
+              />
+            )}
             {state !== "ended" && (
               <div className="w-full max-w-sm">
                 <CatalogSearch value={filters.q} onSearch={(q) => setFilters({ q })} />
@@ -270,12 +278,15 @@ function Storefront() {
 
           {state === "ended" ? (
             <div className="py-20 text-center">
-              <p className="ff-headline text-3xl text-ff-red uppercase md:text-4xl">
-                Fyxx Friday is over
+              <p className="ff-headline text-3xl text-ff-red md:text-4xl">
+                {teaser?.ended?.title ?? "Fyxx Friday is over. Thank you!"}
               </p>
-              <p className="ff-subline mt-3 text-base text-ff-black">
-                Thank you for shopping with us. See you next year.
-              </p>
+              <a
+                href={teaser?.ended?.url ?? "https://www.myfyxx.com"}
+                className="ff-subline mt-6 inline-flex h-12 items-center justify-center rounded-full bg-ff-red px-8 text-base text-ff-cream hover:bg-ff-burgundy"
+              >
+                {teaser?.ended?.button ?? "Shop at myfyxx.com"}
+              </a>
             </div>
           ) : (
             <>
@@ -321,6 +332,7 @@ function Storefront() {
                       item={item}
                       threshold={threshold}
                       eager={i < 4}
+                      lowStockMax={sale ? (teaser?.low_stock_max ?? 5) : null}
                       preSaleLabel={
                         state === "preview" ? (teaser?.copy.sale_label_preview ?? null) : null
                       }
@@ -353,7 +365,7 @@ function Storefront() {
         </div>
       </section>
 
-      <FloatingCart sale={sale} />
+      <FloatingCart sale={sale} ended={state === "ended"} />
       <BackToTop raised={mounted && cartCount > 0} />
       {state !== "ended" && <SpinWidget raised={mounted && cartCount > 0} />}
     </main>

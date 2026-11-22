@@ -11,7 +11,7 @@ import { useCartUi } from "@/stores/cartUiStore";
  * sync). Opens the existing cart drawer.
  */
 
-export function FloatingCart({ sale }: { sale: boolean }) {
+export function FloatingCart({ sale, ended = false }: { sale: boolean; ended?: boolean }) {
   const [mounted, setMounted] = useState(false);
   const items = useCartStore((s) => s.items);
   const count = useCartStore(selectCartCount);
@@ -50,9 +50,9 @@ export function FloatingCart({ sale }: { sale: boolean }) {
         <span className="ff-num block text-sm">
           {count} item{count === 1 ? "" : "s"} · {formatJod(total)}
         </span>
-        {saved > 0 && (
+        {saved > 0 && !ended && (
           <span className="ff-num block text-xs text-ff-warm-cream">
-            You save {formatJod(saved)}
+            You're saving {formatJod(saved)}
           </span>
         )}
       </span>

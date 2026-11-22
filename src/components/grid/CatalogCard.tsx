@@ -30,6 +30,7 @@ export const CatalogCard = memo(function CatalogCard({
   compact = false,
   eager = false,
   preSaleLabel = null,
+  lowStockMax = null,
 }: {
   item: CatalogItem;
   threshold: number;
@@ -37,7 +38,14 @@ export const CatalogCard = memo(function CatalogCard({
   eager?: boolean;
   /** Before Friday 10:00: text after a blurred "-XX%" on sale-list products ("off on Friday"). */
   preSaleLabel?: string | null;
+  /** During the sale: show "Only X left" when this many or fewer are left. */
+  lowStockMax?: number | null;
 }) {
+  const soldOut = item.available === false;
+  const lowStock =
+    !soldOut && lowStockMax && item.stock != null && item.stock > 0 && item.stock <= lowStockMax
+      ? item.stock
+      : null;
   const addItem = useCartStore((s) => s.addItem);
   const [pending, setPending] = useState(false);
   const badge = discountBadge(item, threshold);
@@ -139,7 +147,10 @@ export const CatalogCard = memo(function CatalogCard({
               height={500}
               loading={eager ? "eager" : "lazy"}
               decoding="async"
-              className="h-full w-full object-cover mix-blend-multiply"
+              className={cn(
+                "h-full w-full object-cover mix-blend-multiply",
+                soldOut && "opacity-40 grayscale",
+              )}
             />
           ) : (
             <div className="ff-small flex h-full items-center justify-center text-xs text-ff-black uppercase">
@@ -157,9 +168,14 @@ export const CatalogCard = memo(function CatalogCard({
               % <span className="ff-subline">{preSaleLabel}</span>
             </span>
           )}
-          {badge && (
+          {badge && !soldOut && (
             <span className="ff-num absolute top-2 left-2 rounded-full bg-ff-red px-2.5 py-1 text-[11px] text-ff-cream">
               {badge}
+            </span>
+          )}
+          {soldOut && (
+            <span className="ff-subline absolute top-2 left-2 rounded-full bg-ff-black px-2.5 py-1 text-[11px] text-ff-cream">
+              Sold out
             </span>
           )}
         </div>
@@ -190,9 +206,14 @@ export const CatalogCard = memo(function CatalogCard({
               </s>
             )}
           </p>
+          {lowStock !== null && (
+            <p className="ff-subline mt-0.5 text-xs text-ff-red">Only {lowStock} left</p>
+          )}
         </div>
       </Link>
-      {!compact && (
+      {/* Sold out: no add button; an empty row keeps the cards lined up. */}
+      {!compact && soldOut && <div aria-hidden className="mt-3 h-9" />}
+      {!compact && !soldOut && (
         <button
           type="button"
           onClick={handleAdd}
