@@ -27,14 +27,14 @@ export const Route = createFileRoute("/admin")({
 });
 
 const TABS = [
+  { to: "/admin", label: "Overview" },
+  { to: "/admin/activity", label: "Day by day" },
+  { to: "/admin/cohort", label: "All Fyxx sales" },
   { to: "/admin/report", label: "Report" },
-  { to: "/admin", label: "Sources" },
-  { to: "/admin/activity", label: "Activity" },
-  { to: "/admin/cohort", label: "Customers" },
-  { to: "/admin/errors", label: "Errors" },
   { to: "/admin/sale", label: "Sale & products" },
   { to: "/admin/spins", label: "Spin & win" },
   { to: "/admin/tracking", label: "Tracking" },
+  { to: "/admin/errors", label: "Errors" },
 ] as const;
 
 function AdminLayout() {

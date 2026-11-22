@@ -35,6 +35,21 @@ const PAIRS: Record<string, { name: string; kind: SourceKind }> = {
   "google|cpc": { name: "Google ads", kind: "paid" },
 };
 
+/**
+ * Source with no medium (e.g. the "most came from" column, which only has the
+ * source). Follows how the team tags links: "ig" and "fb" are only used for
+ * ads, "instagram" for our own page.
+ */
+const SOURCE_ONLY: Record<string, { name: string; kind: SourceKind }> = {
+  ig: { name: "Instagram ads", kind: "paid" },
+  fb: { name: "Facebook ads", kind: "paid" },
+  klaviyo: { name: "Email (Klaviyo)", kind: "free" },
+  "fyxx-app": { name: "Fyxx app banner", kind: "free" },
+  fyxx_app: { name: "Fyxx app link", kind: "free" },
+  instagram: { name: "Instagram (our page)", kind: "free" },
+  calendar: { name: "Calendar reminder (our link)", kind: "free" },
+};
+
 /** Source alone, when the medium is new to us. */
 const SOURCES: Record<string, string> = {
   ig: "Instagram",
@@ -117,7 +132,7 @@ export function describeSource(
     return { name: `From ${siteName(s)}`, kind: "unknown", raw };
   }
 
-  const pair = PAIRS[`${s}|${m ?? ""}`];
+  const pair = m ? PAIRS[`${s}|${m}`] : SOURCE_ONLY[s];
   if (pair) return { ...pair, raw };
 
   const kind: SourceKind = m
