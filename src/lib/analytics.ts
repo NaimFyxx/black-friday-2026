@@ -10,7 +10,7 @@
 // (bf_events) with the visitor's first-touch source, for the /admin dashboards.
 
 import type { TrackedEventName } from "@/lib/campaign-config";
-import { primaryImage } from "@/lib/shopify";
+import { primaryImage, type ShopifyProductNode } from "@/lib/shopify";
 import { recordEvent } from "@/lib/track.functions";
 import { getFirstReferrer, getFirstTouchUtm } from "@/lib/utm-attribution";
 import { cartToken } from "@/lib/cart-token";
@@ -26,7 +26,10 @@ type EventParams = Record<string, unknown>;
 type TrackerWindow = Window & {
   gtag?: (...args: unknown[]) => void;
   fbq?: (...args: unknown[]) => void;
-  klaviyo?: { push?: (args: unknown[]) => void };
+  klaviyo?: {
+    push?: (args: unknown[]) => void;
+    isIdentified?: () => Promise<boolean>;
+  };
   _klOnsite?: unknown[][];
 };
 
@@ -401,4 +404,65 @@ export function trackBeginCheckout(items: TrackedItem[]): Promise<void> {
 export function trackOutbound(destination: "website" | "app", label: string, url: string): void {
   trackEvent("outbound_click", { destination, link_text: label, link_url: url.slice(0, 300) });
   logEvent("outbound", { destination, linkLabel: label });
+}
+
+/**
+ * Klaviyo "Viewed Product" on a product page, in the same format as Klaviyo's
+ * Shopify integration, so segments can use what people looked at. Sent only
+ * when klaviyo.js knows the visitor (Klaviyo drops anonymous events anyway).
+ */
+export function trackKlaviyoViewedProduct(
+  product: ShopifyProductNode,
+  variant: {
+    id: string;
+    title: string;
+    price: { amount: string };
+    compareAtPrice?: { amount: string } | null;
+  },
+): void {
+  const w = tw();
+  if (!w || trackingOff()) return;
+  const price = Number(variant.price.amount) || 0;
+  const cmp = variant.compareAtPrice ? Number(variant.compareAtPrice.amount) || 0 : 0;
+  const url = `${window.location.origin}/product/${product.handle}`;
+  const image = primaryImage(product)?.url;
+  const categories = product.productType ? [product.productType] : [];
+  const props = {
+    Name: product.title,
+    ProductID: shopifyVariantId(product.id),
+    VariantID: shopifyVariantId(variant.id),
+    VariantName: variant.title && variant.title !== "Default Title" ? variant.title : undefined,
+    Categories: categories,
+    ImageURL: image,
+    URL: url,
+    Brand: product.vendor || undefined,
+    Price: money(price),
+    CompareAtPrice: cmp > price ? money(cmp) : undefined,
+  };
+  const viewed = {
+    Title: product.title,
+    ItemId: shopifyVariantId(product.id),
+    Categories: categories,
+    ImageUrl: image,
+    Url: url,
+    Metadata: { Brand: props.Brand, Price: props.Price, CompareAtPrice: props.CompareAtPrice },
+  };
+  const send = () => {
+    trackKlaviyo("Viewed Product", props);
+    try {
+      if (typeof w.klaviyo?.push === "function") w.klaviyo.push(["trackViewedItem", viewed]);
+    } catch {
+      // analytics never breaks the page
+    }
+  };
+  const k = w.klaviyo;
+  if (typeof k?.isIdentified === "function") {
+    k.isIdentified()
+      .then((known) => {
+        if (known) send();
+      })
+      .catch(() => {});
+  } else {
+    send(); // klaviyo.js not loaded yet: queued, and kept only for a known visitor
+  }
 }

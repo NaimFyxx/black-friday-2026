@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { trackAddToCart, trackViewItem } from "@/lib/analytics";
+import { trackAddToCart, trackKlaviyoViewedProduct, trackViewItem } from "@/lib/analytics";
 import {
   firstVariant,
   formatPrice,
@@ -236,6 +236,7 @@ function ProductPage() {
       currency: variant.price.currencyCode,
       quantity: 1,
     });
+    trackKlaviyoViewedProduct(product, variant);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id]);
 
