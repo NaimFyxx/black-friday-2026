@@ -33,7 +33,7 @@ export const CatalogCard = memo(function CatalogCard({
   threshold: number;
   compact?: boolean;
   eager?: boolean;
-  /** Before Friday 10:00: label for products on the sale list ("Marked down on Friday"). */
+  /** Before Friday 10:00: text after a blurred "-XX%" on sale-list products ("off on Friday"). */
   preSaleLabel?: string | null;
 }) {
   const addItem = useCartStore((s) => s.addItem);
@@ -140,8 +140,10 @@ export const CatalogCard = memo(function CatalogCard({
             </div>
           )}
           {preSaleLabel && item.in_sale && !badge && (
-            <span className="ff-subline absolute top-2 left-2 max-w-[calc(100%-1rem)] rounded-full bg-ff-burgundy px-2.5 py-1 text-[11px] leading-tight text-ff-cream">
-              {preSaleLabel}
+            <span className="ff-num absolute top-2 left-2 max-w-[calc(100%-1rem)] rounded-full bg-ff-red px-2.5 py-1 text-[11px] leading-tight text-ff-cream">
+              {/* The number is a stand-in, not the real discount: nothing real before 10:00. */}
+              -<span aria-hidden className="inline-block select-none px-px font-bold blur-[1px]">88</span>%{" "}
+              <span className="ff-subline">{preSaleLabel}</span>
             </span>
           )}
           {badge && (

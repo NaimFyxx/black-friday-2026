@@ -355,3 +355,11 @@ in_sale items; /admin/sale has the switch and the label text.
 
 Counts: 1033 shown before, 1028 after (57 of them Accessories). Anon cannot
 read `bf_sale_flags`, `bf_sale_list` or `bf_products`.
+
+## 2026-11-22: Blurred "-XX% off on Friday" badge
+
+Before Friday 10:00 the sale-list card label is now a red badge: "-", a blurred
+number, then "% off on Friday" (replaces "Marked down on Friday"). The blurred
+number is always the stand-in "88", never the real discount, so nothing real
+is in the page before 10:00. The text after the % is `sale_label_preview`
+(now "off on Friday"), editable in /admin/sale; empty hides the badge.

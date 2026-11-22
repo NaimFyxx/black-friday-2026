@@ -220,7 +220,7 @@ function SalePage() {
             </div>
             <Field
               label="Label on sale-list products before the sale starts"
-              hint="Shown on the product photo until Friday 10:00. Leave empty to hide it."
+              hint="Shown on the product photo until Friday 10:00, after a blurred -XX%. Example: off on Friday. Leave empty to hide it."
             >
               <Input
                 value={form.sale_label_preview}
