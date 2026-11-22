@@ -12,6 +12,11 @@
 //   { key, action: "day_sales", since, until }    -> all Shopify orders in the
 //       range (every channel), count and total, split into in store (Point of
 //       Sale) and online (everything else). Cancelled and test orders left out.
+//   { key, action: "usual", kx }                  -> Shopify product IDs this
+//       shopper ordered most ("Your usual" shelf). kx = Klaviyo's _kx link
+//       parameter from one of our emails; resolved with the Klaviyo private
+//       key (KLAVIYO_PRIVATE_KEY, read only). Returns product IDs only, never
+//       the email or profile.
 //   { key, action: "probe" }                      -> which optional secrets exist
 //       (true/false per NAME only, never values)
 //   { key, action: "meta", since, until }          -> Meta ad results per campaign
@@ -219,6 +224,59 @@ async function daySales(since: string, until: string) {
   return { status: "ok", ...sum, online, inStore: channels.inStore, channels };
 }
 
+// ── "Your usual": Klaviyo (read only) ──
+const KLAVIYO_API = "https://a.klaviyo.com/api";
+const ORDERED_PRODUCT = "SuKssc"; // Shopify "Ordered Product" metric
+
+function klaviyoKey(): string | null {
+  return Deno.env.get("KLAVIYO_PRIVATE_KEY") || Deno.env.get("KLAVIYO_API_KEY") || null;
+}
+
+async function klaviyoGet(path: string, key: string) {
+  const r = await fetch(`${KLAVIYO_API}${path}`, {
+    headers: {
+      authorization: `Klaviyo-API-Key ${key}`,
+      revision: "2025-01-15",
+      accept: "application/vnd.api+json",
+    },
+  });
+  if (!r.ok) throw new Error(`Klaviyo ${r.status}`);
+  return await r.json();
+}
+
+/** Product IDs this shopper ordered most (then most recently), from Klaviyo. */
+async function usualProducts(kx: string) {
+  const key = klaviyoKey();
+  if (!key) return { status: "not_configured" };
+  const prof = await klaviyoGet(
+    `/profiles?filter=${encodeURIComponent(`equals(_kx,"${kx}")`)}&fields[profile]=id`,
+    key,
+  );
+  const id = prof?.data?.[0]?.id;
+  if (!id) return { status: "ok", products: [] };
+  const filter = `equals(metric_id,"${ORDERED_PRODUCT}"),equals(profile_id,"${id}")`;
+  const ev = await klaviyoGet(
+    `/events?filter=${encodeURIComponent(filter)}&fields[event]=datetime,event_properties&sort=-datetime&page[size]=200`,
+    key,
+  );
+  const score = new Map<string, { n: number; last: number }>();
+  for (const e of ev?.data ?? []) {
+    const pid = e?.attributes?.event_properties?.ProductID;
+    if (pid === undefined || pid === null) continue;
+    const k = String(pid);
+    const t = Date.parse(e.attributes.datetime) || 0;
+    const s = score.get(k) ?? { n: 0, last: 0 };
+    s.n += 1;
+    s.last = Math.max(s.last, t);
+    score.set(k, s);
+  }
+  const products = [...score.entries()]
+    .sort((a, b) => b[1].n - a[1].n || b[1].last - a[1].last)
+    .slice(0, 40)
+    .map(([k]) => k);
+  return { status: "ok", products };
+}
+
 // ── Meta Ads (read only) ──
 const META_API = "https://graph.facebook.com/v23.0";
 const META_AD_ACCOUNT = "act_4226871230742646"; // "Fyxx Ads"
@@ -372,7 +430,20 @@ Deno.serve(async (req) => {
       lovable_ai: !!Deno.env.get("LOVABLE_API_KEY"),
       admin_password: (Deno.env.get("BLACK_FRIDAY_ADMIN_PASSWORD") ?? "").length >= 8,
       shopify: !!Deno.env.get("SHOPIFY_CLIENT_ID") && !!Deno.env.get("SHOPIFY_CLIENT_SECRET"),
+      klaviyo_private: !!Deno.env.get("KLAVIYO_PRIVATE_KEY"),
+      klaviyo_api: !!Deno.env.get("KLAVIYO_API_KEY"),
     });
+  }
+
+  if (body.action === "usual") {
+    const kx = String(body.kx ?? "");
+    if (!/^[A-Za-z0-9_\-.=]{6,200}$/.test(kx)) return json({ error: "Bad kx" }, 400);
+    try {
+      return json(await usualProducts(kx));
+    } catch (e) {
+      console.error("[bf-admin]", String((e as Error).message));
+      return json({ status: "error", message: String((e as Error).message).slice(0, 300) });
+    }
   }
 
   if (body.action === "meta") {
