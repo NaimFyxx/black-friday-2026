@@ -7,11 +7,13 @@ import {
   ErrorBox,
   fmtDate,
   fmtMoney,
+  fmtNum,
   fmtPct,
   fmtRange,
   PageHeader,
   RangePicker,
   rangeFor,
+  SourceName,
   type RangeKey,
 } from "@/components/admin/AdminUi";
 import { Button } from "@/components/ui/button";
@@ -24,6 +26,7 @@ import {
 } from "@/lib/admin.functions";
 import { CAMPAIGN_LABEL } from "@/lib/campaign-config";
 import type { CampaignReport } from "@/lib/report.server";
+import { describeChannel, describeSourceText } from "@/lib/source-labels";
 
 export const Route = createFileRoute("/admin/report")({
   component: ReportPage,
@@ -132,9 +135,9 @@ function ReportPage() {
     <>
       <div className="space-y-4 print:hidden">
         <PageHeader title="Campaign report">
-          One click: every number from the campaign on one page, with a plain-English summary. Takes
-          up to a minute. Save the final one so it reads the same every time; use “Download PDF” to
-          share it.
+          Every number from the campaign on one page, with a summary in plain words. It takes up to
+          a minute to build. Save the final one so it reads the same every time, and use
+          &quot;Download PDF&quot; to share it.
         </PageHeader>
         <div className="flex flex-wrap items-center gap-3">
           <RangePicker value={rangeKey} onChange={setRangeKey} />
@@ -248,11 +251,12 @@ function ReportPage() {
 
 // ── Building blocks ───────────────────────────────────────────────────
 
-function H2({ children }: { children: ReactNode }) {
+function H2({ children, intro }: { children: ReactNode; intro: string }) {
   return (
-    <h2 className="mt-7 mb-2 font-display text-xl break-after-avoid print:mt-5 print:text-lg">
-      {children}
-    </h2>
+    <div className="mt-7 mb-2 break-after-avoid print:mt-5">
+      <h2 className="font-display text-xl print:text-lg">{children}</h2>
+      <p className="text-sm text-muted-foreground print:text-[10.5px]">{intro}</p>
+    </div>
   );
 }
 
@@ -276,34 +280,36 @@ function Stat({ label, value, sub }: { label: string; value: string; sub?: strin
 function Table({ head, rows }: { head: string[]; rows: ReactNode[][] }) {
   if (rows.length === 0) return <Muted>Nothing in this period.</Muted>;
   return (
-    <table className="w-full text-[13px] print:text-[10.5px]">
-      <thead>
-        <tr className="border-b border-border text-left text-[9px] tracking-[0.12em] text-muted-foreground uppercase">
-          {head.map((h, i) => (
-            <th
-              key={h}
-              className={`py-1.5 pr-3 font-medium last:pr-0 ${i > 0 ? "text-right whitespace-nowrap" : ""}`}
-            >
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r, i) => (
-          <tr key={i} className="border-b border-border/50 break-inside-avoid last:border-0">
-            {r.map((c, j) => (
-              <td
-                key={j}
-                className={`py-1.5 pr-3 align-top last:pr-0 ${j > 0 ? "text-right whitespace-nowrap tabular-nums" : ""}`}
+    <div className="overflow-x-auto print:overflow-visible">
+      <table className="w-full text-[13px] print:text-[10.5px]">
+        <thead>
+          <tr className="border-b border-border text-left text-[11px] text-muted-foreground print:text-[9px]">
+            {head.map((h, i) => (
+              <th
+                key={h}
+                className={`py-1.5 pr-3 font-medium last:pr-0 ${i > 0 ? "text-right" : ""}`}
               >
-                {c}
-              </td>
+                {h}
+              </th>
             ))}
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => (
+            <tr key={i} className="border-b border-border/50 break-inside-avoid last:border-0">
+              {r.map((c, j) => (
+                <td
+                  key={j}
+                  className={`py-1.5 pr-3 align-top last:pr-0 ${j > 0 ? "text-right whitespace-nowrap tabular-nums" : ""}`}
+                >
+                  {c}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }
 
@@ -401,16 +407,16 @@ function Report({ r }: { r: CampaignReport }) {
       {/* Headline numbers */}
       <div className="mt-4 grid grid-cols-2 gap-2 md:grid-cols-5 print:grid-cols-5">
         <Stat
-          label="Total sales"
+          label="All Fyxx sales"
           value={cmp ? fmtMoney(cmp.now) : "–"}
           sub={
             cmp
-              ? `${cmp.changePct === null ? "" : `${cmp.changePct >= 0 ? "+" : ""}${cmp.changePct.toFixed(0)}% vs before`}${cmp.likeForLike ? "" : " · excl. POS*"}`
+              ? `${cmp.changePct === null ? "" : `${cmp.changePct >= 0 ? "+" : ""}${cmp.changePct.toFixed(0)}% vs before`}${cmp.likeForLike ? "" : " · without shops*"}`
               : "not available"
           }
         />
         <Stat
-          label="From marketing"
+          label="Helped by marketing"
           value={mNow ? fmtMoney(mNow.influencedRevenue) : "–"}
           sub={
             mNow
@@ -421,27 +427,36 @@ function Report({ r }: { r: CampaignReport }) {
         <Stat
           label="Email & SMS"
           value={kl ? fmtMoney(kl.totals.revenue) : "–"}
-          sub={kl ? `${kl.totals.sends} sends · ${kl.totals.orders} orders` : "not available"}
-        />
-        <Stat
-          label="Meta ads"
-          value={
-            meta?.roas != null ? `${meta.roas.toFixed(1)}× return` : metaEmpty ? "No ads" : "–"
+          sub={
+            kl
+              ? `${fmtNum(kl.totals.sends)} sent · ${fmtNum(kl.totals.orders)} orders`
+              : "not available"
           }
-          sub={meta ? `${fmtMoney(meta.spend, meta.currency)} spent` : "not available"}
         />
         <Stat
-          label="Black Friday site"
+          label="Facebook & Instagram ads"
+          value={meta?.roas != null ? `${meta.roas.toFixed(1)}x back` : metaEmpty ? "No ads" : "–"}
+          sub={
+            meta
+              ? `${fmtMoney(meta.spend, meta.currency)} spent${meta.roas != null ? `, sales ${meta.roas.toFixed(1)} times that` : ""}`
+              : "not available"
+          }
+        />
+        <Stat
+          label="Fyxx Friday site"
           value={site ? fmtMoney(site.totals.revenue) : "–"}
           sub={
-            site ? `${site.totals.orders} orders · ${site.totals.visits} visits` : "not available"
+            site
+              ? `${fmtNum(site.totals.orders)} orders · ${fmtNum(site.totals.visits)} visits`
+              : "not available"
           }
         />
       </div>
       {cmp && !cmp.likeForLike && (
         <p className="mt-1.5 text-[11px] text-muted-foreground">
-          * Odoo POS data starts 19 Oct 2026, so the earlier period has no POS. To compare like with
-          like, “Total sales” here is website + app + draft orders. POS this period:{" "}
+          * Shop (POS) sales are only recorded from 19 Oct 2026, so the days before have none. To
+          compare like with like, &quot;All Fyxx sales&quot; here is website + app + draft orders.
+          Shop sales this time:{" "}
           {fmtMoney(store?.current.channels.find((c) => c.channel === "POS (Odoo)")?.revenue ?? 0)}.
         </p>
       )}
@@ -464,16 +479,18 @@ function Report({ r }: { r: CampaignReport }) {
       ) : null}
 
       {/* Whole store */}
-      <H2>Sales by channel</H2>
+      <H2 intro="Where all Fyxx orders were placed, compared with the days before. Shows whether the campaign lifted sales everywhere.">
+        Sales by channel
+      </H2>
       {store ? (
         <>
           <Table
-            head={["Channel", "Orders", "Revenue", "Share", "Before"]}
+            head={["Channel", "Orders", "Sales", "Share", "Sales before"]}
             rows={store.current.channels.map((c) => {
               const b = store.previous.channels.find((x) => x.channel === c.channel);
               const isPos = c.channel === "POS (Odoo)";
               return [
-                c.channel,
+                describeChannel(c.channel),
                 c.orders.toLocaleString(),
                 fmtMoney(c.revenue),
                 fmtPct(c.revenue, store.current.revenue),
@@ -482,10 +499,9 @@ function Report({ r }: { r: CampaignReport }) {
             })}
           />
           <p className="mt-1.5 text-[11px] text-muted-foreground">
-            {store.current.orders.toLocaleString()} orders, average {fmtMoney(store.current.aov)} ·{" "}
-            {store.current.newCustomers.toLocaleString()} new and{" "}
-            {store.current.returningCustomers.toLocaleString()} returning online customers (before:{" "}
-            {store.previous.newCustomers.toLocaleString()} new).
+            {fmtNum(store.current.orders)} orders, average {fmtMoney(store.current.aov)} ·{" "}
+            {fmtNum(store.current.newCustomers)} new and {fmtNum(store.current.returningCustomers)}{" "}
+            returning online customers (before: {fmtNum(store.previous.newCustomers)} new).
           </p>
         </>
       ) : (
@@ -493,12 +509,14 @@ function Report({ r }: { r: CampaignReport }) {
       )}
 
       {/* Marketing */}
-      <H2>What brought the online sales in</H2>
+      <H2 intro="Each online order is credited to one main reason: an email, a discount code or where the visit came from. Shows which marketing earned its money.">
+        What brought the online sales in
+      </H2>
       {mNow ? (
         <>
           <div className="break-inside-avoid">
             <Table
-              head={["Main reason", "Orders", "Revenue"]}
+              head={["Main reason", "Orders", "Sales"]}
               rows={mNow.byReason.map((b) => [
                 b.name,
                 b.orders.toLocaleString(),
@@ -510,27 +528,33 @@ function Report({ r }: { r: CampaignReport }) {
             <div className="break-inside-avoid">
               <p className="mb-1 text-sm font-medium">Top Klaviyo messages</p>
               <Table
-                head={["Message", "Orders", "Revenue"]}
+                head={["Message", "Orders", "Sales"]}
                 rows={mNow.topKlaviyoMessages
                   .slice(0, 8)
                   .map((b) => [b.name, b.orders, fmtMoney(b.revenue)])}
               />
             </div>
             <div className="break-inside-avoid">
-              <p className="mb-1 text-sm font-medium">Top discount programmes</p>
+              <p className="mb-1 text-sm font-medium">Top discount codes and programmes</p>
               <Table
-                head={["Programme / code", "Orders", "Revenue"]}
+                head={["Code or programme", "Orders", "Sales"]}
                 rows={mNow.topCodes.slice(0, 8).map((b) => [b.name, b.orders, fmtMoney(b.revenue)])}
               />
             </div>
           </div>
           <div className="mt-4 break-inside-avoid">
-            <p className="mb-1 text-sm font-medium">Top traffic sources (Google Analytics)</p>
+            <p className="mb-1 text-sm font-medium">
+              Where online shoppers came from (Google Analytics)
+            </p>
             <Table
-              head={["Source / medium", "Orders", "Revenue"]}
+              head={["Came from", "Orders", "Sales"]}
               rows={mNow.topGaSources
                 .slice(0, 8)
-                .map((b) => [b.name, b.orders, fmtMoney(b.revenue)])}
+                .map((b) => [
+                  <SourceName key={b.name} label={describeSourceText(b.name)} showRaw />,
+                  b.orders,
+                  fmtMoney(b.revenue),
+                ])}
             />
           </div>
         </>
@@ -539,17 +563,19 @@ function Report({ r }: { r: CampaignReport }) {
       )}
 
       {/* Klaviyo */}
-      <H2>Emails & SMS (Klaviyo)</H2>
+      <H2 intro="Every email and SMS sent in this time, how many people opened and clicked, and the orders that followed.">
+        Emails & SMS (Klaviyo)
+      </H2>
       {kl ? (
         <Table
-          head={["Message", "Sent", "Recipients", "Opened", "Clicked", "Orders", "Revenue"]}
+          head={["Message", "Sent on", "Sent to", "Opened", "Clicked", "Orders", "Sales"]}
           rows={kl.campaigns.map((c) => [
             `${c.name}${c.channel && c.channel !== "email" ? ` (${c.channel})` : ""}`,
             shortDay(c.sentOn),
-            c.sent.toLocaleString(),
+            fmtNum(c.sent),
             `${(c.openRate * 100).toFixed(1)}%`,
             `${(c.clickRate * 100).toFixed(2)}%`,
-            c.orders.toLocaleString(),
+            fmtNum(c.orders),
             fmtMoney(c.revenue),
           ])}
         />
@@ -558,7 +584,9 @@ function Report({ r }: { r: CampaignReport }) {
       )}
 
       {/* Meta */}
-      <H2>Meta ads</H2>
+      <H2 intro="Facebook and Instagram ads: what was spent and what Meta says came back. 3.0x back means sales of 3 for every 1 spent.">
+        Facebook & Instagram ads (Meta)
+      </H2>
       {metaEmpty ? (
         <Muted>
           {meta
@@ -568,49 +596,50 @@ function Report({ r }: { r: CampaignReport }) {
       ) : (
         <>
           <Table
-            head={["Campaign", "Spend", "Clicks", "Purchases", "Value", "Return"]}
+            head={["Campaign", "Spent", "Clicks", "Orders", "Sales", "Back per 1 spent"]}
             rows={meta!.campaigns.map((c) => [
               c.name,
               fmtMoney(c.spend, meta!.currency),
-              c.clicks.toLocaleString(),
-              c.purchases.toLocaleString(),
+              fmtNum(c.clicks),
+              fmtNum(c.purchases),
               fmtMoney(c.purchase_value, meta!.currency),
-              c.roas != null ? `${c.roas.toFixed(1)}×` : "–",
+              c.roas != null ? `${c.roas.toFixed(1)}x` : "–",
             ])}
           />
           {meta!.spendJod != null && (
             <p className="mt-1.5 text-[11px] text-muted-foreground">
-              Total spend ≈ {fmtMoney(meta!.spendJod)} · Meta-reported purchase value ≈{" "}
-              {fmtMoney(meta!.purchaseValueJod ?? 0)} ({meta!.purchases.toLocaleString()}{" "}
-              purchases).
+              Spent in total about {fmtMoney(meta!.spendJod)} · sales Meta counts from the ads about{" "}
+              {fmtMoney(meta!.purchaseValueJod ?? 0)} ({fmtNum(meta!.purchases)} orders).
             </p>
           )}
         </>
       )}
 
       {/* Site */}
-      <H2>The Black Friday site</H2>
+      <H2 intro="This site's own numbers: visits, carts and orders through its checkout, by where visitors first came from.">
+        The Fyxx Friday site
+      </H2>
       {siteEmpty ? (
         <Muted>
           {site
-            ? "No visits or orders on the Black Friday site in this period."
+            ? "No visits or orders on the Fyxx Friday site in this period."
             : `Site numbers not available${why(r.site)}.`}
         </Muted>
       ) : (
         <>
           <p className="mb-2 text-sm">
-            {site!.totals.visits.toLocaleString()} visits → {site!.totals.carts.toLocaleString()}{" "}
-            added to cart ({fmtPct(site!.totals.carts, site!.totals.visits)}) →{" "}
-            {site!.totals.checkouts.toLocaleString()} reached checkout →{" "}
-            {site!.totals.orders.toLocaleString()} orders (
+            {fmtNum(site!.totals.visits)} visits → {fmtNum(site!.totals.carts)} added to cart (
+            {fmtPct(site!.totals.carts, site!.totals.visits)}) → {fmtNum(site!.totals.checkouts)}{" "}
+            went to checkout → {fmtNum(site!.totals.orders)} orders (
             {fmtPct(site!.totals.orders, site!.totals.visits)} of visits) ·{" "}
-            {fmtMoney(site!.totals.revenue)} · {site!.totals.newCustomers} new customers
+            {fmtMoney(site!.totals.revenue)} in sales · {fmtNum(site!.totals.newCustomers)} new
+            customers
           </p>
           {site!.ordersNote && <p className="text-[11px] text-amber-700">{site!.ordersNote}</p>}
           <Table
-            head={["Source", "Visits", "Carts", "Checkouts", "Orders", "Revenue"]}
+            head={["Came from", "Visits", "Added to cart", "Went to checkout", "Orders", "Sales"]}
             rows={site!.sources.map((s) => [
-              s.source,
+              <SourceName key={s.source} label={describeSourceText(s.source)} showRaw />,
               s.visits,
               s.carts,
               s.checkouts,
@@ -622,13 +651,15 @@ function Report({ r }: { r: CampaignReport }) {
       )}
 
       {/* Products */}
-      <H2>Products on the site</H2>
+      <H2 intro="What visitors on this site wanted most, and what they looked at but didn't buy (maybe the price or the photo).">
+        Products on the site
+      </H2>
       {prods?.tracked ? (
         <div className="grid gap-5 md:grid-cols-2 print:grid-cols-2">
           <div className="break-inside-avoid">
             <p className="mb-1 text-sm font-medium">Most added to cart</p>
             <Table
-              head={["Product", "Views", "Added", "Checkout"]}
+              head={["Product", "Viewed", "Added to cart", "At checkout"]}
               rows={prods.mostAdded.map((p) => [
                 p.title || "(unknown)",
                 p.views,
@@ -640,7 +671,7 @@ function Report({ r }: { r: CampaignReport }) {
           <div className="break-inside-avoid">
             <p className="mb-1 text-sm font-medium">Looked at a lot, rarely added</p>
             <Table
-              head={["Product", "Views", "Added", "Rate"]}
+              head={["Product", "Viewed", "Added to cart", "Added per view"]}
               rows={prods.viewedNotAdded.map((p) => [
                 p.title || "(unknown)",
                 p.views,
@@ -653,7 +684,7 @@ function Report({ r }: { r: CampaignReport }) {
       ) : (
         <Muted>
           {prods
-            ? "No product activity on the Black Friday site in this period."
+            ? "No product activity on the Fyxx Friday site in this period."
             : `Products not available${why(r.products)}.`}
         </Muted>
       )}

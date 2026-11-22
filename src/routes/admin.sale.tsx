@@ -179,9 +179,9 @@ function SalePage() {
   return (
     <>
       <PageHeader title="Sale & products">
-        Everything the shop page uses: sale dates, badge and &quot;up to&quot; rules, filters and
-        which Shopify products are included. Saved changes show on the site within a minute, no
-        redeploy needed. Prices always come from Shopify.
+        The settings behind the shop page: sale times, badges, filters, texts and which Shopify
+        products are shown. Saved changes show on the site within a minute. Prices always come from
+        Shopify and can&apos;t be changed here.
       </PageHeader>
 
       {error ? (
@@ -214,6 +214,9 @@ function SalePage() {
               <span className="ml-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground uppercase">
                 {state}
               </span>
+            </p>
+            <p className="-mt-3 text-sm text-muted-foreground">
+              When Friday prices and badges switch on and off on the site.
             </p>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Sale starts">
@@ -265,7 +268,12 @@ function SalePage() {
           </Panel>
 
           <Panel className="space-y-4">
-            <p className="font-medium">Before the sale: big header and cart note</p>
+            <div>
+              <p className="font-medium">Before the sale: big header and cart note</p>
+              <p className="text-sm text-muted-foreground">
+                The texts visitors see before Friday 10:00, to get them to fill a cart early.
+              </p>
+            </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Headline">
                 <Input
@@ -316,6 +324,12 @@ function SalePage() {
           </Panel>
 
           <Panel className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <p className="font-medium">Shop page rules</p>
+              <p className="text-sm text-muted-foreground">
+                Numbers that decide badges, &quot;up to&quot;, Top deals and the filters.
+              </p>
+            </div>
             <Field
               label="Badge switches to “Save JOD” at this price (JOD)"
               hint="Under it the badge shows −15%; at or above, Save JOD 12.000."
@@ -377,6 +391,13 @@ function SalePage() {
           </Panel>
 
           <Panel className="space-y-4">
+            <div>
+              <p className="font-medium">Categories, sections and texts</p>
+              <p className="text-sm text-muted-foreground">
+                Which products go where, the header sections, quick links and the smaller texts. The
+                JSON boxes are for whoever set them up: change with care.
+              </p>
+            </div>
             <Field
               label="Category mapping (JSON)"
               hint="Category circles in order. A product joins the first category whose product_types match its Shopify product type (require_tags: it must also have one of these tags; handles: named products). Inside it, the first sub category whose Shopify collections, tags or product types match. image_handle: the product whose photo shows in the circle."
@@ -489,13 +510,17 @@ function SalePage() {
           {save.error && <ErrorBox error={save.error} />}
 
           <Panel>
-            <p className="mb-3 font-medium">Products per category</p>
+            <p className="font-medium">Products per category</p>
+            <p className="mb-3 text-sm text-muted-foreground">
+              How many products each category has on the site right now, and the biggest discount it
+              will show.
+            </p>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="text-left text-xs text-muted-foreground">
                   <tr>
                     <th className="py-1 pr-4">Category</th>
-                    <th className="py-1 pr-4 text-right">In the index</th>
+                    <th className="py-1 pr-4 text-right">On the site</th>
                     <th className="py-1 pr-4 text-right">In stock</th>
                     <th className="py-1 pr-4 text-right">Discounted</th>
                     <th className="py-1 text-right">Up to</th>

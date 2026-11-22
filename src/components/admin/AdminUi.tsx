@@ -224,9 +224,10 @@ export function SourceName({
 }
 
 /** Table header and cell styles, the same on every admin page. */
-export const TH = "px-3 py-2.5 text-xs font-medium text-muted-foreground first:pl-4 last:pr-4";
+export const TH =
+  "px-2 py-2.5 text-xs font-medium text-muted-foreground first:pl-3 last:pr-3 sm:px-3 sm:first:pl-4 sm:last:pr-4";
 export const THR = `${TH} text-right`;
-export const TD = "px-3 py-2.5 align-top first:pl-4 last:pr-4";
+export const TD = "px-2 py-2.5 align-top first:pl-3 last:pr-3 sm:px-3 sm:first:pl-4 sm:last:pr-4";
 export const TDR = `${TD} text-right tabular-nums whitespace-nowrap`;
 export const TR = "border-b border-border/60 last:border-0";
 

@@ -181,7 +181,7 @@ function CohortPage() {
                           <th className={TH}>Channel</th>
                           <th className={THR}>Orders</th>
                           <th className={THR}>Sales</th>
-                          <th className={THR}>Share</th>
+                          <th className={`${THR} hidden sm:table-cell`}>Share</th>
                           <th className={`${THR} hidden sm:table-cell`}>Customers</th>
                           <th className={THR}>Sales before</th>
                         </tr>
@@ -194,7 +194,9 @@ function CohortPage() {
                               <td className={`${TD} font-medium`}>{describeChannel(ch.channel)}</td>
                               <td className={TDR}>{fmtNum(ch.orders)}</td>
                               <td className={TDR}>{fmtMoney(ch.revenue)}</td>
-                              <td className={TDR}>{fmtPct(ch.revenue, c.revenue)}</td>
+                              <td className={`${TDR} hidden sm:table-cell`}>
+                                {fmtPct(ch.revenue, c.revenue)}
+                              </td>
                               <td className={`${TDR} hidden sm:table-cell`}>
                                 {ch.channel === "POS (Odoo)" ? "–" : fmtNum(ch.customers)}
                               </td>
