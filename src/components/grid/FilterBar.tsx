@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { SlidersHorizontal, X } from "lucide-react";
 
@@ -50,8 +50,33 @@ export function FilterBar({
     tags.push({ label: `${filters.disc}% off or more`, clear: { disc: undefined } });
   const active = tags.filter((t) => !("q" in t.clear)).length;
 
+  // Where the bar ends on screen, for the sticky price headings in the grid.
+  const bar = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = bar.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const set = () => {
+      const top = parseFloat(getComputedStyle(el).top) || 0;
+      document.documentElement.style.setProperty(
+        "--ff-filter-bottom",
+        `${Math.round(top + el.offsetHeight)}px`,
+      );
+    };
+    set();
+    const ro = new ResizeObserver(set);
+    ro.observe(el);
+    window.addEventListener("resize", set);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", set);
+    };
+  }, []);
+
   return (
-    <div className="sticky top-[100px] z-30 -mx-5 border-b border-ff-black/15 bg-ff-cream px-5 md:top-[88px] md:-mx-10 md:px-10">
+    <div
+      ref={bar}
+      className="sticky top-[100px] z-30 -mx-5 border-b border-ff-black/15 bg-ff-cream px-5 md:top-[88px] md:-mx-10 md:px-10"
+    >
       {/* 1. Filter button + count */}
       <div className="flex items-center justify-between gap-3 py-2">
         <button
@@ -146,8 +171,8 @@ function FilterSheet({
   const set = (patch: Partial<CatalogFilters>) => setDraft((d) => ({ ...d, ...patch }));
 
   const sortOptions: SortKey[] = sale
-    ? ["discount", "price_asc", "price_desc"]
-    : ["newest", "price_asc", "price_desc"];
+    ? ["featured", "discount", "price_asc", "price_desc"]
+    : ["featured", "price_asc", "price_desc", "newest"];
   const sort = draft.sort && sortOptions.includes(draft.sort) ? draft.sort : sortOptions[0];
   const total = f?.total ?? 0;
 

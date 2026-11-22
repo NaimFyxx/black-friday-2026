@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { dehydrate, hydrate, useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, Search } from "lucide-react";
@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import {
   catalogQueryOptions,
   facetsQueryOptions,
+  bandLabel,
   mainInGroup,
   type CatalogFacets,
   type CatalogFilters,
@@ -342,18 +343,33 @@ function Storefront() {
                 </p>
               ) : (
                 <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 md:gap-y-12 lg:grid-cols-4">
-                  {items.map((item, i) => (
-                    <CatalogCard
-                      key={item.product_id}
-                      item={item}
-                      threshold={threshold}
-                      eager={i < 4}
-                      lowStockMax={sale ? (teaser?.low_stock_max ?? 5) : null}
-                      preSaleLabel={
-                        state === "preview" ? (teaser?.copy.sale_label_preview ?? null) : null
-                      }
-                    />
-                  ))}
+                  {items.map((item, i) => {
+                    const prev = items[i - 1];
+                    const heading =
+                      item.block !== undefined &&
+                      item.band !== undefined &&
+                      (!prev || prev.block !== item.block || prev.band !== item.band);
+                    const band = facets?.bands.find((b) => b.index === item.band);
+                    return (
+                      <Fragment key={item.product_id}>
+                        {heading && (
+                          <GridHeading
+                            eyebrow={item.block === 0 ? "Fyxx selection" : "More from our shelves"}
+                            label={band ? bandLabel(band) : ""}
+                          />
+                        )}
+                        <CatalogCard
+                          item={item}
+                          threshold={threshold}
+                          eager={i < 4}
+                          lowStockMax={sale ? (teaser?.low_stock_max ?? 5) : null}
+                          preSaleLabel={
+                            state === "preview" ? (teaser?.copy.sale_label_preview ?? null) : null
+                          }
+                        />
+                      </Fragment>
+                    );
+                  })}
                 </div>
               )}
 
@@ -439,5 +455,21 @@ function CatalogSearch({
         className="ff-small h-10 rounded-full border-ff-black/25 bg-ff-cream pl-9"
       />
     </label>
+  );
+}
+
+/** Full-width heading in the product grid (default order): "Fyxx selection, Under JOD 20".
+ *  Sticks under the filter bar while its part of the list is on screen. */
+function GridHeading({ eyebrow, label }: { eyebrow: string; label: string }) {
+  return (
+    <div
+      className="sticky z-20 col-span-full -mx-5 -mb-4 border-b border-ff-black/10 bg-ff-cream/95 px-5 py-2 backdrop-blur-sm md:-mx-10 md:-mb-6 md:px-10"
+      style={{ top: "var(--ff-filter-bottom, 140px)" }}
+    >
+      <p className="flex items-baseline gap-2">
+        <span className="ff-headline text-sm text-ff-red md:text-base">{eyebrow}</span>
+        {label && <span className="ff-subline text-sm text-ff-black md:text-base">{label}</span>}
+      </p>
+    </div>
   );
 }

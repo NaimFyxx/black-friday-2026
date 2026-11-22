@@ -6,3 +6,8 @@
 -- bf_card now also returns product_type (shown under the title on cards).
 -- bf_settings.category_mapping[].image_handle switched to a Fyxx-vendor product
 --   per category (most added to cart / viewed, well-known bottle on ties).
+-- Later the same night (migration bf_catalog_fyxx_price_bands): the default order is
+--   Fyxx selection (vendor contains vendor_priority[1]) then everything else; in each
+--   block cheapest price band first (bf_settings.price_bands), then the other
+--   vendor_priority words (umg, zumot), then categories take turns from the cheapest.
+--   Items carry "block" and "band" so the grid shows sticky headings.

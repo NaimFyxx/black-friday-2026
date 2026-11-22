@@ -13,7 +13,8 @@ import { simCatalog, simFacets } from "@/lib/preview-sim.functions";
 import { formatJod, type ShopifyProduct } from "@/lib/shopify";
 
 export type SaleState = "preview" | "sale" | "ended";
-export type SortKey = "discount" | "price_asc" | "price_desc" | "newest";
+/** "featured" = the default order (Fyxx selection first, then price bands; see bf_catalog). */
+export type SortKey = "featured" | "discount" | "price_asc" | "price_desc" | "newest";
 
 export interface CatalogFilters {
   main?: string | undefined;
@@ -49,6 +50,10 @@ export interface CatalogItem {
   /** Units left of this variant (null when Shopify doesn't track it). */
   stock?: number | null;
   saved_amount: number; // 0 outside the sale
+  /** Default order only: 0 = Fyxx selection, 1 = everything else. */
+  block?: number;
+  /** Default order only: price band index (bf_settings.price_bands). */
+  band?: number;
 }
 
 export interface CatalogPage {
@@ -106,7 +111,7 @@ const params = (f: CatalogFilters, preview: Preview | null) => ({
   group: f.group ?? null,
   disc: f.disc ?? null,
   q: f.q ?? null,
-  sort: f.sort ?? null,
+  sort: f.sort && f.sort !== "featured" ? f.sort : null,
 });
 
 export async function fetchCatalogPage(
@@ -155,7 +160,7 @@ const filterKey = (f: CatalogFilters, preview: Preview | null) => [
   f.group ?? "",
   f.disc ?? "",
   f.q ?? "",
-  f.sort ?? "",
+  f.sort && f.sort !== "featured" ? f.sort : "",
 ];
 
 export const catalogQueryOptions = (
@@ -243,6 +248,7 @@ export function toCartProduct(item: CatalogItem): ShopifyProduct {
 }
 
 export const SORT_LABELS: Record<SortKey, string> = {
+  featured: "Fyxx picks first",
   discount: "Biggest markdown first",
   price_asc: "Price low to high",
   price_desc: "Price high to low",

@@ -735,3 +735,4 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 - Category circle photos: each category now uses a product whose vendor contains "Fyxx" (category_mapping[].image_handle). Live immediately (looked up at query time).
 - Default product order: vendor contains Fyxx, then UMG, then Zumot, then the rest (bf_settings.vendor_priority). Only when the shopper hasn't picked a sort.
 - Product type (Shopify) under the title on every catalog card.
+- Default order (sort "featured", shown as "Fyxx picks first" in Filter & sort): Fyxx selection first, then everything else; each block cheapest band first, categories taking turns. Grid shows sticky headings "Fyxx selection / More from our shelves" + price band (GridHeading in src/routes/index.tsx; FilterBar sets --ff-filter-bottom).
