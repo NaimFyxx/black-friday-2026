@@ -7,6 +7,7 @@ import {
   ErrorBox,
   fmtDate,
   fmtMoney,
+  fmtNum,
   fmtPct,
   fmtRange,
   Loading,
@@ -14,11 +15,19 @@ import {
   Panel,
   RangePicker,
   rangeFor,
+  Note,
+  Section,
   SetupNotice,
   StatCard,
+  TD,
+  TDR,
+  TH,
+  THR,
+  TR,
   type RangeKey,
 } from "@/components/admin/AdminUi";
 import { getCohort } from "@/lib/admin.functions";
+import { describeChannel } from "@/lib/source-labels";
 
 export const Route = createFileRoute("/admin/cohort")({
   component: CohortPage,
@@ -43,11 +52,10 @@ function CohortPage() {
 
   return (
     <>
-      <PageHeader title="Customers">
-        Every Fyxx order in the period across all channels: website, app and draft orders from
-        Shopify, and POS sales from Odoo (Shopify's “Odoo Connector” copies of POS sales are left
-        out so POS isn't counted twice). Compared with the same number of days right before it. New
-        vs returning covers Shopify customers only.
+      <PageHeader title="All Fyxx sales">
+        Every Fyxx order in this time, from every channel: the app, the website, draft orders and
+        the shops. Compared with the same number of days just before, so you can see whether the
+        campaign lifted sales overall, not only on this site.
       </PageHeader>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -64,11 +72,12 @@ function CohortPage() {
       ) : (
         <>
           {data.firstOrderSource === "customers_table" && (
-            <SetupNotice title="New vs returning may be off">
-              The <code>bf_first_order_dates</code> database function isn't set up yet, so
-              new-vs-returning falls back to the <code>shopify_customers</code> table, which stopped
-              updating in late August 2026. Customers it doesn't know are shown as “unknown”. Paste
-              the prompt from <code>docs/LOVABLE-SETUP.md</code> into Lovable to fix this.
+            <SetupNotice title="New or returning may be off">
+              The database can't yet tell for sure who ordered before (the{" "}
+              <code>bf_first_order_dates</code> function is missing), so it uses an older customer
+              list that stopped updating in late August 2026. Customers it doesn't know show as
+              &quot;unknown&quot;. Paste the prompt from <code>docs/LOVABLE-SETUP.md</code> into
+              Lovable to fix this.
             </SetupNotice>
           )}
           {(() => {
@@ -76,123 +85,141 @@ function CohortPage() {
             const p = data.previous;
             return (
               <>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-                  <StatCard
-                    label="Orders"
-                    value={c.orders.toLocaleString()}
-                    sub={change(c.orders, p.orders)}
-                  />
-                  <StatCard
-                    label="Revenue"
-                    value={fmtMoney(c.revenue)}
-                    sub={change(c.revenue, p.revenue)}
-                  />
-                  <StatCard label="Avg. order" value={fmtMoney(c.aov)} sub={change(c.aov, p.aov)} />
-                  <StatCard
-                    label="Customers"
-                    value={c.customers.toLocaleString()}
-                    sub={change(c.customers, p.customers)}
-                  />
-                  <StatCard
-                    label="New customers"
-                    value={c.newCustomers.toLocaleString()}
-                    sub={`${fmtPct(c.newCustomers, c.customers)} · ${change(c.newCustomers, p.newCustomers)}`}
-                  />
-                  <StatCard
-                    label="Returning"
-                    value={c.returningCustomers.toLocaleString()}
-                    sub={`${fmtPct(c.returningCustomers, c.customers)} · ${change(c.returningCustomers, p.returningCustomers)}`}
-                  />
-                </div>
-
-                <div className="grid gap-3 md:grid-cols-2">
-                  <Panel>
-                    <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
-                      Revenue: new vs returning
-                    </p>
-                    <SplitBar
-                      a={{ label: "New", value: c.newRevenue }}
-                      b={{ label: "Returning", value: c.returningRevenue }}
+                <Section
+                  title="The main numbers"
+                  intro="Orders and sales from every channel, with the change against the days just before."
+                >
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+                    <StatCard
+                      label="Sales"
+                      value={fmtMoney(c.revenue)}
+                      sub={change(c.revenue, p.revenue)}
                     />
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      “New” = first order ever placed in this period.{" "}
-                      {c.guestOrders.toLocaleString()} order(s) had no customer attached (guest /
-                      walk-in / house account) and aren't counted as either.
-                      {c.unknownCustomers > 0 &&
-                        ` ${c.unknownCustomers.toLocaleString()} customer(s) unknown.`}
-                    </p>
-                  </Panel>
-                  <Panel>
-                    <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
-                      Before this period
-                    </p>
-                    <p className="mt-1 text-sm">
-                      {fmtRange(data.previousRange)}: {p.orders.toLocaleString()} orders ·{" "}
-                      {fmtMoney(p.revenue)} · {p.customers.toLocaleString()} customers (
-                      {p.newCustomers.toLocaleString()} new)
-                    </p>
-                    {data.syncedAt && (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        Order data last synced {fmtDate(data.syncedAt, true)}.
-                      </p>
-                    )}
-                    {[c.pos, p.pos].some((x) => x && x.days < x.expectedDays) && (
-                      <p className="mt-2 text-xs text-amber-700">
-                        Odoo POS totals are missing for some days (now: {c.pos?.days ?? 0}/
-                        {c.pos?.expectedDays ?? 0}, before: {p.pos?.days ?? 0}/
-                        {p.pos?.expectedDays ?? 0}). Pulse records them nightly from 19 Oct 2026;
-                        today's POS sales appear tomorrow.
-                      </p>
-                    )}
-                  </Panel>
-                </div>
+                    <StatCard
+                      label="Orders"
+                      value={fmtNum(c.orders)}
+                      sub={change(c.orders, p.orders)}
+                    />
+                    <StatCard
+                      label="Average order"
+                      value={fmtMoney(c.aov)}
+                      sub={change(c.aov, p.aov)}
+                    />
+                    <StatCard
+                      label="Customers"
+                      value={fmtNum(c.customers)}
+                      sub={change(c.customers, p.customers)}
+                    />
+                    <StatCard
+                      label="New customers"
+                      value={fmtNum(c.newCustomers)}
+                      sub={`first order ever, ${fmtPct(c.newCustomers, c.customers)} of customers. ${change(c.newCustomers, p.newCustomers)}`}
+                    />
+                    <StatCard
+                      label="Returning customers"
+                      value={fmtNum(c.returningCustomers)}
+                      sub={`ordered before, ${fmtPct(c.returningCustomers, c.customers)}. ${change(c.returningCustomers, p.returningCustomers)}`}
+                    />
+                  </div>
+                </Section>
 
-                <Panel className="overflow-x-auto p-0">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border text-left text-[10px] tracking-[0.15em] text-muted-foreground uppercase">
-                        <th className="px-4 py-3 font-medium">Channel</th>
-                        <th className="px-4 py-3 text-right font-medium">Orders</th>
-                        <th className="px-4 py-3 text-right font-medium">Revenue</th>
-                        <th className="px-4 py-3 text-right font-medium">Share</th>
-                        <th className="px-4 py-3 text-right font-medium">Customers</th>
-                        <th className="px-4 py-3 text-right font-medium">Before</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {c.channels.map((ch) => {
-                        const before = p.channels.find((x) => x.channel === ch.channel);
-                        return (
-                          <tr key={ch.channel} className="border-b border-border/60 last:border-0">
-                            <td className="px-4 py-2.5 font-medium">{ch.channel}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums">
-                              {ch.orders.toLocaleString()}
-                            </td>
-                            <td className="px-4 py-2.5 text-right tabular-nums">
-                              {fmtMoney(ch.revenue)}
-                            </td>
-                            <td className="px-4 py-2.5 text-right tabular-nums">
-                              {fmtPct(ch.revenue, c.revenue)}
-                            </td>
-                            <td className="px-4 py-2.5 text-right tabular-nums">
-                              {ch.channel === "POS (Odoo)" ? "–" : ch.customers.toLocaleString()}
-                            </td>
-                            <td className="px-4 py-2.5 text-right text-muted-foreground tabular-nums">
-                              {before ? fmtMoney(before.revenue) : "–"}
+                <Section
+                  title="New or returning customers"
+                  intro="How much of the sales came from people ordering for the first time ever. New customers are the ones the campaign wins."
+                >
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <Panel>
+                      <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+                        Sales: new or returning
+                      </p>
+                      <SplitBar
+                        a={{ label: "New", value: c.newRevenue }}
+                        b={{ label: "Returning", value: c.returningRevenue }}
+                      />
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        &quot;New&quot; means their first order ever was in this time.{" "}
+                        {fmtNum(c.guestOrders)} order(s) had no customer attached (guest, walk-in or
+                        house account) and count as neither.
+                        {c.unknownCustomers > 0 &&
+                          ` ${fmtNum(c.unknownCustomers)} customer(s) unknown.`}
+                      </p>
+                    </Panel>
+                    <Panel>
+                      <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+                        The days before, for comparison
+                      </p>
+                      <p className="mt-1 text-sm">
+                        {fmtRange(data.previousRange)}: {fmtNum(p.orders)} orders ·{" "}
+                        {fmtMoney(p.revenue)} in sales · {fmtNum(p.customers)} customers (
+                        {fmtNum(p.newCustomers)} new)
+                      </p>
+                      {data.syncedAt && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Orders last copied from Shopify {fmtDate(data.syncedAt, true)}.
+                        </p>
+                      )}
+                      {[c.pos, p.pos].some((x) => x && x.days < x.expectedDays) && (
+                        <p className="mt-2 text-xs text-amber-700">
+                          Shop (POS) sales are missing for some days (this time: {c.pos?.days ?? 0}{" "}
+                          of {c.pos?.expectedDays ?? 0} days, before: {p.pos?.days ?? 0} of{" "}
+                          {p.pos?.expectedDays ?? 0}). They are copied from Odoo every night since
+                          19 Oct 2026, so today's shop sales show tomorrow.
+                        </p>
+                      )}
+                    </Panel>
+                  </div>
+                </Section>
+
+                <Section
+                  title="Sales by channel"
+                  intro="Where the orders were placed, with each channel's share of all sales and its sales in the days before."
+                >
+                  <Panel className="overflow-x-auto p-0">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-border text-left">
+                          <th className={TH}>Channel</th>
+                          <th className={THR}>Orders</th>
+                          <th className={THR}>Sales</th>
+                          <th className={THR}>Share</th>
+                          <th className={`${THR} hidden sm:table-cell`}>Customers</th>
+                          <th className={THR}>Sales before</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {c.channels.map((ch) => {
+                          const before = p.channels.find((x) => x.channel === ch.channel);
+                          return (
+                            <tr key={ch.channel} className={TR}>
+                              <td className={`${TD} font-medium`}>{describeChannel(ch.channel)}</td>
+                              <td className={TDR}>{fmtNum(ch.orders)}</td>
+                              <td className={TDR}>{fmtMoney(ch.revenue)}</td>
+                              <td className={TDR}>{fmtPct(ch.revenue, c.revenue)}</td>
+                              <td className={`${TDR} hidden sm:table-cell`}>
+                                {ch.channel === "POS (Odoo)" ? "–" : fmtNum(ch.customers)}
+                              </td>
+                              <td className={`${TDR} text-muted-foreground`}>
+                                {before ? fmtMoney(before.revenue) : "–"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {c.channels.length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="p-8 text-center text-muted-foreground">
+                              No orders in this period yet.
                             </td>
                           </tr>
-                        );
-                      })}
-                      {c.channels.length === 0 && (
-                        <tr>
-                          <td colSpan={6} className="p-8 text-center text-muted-foreground">
-                            No orders in this period yet.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </Panel>
+                        )}
+                      </tbody>
+                    </table>
+                  </Panel>
+                  <Note>
+                    Shop sales come from Odoo. Shopify also keeps partial copies of some shop sales
+                    (&quot;Odoo Connector&quot;); those are left out so nothing is counted twice.
+                    New or returning only covers Shopify customers, not shop customers.
+                  </Note>
+                </Section>
               </>
             );
           })()}

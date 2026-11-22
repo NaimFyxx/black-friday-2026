@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   ErrorBox,
   fmtDate,
+  fmtNum,
   Loading,
   PageHeader,
   Panel,
@@ -83,8 +84,8 @@ function SpinsPage() {
   return (
     <>
       <PageHeader title="Spin & win">
-        The Fyxx points slot machine on the landing page. One spin per email and per browser. Points
-        are not added automatically: download the list and add them in LoyaltyLion.
+        The Fyxx points slot machine on the landing page: who won, the chances and the texts. Points
+        are not added to accounts by themselves: download the list and add them in LoyaltyLion.
       </PageHeader>
 
       {error ? (
@@ -94,17 +95,22 @@ function SpinsPage() {
       ) : (
         <div className="space-y-6">
           <div className="grid gap-3 sm:grid-cols-3">
-            <StatCard label="Spins" value={String(spins.length)} />
-            <StatCard label="Points to add" value={String(totalPoints)} />
+            <StatCard label="Spins" value={fmtNum(spins.length)} sub="one per email and browser" />
+            <StatCard label="Points to add" value={fmtNum(totalPoints)} sub="in LoyaltyLion" />
             <StatCard
-              label="Average"
+              label="Average points per spin"
               value={spins.length ? (totalPoints / spins.length).toFixed(1) : "0"}
             />
           </div>
 
           <Panel>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <p className="font-medium">Winners</p>
+              <div>
+                <p className="font-medium">Winners</p>
+                <p className="text-sm text-muted-foreground">
+                  Everyone who spun and what they won. The download is ready for LoyaltyLion.
+                </p>
+              </div>
               <Button variant="outline" onClick={downloadCsv} disabled={spins.length === 0}>
                 Download CSV for LoyaltyLion
               </Button>
@@ -140,7 +146,7 @@ function SpinsPage() {
               <div>
                 <p className="font-medium">Show the game</p>
                 <p className="text-sm text-muted-foreground">
-                  Sticker and popup on the landing page, until the sale ends.
+                  The sticker and pop-up on the landing page, until the sale ends.
                 </p>
               </div>
               <Switch checked={enabled} onCheckedChange={setEnabled} />
@@ -148,7 +154,13 @@ function SpinsPage() {
           </Panel>
 
           <Panel className="space-y-3">
-            <p className="font-medium">Prizes and chances</p>
+            <div>
+              <p className="font-medium">Prizes and chances</p>
+              <p className="text-sm text-muted-foreground">
+                A bigger number means that prize comes up more often. The % under each is its
+                chance.
+              </p>
+            </div>
             <div className="grid gap-3 sm:grid-cols-5">
               {odds.map((o, i) => (
                 <label key={i} className="block space-y-1 text-sm">
@@ -177,6 +189,12 @@ function SpinsPage() {
           </Panel>
 
           <Panel className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <p className="font-medium">Texts</p>
+              <p className="text-sm text-muted-foreground">
+                Every word the game shows. Saved changes show on the site within a minute.
+              </p>
+            </div>
             {COPY_FIELDS.map((f) => (
               <Field key={f.key} label={f.label} hint={f.hint}>
                 <Input

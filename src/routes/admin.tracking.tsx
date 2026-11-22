@@ -39,9 +39,9 @@ function TrackingPage() {
   return (
     <>
       <PageHeader title="Tracking">
-        Keep your own testing out of the numbers. Covers Google Analytics, Meta Pixel, Klaviyo,
-        Microsoft Clarity and the visit log behind these dashboards. Changes apply on the next page
-        load.
+        Switches that decide who gets counted, so the team&apos;s own testing stays out of the
+        numbers. They cover Google Analytics, the Meta pixel, Klaviyo, Microsoft Clarity and the
+        visits on these pages. Changes apply the next time a page loads.
       </PageHeader>
 
       {error ? (
@@ -51,29 +51,29 @@ function TrackingPage() {
       ) : (
         <>
           {data.siteSetup === "missing" && (
-            <SetupNotice title="The site-wide switch isn't set up yet">
-              The <code>bf_settings</code> table hasn't been created, so tracking is ON for everyone
-              and this switch can't be saved. Paste the prompt from{" "}
-              <code>docs/LOVABLE-SETUP.md</code> into Lovable. (The “this device” switch below
-              already works.)
+            <SetupNotice title="The switch for the whole site isn't set up yet">
+              The settings table (<code>bf_settings</code>) doesn&apos;t exist yet, so everyone is
+              counted and this switch can&apos;t be saved. Paste the prompt from{" "}
+              <code>docs/LOVABLE-SETUP.md</code> into Lovable. (The &quot;this device&quot; switch
+              below already works.)
             </SetupNotice>
           )}
 
           {data.siteSetup === "error" && (
-            <SetupNotice title="Couldn't read the site-wide switch">
-              The site couldn't reach the <code>bf_settings</code> table in Supabase, so tracking
-              stays ON for everyone (it fails safe so Black Friday data is never lost). Try
-              reloading; if it keeps happening, check the Supabase connection in Lovable.
+            <SetupNotice title="Couldn't read the switch for the whole site">
+              The site couldn&apos;t reach its settings in the database, so everyone stays counted
+              (on purpose, so no campaign numbers are lost). Try reloading; if it keeps happening,
+              check the Supabase connection in Lovable.
             </SetupNotice>
           )}
 
           <Panel className="space-y-5">
             <Row
-              title="Site-wide tracking"
+              title="Count visitors on the whole site"
               description={
                 data.siteEnabled
-                  ? "ON: every visitor is tracked."
-                  : "OFF: nobody is tracked. Turn this on when Black Friday goes live!"
+                  ? "ON: every visitor is counted."
+                  : "OFF: nobody is counted. Turn this on before Fyxx Friday goes live!"
               }
               checked={data.siteEnabled}
               disabled={data.siteSetup !== "ok" || site.isPending}
@@ -82,11 +82,11 @@ function TrackingPage() {
             />
             <div className="border-t border-border" />
             <Row
-              title="Track this device"
+              title="Count this device"
               description={
                 data.deviceExcluded
-                  ? "OFF: this browser is never tracked, even when site-wide tracking is on. Do this on each phone and laptop you and Lori test with."
-                  : "ON: this browser is tracked like any visitor. Switch off on your own devices."
+                  ? "OFF: this browser is never counted, even when the whole site is. Do this on every phone and laptop the team tests with."
+                  : "ON: this browser is counted like any visitor. Switch it off on the team's own devices."
               }
               checked={!data.deviceExcluded}
               disabled={device.isPending}
@@ -98,9 +98,9 @@ function TrackingPage() {
           {(site.error || device.error) && <ErrorBox error={site.error ?? device.error} />}
 
           <p className="text-xs text-muted-foreground">
-            “This device” is remembered by a cookie in this browser, so set it once per browser
-            (clearing cookies or using a private window resets it). Errors are still logged on the
-            Errors page either way, so you can see what breaks while testing.
+            &quot;This device&quot; is remembered in this browser, so set it once per browser
+            (clearing cookies or a private window resets it). Errors are still saved on the Errors
+            page either way, so you can see what breaks while testing.
           </p>
         </>
       )}

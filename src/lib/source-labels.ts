@@ -183,3 +183,16 @@ export const KIND_LABEL: Record<SourceKind, string> = {
   free: "Free",
   unknown: "Unknown",
 };
+
+/** Sales channel names in plain words (Pulse's sub_channel values). */
+const CHANNELS: Record<string, string> = {
+  "mobile app": "Fyxx app",
+  website: "myfyxx.com website",
+  "draft orders": "Draft orders (made by the team)",
+  pos: "Shops (POS)",
+  "pos (odoo)": "Shops (POS)",
+};
+
+export function describeChannel(channel: string): string {
+  return CHANNELS[channel.trim().toLowerCase()] ?? channel;
+}
