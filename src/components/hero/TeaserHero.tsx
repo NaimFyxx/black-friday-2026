@@ -22,7 +22,8 @@ export function TeaserHero({
     <section aria-labelledby="teaser-headline" className="bg-ff-burgundy text-ff-cream">
       <div className="mx-auto grid max-w-[1320px] items-center gap-5 px-5 pt-6 pb-8 md:px-10 md:py-12 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:py-16">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-          {/* Logo and bottles side by side on phones, so the button stays on the first screen. */}
+          {/* Logo and bottles side by side on phones, so the button stays on the first
+              screen. On phones the bottles sit next to the logo, not over "Friday". */}
           <div className="flex items-end justify-center lg:justify-start">
             <img
               src="/brand/fyxx-friday-logo-cream.svg"
@@ -30,7 +31,7 @@ export function TeaserHero({
               width={2587}
               height={1446}
               fetchPriority="high"
-              className="h-auto w-[52vw] max-w-[380px] lg:w-[420px] lg:max-w-none"
+              className="h-auto w-[50vw] max-w-[380px] lg:w-[420px] lg:max-w-none"
             />
             <img
               src="/brand/fyxx-friday-bottles-360.webp"
@@ -41,7 +42,7 @@ export function TeaserHero({
               width={360}
               height={459}
               fetchPriority="high"
-              className="-ml-[6vw] h-auto w-[30vw] max-w-[220px] lg:hidden"
+              className="ml-1 h-auto w-[28vw] max-w-[220px] md:-ml-[4vw] lg:hidden"
             />
           </div>
 
@@ -65,6 +66,7 @@ export function TeaserHero({
           )}
           {copy.teaser_button && (
             <button
+              id="hero-cta"
               type="button"
               onClick={onStart}
               className="ff-subline mt-5 inline-flex h-12 items-center justify-center rounded-full bg-ff-red px-8 text-base text-ff-cream transition-colors hover:bg-ff-cream hover:text-ff-burgundy"

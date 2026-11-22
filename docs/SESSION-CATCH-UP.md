@@ -395,3 +395,35 @@ Decisions from the owner: crossed-out Shopify prices keep showing before
 desktop (`src/components/SiteHeader.tsx`). It goes to the top of the landing
 page with no section, and is underlined when no section is picked. Phone row
 spacing tightened so all four fit on a 320px screen.
+
+## 2026-11-22: Website QA fixes before Fyxx Friday
+
+- `sale_end` set to 2026-11-28T00:00:00+03:00 (bf_settings). bf_sale_state
+  now gives sale 27 Nov 10:00 to 28 Nov 00:00 Amman. The sale-list filter does
+  not read sale_end. `CAMPAIGN_END` in campaign-config.ts (the report window,
+  build-up week through 1 Dec) is not the sale end and was left as is.
+- UTMs (`src/lib/utm-attribution.ts`): "fyxx:utm" is now LAST touch,
+  overwritten on every page load with utm_* or fbclid in the URL; stores
+  utm_source/medium/campaign/content/term + fbclid. New "fyxx:utm_first" keeps
+  first touch (old "fyxx:utm" values are copied into it once). bf_events and the
+  GA campaign_view keep using first touch, same fields as before (no fbclid).
+  Cart attributes now include `_utm_term` and `_fbclid`; right before checkout
+  `refreshCartAttributes` (cartAttributesUpdate) puts the latest values on the
+  cart, and the checkout link carries all six as URL params.
+  Tested end to end (see below).
+- `teaser_button` = "Fill your cart".
+- Ticker: FYXX FRIDAY | FRI 27 NOV | FROM 10:00 | UP TO 50% OFF. Meta / OG /
+  Twitter descriptions and hidden headings: no "Black Friday", no best/biggest.
+- Item 5 (hide "Earns Fyxx Points" for sale items) dropped by the owner: kept.
+- Cart: no "Default Title" line for single-option products.
+- Product page: "About this product" for cigars and accessories.
+- Phones: hero bottles no longer overlap "Friday"; the floating cart bar
+  hides while the hero "Fill your cart" button is on screen.
+- Product photo: CDN sizes 400 to 1200 with srcset/sizes, preload link in the
+  head, eager load; cards preload the product page (and photo) on touch/hover.
+- Cart drawer: list padded away from the scrollbar, bigger remove button.
+
+UTM test (local, real Shopify cart): visit 1 qa/test/fyxx-friday-2026-11-27/
+qa-ad/TEST1 reached the checkout URL and the cart attributes; visit 2 with
+meta/paid/second-touch/ad-2/whisky/TEST2 replaced all of them on the same cart.
+First touch stayed on the old record; bf_events payloads carried first touch.

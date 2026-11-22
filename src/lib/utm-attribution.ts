@@ -1,12 +1,14 @@
 // UTM source tracking, ported from Fyxx Cup 2026.
 //
-// On landing we capture the utm_* params (plus ?from=app) and keep them in
-// localStorage. FIRST-TOUCH: once a record is stored we never overwrite it, so
-// the first campaign that brought the visitor in is the one credited. The stored
-// source is sent with the GA `campaign_view` event and carried onto the Shopify
-// checkout link so orders can be traced back to the ad / email / post.
+// Two records in localStorage:
+// - "fyxx:utm" is LAST TOUCH: every page load whose URL has utm_* params or
+//   fbclid overwrites it. It goes onto the Shopify cart (attributes) and the
+//   checkout link, so orders show the campaign and Meta ad that sold them.
+// - "fyxx:utm_first" is FIRST TOUCH: written once, never overwritten. The
+//   site's own event log (bf_events) and the GA campaign_view keep using it.
 
 export const UTM_STORAGE_KEY = "fyxx:utm";
+export const UTM_FIRST_KEY = "fyxx:utm_first";
 
 export const UTM_KEYS = [
   "utm_source",
@@ -14,37 +16,14 @@ export const UTM_KEYS = [
   "utm_campaign",
   "utm_content",
   "utm_term",
+  "fbclid",
 ] as const;
 export type UtmParams = Partial<Record<(typeof UTM_KEYS)[number], string>>;
 
-/** Capture utm_* params from the current URL. Called once on app mount. */
-export function captureUtmFromUrl(): void {
-  if (typeof window === "undefined") return;
-  try {
-    if (window.localStorage.getItem(UTM_STORAGE_KEY)) return; // first-touch wins
-    const params = new URLSearchParams(window.location.search);
-    const utm: UtmParams = {};
-    for (const k of UTM_KEYS) {
-      const v = params.get(k);
-      if (v && v.trim()) utm[k] = v.trim().slice(0, 200);
-    }
-    // Visitors from the FYXX app arrive with ?from=app instead of UTMs.
-    if (!utm.utm_source && params.get("from") === "app") {
-      utm.utm_source = "fyxx_app";
-      utm.utm_medium = utm.utm_medium ?? "app";
-    }
-    if (Object.keys(utm).length > 0) {
-      window.localStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(utm));
-    }
-  } catch {
-    // storage/URL unavailable - attribution is a best-effort extra.
-  }
-}
-
-export function getStoredUtm(): UtmParams | null {
+function read(key: string): UtmParams | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(UTM_STORAGE_KEY);
+    const raw = window.localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as unknown;
     return parsed && typeof parsed === "object" ? (parsed as UtmParams) : null;
@@ -53,16 +32,58 @@ export function getStoredUtm(): UtmParams | null {
   }
 }
 
+/** Capture utm_* params and fbclid from the current URL. Called on every page load. */
+export function captureUtmFromUrl(): void {
+  if (typeof window === "undefined") return;
+  try {
+    // Visitors from before the split: their stored record was first touch.
+    const existing = window.localStorage.getItem(UTM_STORAGE_KEY);
+    if (existing && !window.localStorage.getItem(UTM_FIRST_KEY)) {
+      window.localStorage.setItem(UTM_FIRST_KEY, existing);
+    }
+    const params = new URLSearchParams(window.location.search);
+    const utm: UtmParams = {};
+    for (const k of UTM_KEYS) {
+      const v = params.get(k);
+      if (v && v.trim()) utm[k] = v.trim().slice(0, 500);
+    }
+    // Visitors from the FYXX app arrive with ?from=app instead of UTMs.
+    if (!utm.utm_source && params.get("from") === "app") {
+      utm.utm_source = "fyxx_app";
+      utm.utm_medium = utm.utm_medium ?? "app";
+    }
+    if (Object.keys(utm).length === 0) return;
+    const json = JSON.stringify(utm);
+    window.localStorage.setItem(UTM_STORAGE_KEY, json); // last touch wins
+    if (!window.localStorage.getItem(UTM_FIRST_KEY)) {
+      window.localStorage.setItem(UTM_FIRST_KEY, json); // first touch, once
+    }
+  } catch {
+    // storage/URL unavailable - attribution is a best-effort extra.
+  }
+}
+
+/** Last touch: the most recent campaign that brought the visitor in. */
+export function getStoredUtm(): UtmParams | null {
+  return read(UTM_STORAGE_KEY);
+}
+
+/** First touch: the first campaign that ever brought the visitor in. */
+export function getFirstTouchUtm(): UtmParams | null {
+  return read(UTM_FIRST_KEY) ?? read(UTM_STORAGE_KEY);
+}
+
 export function clearStoredUtm(): void {
   if (typeof window === "undefined") return;
   try {
     window.localStorage.removeItem(UTM_STORAGE_KEY);
+    window.localStorage.removeItem(UTM_FIRST_KEY);
   } catch {
     // ignore
   }
 }
 
-/** Add the stored first-touch UTMs to a URL (e.g. the Shopify checkout link). */
+/** Add the last-touch UTMs and fbclid to a URL (the Shopify checkout link). */
 export function withStoredUtm(url: string): string {
   const utm = getStoredUtm();
   if (!utm) return url;

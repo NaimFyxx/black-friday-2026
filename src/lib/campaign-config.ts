@@ -25,4 +25,6 @@ export const CART_ATTR = {
   medium: "_utm_medium",
   campaign: "_utm_campaign",
   content: "_utm_content",
+  term: "_utm_term",
+  fbclid: "_fbclid",
 } as const;

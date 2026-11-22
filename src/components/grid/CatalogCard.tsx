@@ -125,6 +125,7 @@ export const CatalogCard = memo(function CatalogCard({
       <Link
         to="/product/$handle"
         params={{ handle: item.handle }}
+        preload="intent"
         className="block flex-1 focus-visible:outline-none"
       >
         <div className="relative aspect-4/5 overflow-hidden rounded-lg border border-ff-black/15 bg-ff-cream">

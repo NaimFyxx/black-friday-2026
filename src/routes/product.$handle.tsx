@@ -33,9 +33,19 @@ export const Route = createFileRoute("/product/$handle")({
   loader: async ({ params }) => {
     const product = await getProductByHandle(params.handle);
     if (!product) throw notFound();
+    // Start downloading the photo now (also when a card is only touched or
+    // hovered), so it is ready when the page shows.
+    const url = primaryImage(product)?.url;
+    if (url && typeof window !== "undefined") {
+      const img = new Image();
+      img.sizes = productImage(url).sizes;
+      img.srcset = productImage(url).srcSet;
+    }
     // Only sizes on the Fyxx Friday sale list can be chosen and added.
     return onlySaleVariants(product);
   },
+  // A card touched a moment ago already loaded this: don't fetch it twice.
+  preloadStaleTime: 30_000,
   head: ({ loaderData }) => {
     const title = loaderData ? `${loaderData.title} | Fyxx` : "Product | Fyxx";
     const description = loaderData
@@ -55,6 +65,19 @@ export const Route = createFileRoute("/product/$handle")({
         ...(image ? [{ property: "og:image", content: image }] : []),
         ...(image ? [{ name: "twitter:image", content: image }] : []),
       ],
+      // Main photo: fetch it straight away, before the page scripts run.
+      links: image
+        ? [
+            {
+              rel: "preload",
+              as: "image",
+              href: productImage(image).src,
+              imageSrcSet: productImage(image).srcSet,
+              imageSizes: productImage(image).sizes,
+              fetchPriority: "high",
+            },
+          ]
+        : [],
     };
   },
   component: ProductPage,
@@ -76,6 +99,17 @@ export const Route = createFileRoute("/product/$handle")({
     </div>
   ),
 });
+
+/** Main product photo from the Shopify CDN at the size the screen needs. */
+function productImage(url: string) {
+  const widths = [400, 600, 800, 1000, 1200];
+  return {
+    src: sizedImage(url, 800)!,
+    srcSet: widths.map((w) => `${sizedImage(url, w)} ${w}w`).join(", "),
+    // The photo fills 88% of a full-width box on phones, half the page on desktop.
+    sizes: "(min-width: 1152px) 500px, (min-width: 768px) 44vw, 88vw",
+  };
+}
 
 // Small promises under the button, same as the myfyxx.com product page.
 const PERKS = [
@@ -127,11 +161,12 @@ function ProductPage() {
     () => parseDescription(product.descriptionHtml),
     [product.descriptionHtml],
   );
+  // Bottles say "bottle" (or "wine"); cigars and accessories say "product".
   const aboutTitle =
     product.productType === "Wine"
       ? "About this wine"
-      : product.productType === "Cigars"
-        ? "About this cigar"
+      : product.productType === "Cigars" || /accessor/i.test(product.productType)
+        ? "About this product"
         : "About this bottle";
 
   // Product view -> GA4 view_item + Meta ViewContent (once per product).
@@ -212,9 +247,9 @@ function ProductPage() {
             <div className="flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-ff-black/10 bg-ff-cream">
               {image ? (
                 <img
-                  src={sizedImage(image.url, 900)}
-                  srcSet={`${sizedImage(image.url, 600)} 600w, ${sizedImage(image.url, 900)} 900w, ${sizedImage(image.url, 1200)} 1200w`}
-                  sizes="(min-width: 768px) 50vw, 100vw"
+                  {...productImage(image.url)}
+                  loading="eager"
+                  decoding="async"
                   alt={image.altText ?? product.title}
                   width={900}
                   height={900}

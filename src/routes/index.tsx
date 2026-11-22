@@ -62,12 +62,12 @@ export const Route = createFileRoute("/")({
       { title: "Fyxx Friday | 27 November" },
       {
         name: "description",
-        content: "One day. The biggest deals of the year on wine, spirits and cigars. Delivered in Amman.",
+        content: "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
       },
       { property: "og:title", content: "Fyxx Friday | 27 November" },
       {
         property: "og:description",
-        content: "One day. The biggest deals of the year on wine, spirits and cigars. Delivered in Amman.",
+        content: "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://friday.myfyxx.com/" },
@@ -75,12 +75,12 @@ export const Route = createFileRoute("/")({
       { property: "og:image", content: "https://friday.myfyxx.com/brand/og-fyxx-friday.jpg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "Fyxx Friday, November 27: one day only, special offers, best deals" },
+      { property: "og:image:alt", content: "Fyxx Friday, Friday 27 November from 10:00. One day only." },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Fyxx Friday | 27 November" },
       {
         name: "twitter:description",
-        content: "One day. The biggest deals of the year on wine, spirits and cigars. Delivered in Amman.",
+        content: "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
       },
       { name: "twitter:image", content: "https://friday.myfyxx.com/brand/og-fyxx-friday.jpg" },
     ],
@@ -161,21 +161,23 @@ function Storefront() {
 
   return (
     <main className="min-h-screen bg-ff-cream text-ff-black">
-      <h1 className="sr-only">Fyxx Friday: Black Friday 2026, November 27, special offers and best deals</h1>
+      <h1 className="sr-only">Fyxx Friday: Friday 27 November from 10:00, one day only</h1>
       {/* Moving ticker: the message scrolls right to left on a loop. Pauses on
           hover; stays still for visitors who ask for reduced motion. */}
       <div id="top" className="ff-ticker overflow-hidden bg-ff-red py-2 text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg">
-        <span className="sr-only">Black Friday 2026, November 27: special offers, best deals</span>
+        <span className="sr-only">Fyxx Friday, Friday 27 November from 10:00. Up to 50% off.</span>
         <div aria-hidden="true" className="ff-ticker-track flex w-max whitespace-nowrap">
           {[0, 1].map((half) => (
             <div key={half} className="flex shrink-0">
               {Array.from({ length: 4 }, (_, k) => (
                 <span key={k} className="flex shrink-0 items-center">
-                  <span className="px-4 md:px-6">BLACK FRIDAY 2026</span>
+                  <span className="px-4 md:px-6">FYXX FRIDAY</span>
                   <span>|</span>
-                  <span className="px-4 md:px-6">NOVEMBER 27</span>
+                  <span className="px-4 md:px-6">FRI 27 NOV</span>
                   <span>|</span>
-                  <span className="px-4 md:px-6">SPECIAL OFFERS. BEST DEALS</span>
+                  <span className="px-4 md:px-6">FROM 10:00</span>
+                  <span>|</span>
+                  <span className="px-4 md:px-6">UP TO 50% OFF</span>
                   <span>|</span>
                 </span>
               ))}

@@ -16,6 +16,7 @@ import {
 import { trackBeginCheckout } from "@/lib/analytics";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { teaserQueryOptions } from "@/lib/teaser";
+import { refreshCartAttributes, type CartItem } from "@/lib/shopify-cart";
 import { withStoredUtm } from "@/lib/utm-attribution";
 import { prepareCheckout } from "@/lib/checkout-handoff.functions";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
@@ -69,7 +70,7 @@ export function CartDrawer() {
           quantity: item.quantity,
         })),
       );
-      // Carry the first-touch source onto checkout so orders can be traced.
+      // Carry the latest campaign (UTMs + fbclid) onto checkout.
       const normal = withStoredUtm(checkoutUrl);
       // Open the tab now (inside the tap, so phones allow it), then send it to
       // the checkout page directly so the Fyxx app does not take over (see
@@ -80,7 +81,10 @@ export function CartDrawer() {
         if (tab && !tab.closed) tab.location.href = url;
         else window.location.href = url;
       };
-      prepareCheckoutFn({ data: { url: normal } })
+      // Latest campaign onto the cart first (orders read it), then hand off.
+      const cartId = useCartStore.getState().cartId;
+      (cartId ? refreshCartAttributes(cartId).catch(() => {}) : Promise.resolve())
+        .then(() => prepareCheckoutFn({ data: { url: normal } }))
         .then((r) => go(r ? withStoredUtm(r.url) : normal))
         .catch(() => go(normal));
     }
@@ -121,7 +125,8 @@ export function CartDrawer() {
             </div>
           ) : (
             <>
-              <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto py-2">
+              {/* Right padding keeps the remove buttons clear of the scrollbar. */}
+              <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto py-2 pr-3">
                 {items.map((item) => (
                   <li key={item.variantId} className="flex gap-4 py-4">
                     <div className="h-16 w-14 shrink-0 overflow-hidden rounded-sm bg-sand">
@@ -137,15 +142,20 @@ export function CartDrawer() {
                       <h4 className="truncate font-display text-lg leading-tight">
                         {item.product.node.title}
                       </h4>
-                      <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                        {item.selectedOptions.map((o) => o.value).join(" · ") || item.variantTitle}
-                      </p>
+                      {/* Size etc.; nothing for single-option products ("Default Title"). */}
+                      {variantLabel(item) && (
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {variantLabel(item)}
+                        </p>
+                      )}
                       <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm tabular-nums">
                         {item.compareAtPrice &&
                         Number(item.compareAtPrice.amount) > Number(item.price.amount) ? (
                           <>
                             <span className="text-ff-red">{formatPrice(item.price)}</span>
-                            <s className="text-xs text-ff-black/55">{formatPrice(item.compareAtPrice)}</s>
+                            <s className="text-xs text-ff-black/55">
+                              {formatPrice(item.compareAtPrice)}
+                            </s>
                           </>
                         ) : (
                           formatPrice(item.price)
@@ -157,10 +167,10 @@ export function CartDrawer() {
                         variant="ghost"
                         size="icon"
                         aria-label={`Remove ${item.product.node.title}`}
-                        className="h-6 w-6 text-muted-foreground"
+                        className="h-8 w-8 text-muted-foreground hover:text-ff-red"
                         onClick={() => removeItem(item.variantId)}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                       <div className="flex items-center gap-1 rounded-full border border-border">
                         <Button
@@ -238,4 +248,14 @@ function TeaserCartNote() {
       {note}
     </p>
   );
+}
+
+/** "70cl", "Red · 6 pack"... or "" when Shopify says "Default Title" (one option only). */
+function variantLabel(item: CartItem): string {
+  const fromOptions = item.selectedOptions
+    .map((o) => o.value)
+    .filter((v) => v && v !== "Default Title")
+    .join(" · ");
+  if (fromOptions) return fromOptions;
+  return item.variantTitle && item.variantTitle !== "Default Title" ? item.variantTitle : "";
 }

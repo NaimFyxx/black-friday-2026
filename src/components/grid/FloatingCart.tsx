@@ -17,7 +17,19 @@ export function FloatingCart({ sale }: { sale: boolean }) {
   const count = useCartStore(selectCartCount);
   const setOpen = useCartUi((s) => s.setOpen);
   useEffect(() => setMounted(true), []);
-  if (!mounted || count === 0) return null;
+
+  // Stay out of the way while the hero's "Fill your cart" button is on screen
+  // (on phones the bar would cover it). The header cart icon is always there.
+  const [heroCtaVisible, setHeroCtaVisible] = useState(false);
+  useEffect(() => {
+    const el = document.getElementById("hero-cta");
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setHeroCtaVisible(!!e?.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [mounted, count]);
+
+  if (!mounted || count === 0 || heroCtaVisible) return null;
 
   const total = items.reduce((sum, i) => sum + Number(i.price.amount) * i.quantity, 0);
   const saved = items.reduce((sum, i) => {

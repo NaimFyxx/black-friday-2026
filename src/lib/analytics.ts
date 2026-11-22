@@ -12,7 +12,7 @@
 import type { TrackedEventName } from "@/lib/campaign-config";
 import { primaryImage } from "@/lib/shopify";
 import { recordEvent } from "@/lib/track.functions";
-import { getStoredUtm } from "@/lib/utm-attribution";
+import { getFirstTouchUtm } from "@/lib/utm-attribution";
 import { useCartStore } from "@/stores/cartStore";
 
 export const CAMPAIGN_NAME = "black_friday_2026";
@@ -117,7 +117,8 @@ function logEvent(
   if (typeof window === "undefined" || trackingOff()) return;
   const sessionId = getSessionId();
   if (sessionId.length < 8) return;
-  const utm = getStoredUtm() ?? {};
+  // First touch, without fbclid (same fields as always).
+  const { fbclid: _fbclid, ...utm } = getFirstTouchUtm() ?? {};
   recordEvent({
     data: {
       event,
@@ -179,7 +180,8 @@ export function trackShare(method: string, contentName: string): void {
 
 /** Fire once per page load to tag the session, with the first-touch source. */
 export function trackCampaignView(): void {
-  trackEvent("campaign_view", { ...(getStoredUtm() ?? {}) });
+  const { fbclid: _fbclid, ...firstTouch } = getFirstTouchUtm() ?? {};
+  trackEvent("campaign_view", { ...firstTouch });
   // Count one "visit" per browser session in Supabase.
   // Tracking off for this page load: don't mark the visit as logged, so a
   // reload after tracking is switched back on still counts it.

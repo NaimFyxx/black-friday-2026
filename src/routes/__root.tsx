@@ -264,7 +264,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Fyxx Black Friday 2026: browse the full Amman cellar of wine, spirits and cigars and check out in a few taps.",
+          "Fyxx Friday, Friday 27 November from 10:00: wine, spirits and cigars in Amman, check out in a few taps.",
       },
       { property: "og:title", content: "Fyxx: Wine, Spirits & Cigars in Amman" },
       {

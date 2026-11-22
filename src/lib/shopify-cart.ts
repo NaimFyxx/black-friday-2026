@@ -11,7 +11,7 @@ import { CART_ATTR } from "@/lib/campaign-config";
 import { storefrontApiRequest, type ShopifyProduct } from "@/lib/shopify";
 import { getStoredUtm } from "@/lib/utm-attribution";
 
-/** Session + first-touch UTM as Shopify cart attributes (empty values dropped). */
+/** Session + last-touch UTMs and fbclid as Shopify cart attributes (empty values dropped). */
 function campaignCartAttributes(): Array<{ key: string; value: string }> {
   // Tracking switched off (in /admin): leave test orders out of the reports.
   if (trackingOff()) return [];
@@ -22,8 +22,32 @@ function campaignCartAttributes(): Array<{ key: string; value: string }> {
     [CART_ATTR.medium, utm.utm_medium],
     [CART_ATTR.campaign, utm.utm_campaign],
     [CART_ATTR.content, utm.utm_content],
+    [CART_ATTR.term, utm.utm_term],
+    [CART_ATTR.fbclid, utm.fbclid],
   ];
   return pairs.filter((p): p is [string, string] => !!p[1]).map(([key, value]) => ({ key, value }));
+}
+
+const CART_ATTRIBUTES_UPDATE_MUTATION = `
+  mutation cartAttributesUpdate($cartId: ID!, $attributes: [AttributeInput!]!) {
+    cartAttributesUpdate(cartId: $cartId, attributes: $attributes) {
+      userErrors { field message }
+    }
+  }
+`;
+
+/**
+ * Right before checkout: put the visitor's latest campaign on the cart. The
+ * cart may have been made on an earlier visit from another ad; Shopify
+ * replaces all attributes with this list, so stale values don't linger.
+ */
+export async function refreshCartAttributes(cartId: string): Promise<void> {
+  if (trackingOff()) return;
+  const data = await storefrontApiRequest<{
+    cartAttributesUpdate?: { userErrors?: Array<{ message: string }> };
+  }>(CART_ATTRIBUTES_UPDATE_MUTATION, { cartId, attributes: campaignCartAttributes() });
+  const errors = data?.data?.cartAttributesUpdate?.userErrors ?? [];
+  if (errors.length) console.error("Cart attributes update failed:", errors);
 }
 
 export interface CartItem {
