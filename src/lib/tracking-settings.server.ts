@@ -124,18 +124,23 @@ export async function getTrackingHosts(): Promise<string[]> {
   }
 }
 
-/** Is this request coming from a tracked host? Uses the browser's Origin (or
- *  Referer) header; a request without either is allowed. */
-export async function fromTrackedHost(): Promise<boolean> {
+/** The browser's hostname for this request (Origin, else Referer), or null. */
+export async function requestHost(): Promise<string | null> {
   try {
     const { getRequestHeader } = await import("@tanstack/react-start/server");
     const src = getRequestHeader("origin") || getRequestHeader("referer");
-    if (!src) return true;
-    const host = new URL(src).hostname.toLowerCase();
-    return (await getTrackingHosts()).includes(host);
+    return src ? new URL(src).hostname.toLowerCase() : null;
   } catch {
-    return true;
+    return null;
   }
+}
+
+/** Is this request coming from a tracked host? A request without an Origin
+ *  or Referer header is allowed. */
+export async function fromTrackedHost(): Promise<boolean> {
+  const host = await requestHost();
+  if (!host) return true;
+  return (await getTrackingHosts()).includes(host);
 }
 
 /** Should this request be tracked at all? */

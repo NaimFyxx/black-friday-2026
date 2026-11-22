@@ -56,10 +56,13 @@ export const recordEvent = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       // Respect the admin tracking switches (site-wide off, or this device excluded).
-      const { shouldTrack, fromTrackedHost } = await import("./tracking-settings.server");
+      const { shouldTrack, getTrackingHosts, requestHost } =
+        await import("./tracking-settings.server");
       if (!(await shouldTrack())) return { ok: true };
-      // Lovable previews / editor / localhost: not logged.
-      if (!(await fromTrackedHost())) return { ok: true };
+      // Only the real site (bf_settings.tracking_hosts). Lovable previews, the
+      // Lovable editor and localhost are not logged.
+      const host = await requestHost();
+      if (host && !(await getTrackingHosts()).includes(host)) return { ok: true };
       // The team's own visits: hidden-preview cookie or signed in to /admin.
       // Stored, but left out of every dashboard count.
       const { getCookie } = await import("@tanstack/react-start/server");
@@ -84,6 +87,7 @@ export const recordEvent = createServerFn({ method: "POST" })
         referrer: data.utm_source ? null : (data.referrer ?? null),
         internal,
         destination: data.destination ?? null,
+        host,
         from_app: data.fromApp ?? false,
         value: data.value ?? null,
         currency: data.currency ?? null,
