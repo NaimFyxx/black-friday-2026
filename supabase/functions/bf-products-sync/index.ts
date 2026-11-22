@@ -10,6 +10,9 @@
 // bf_settings.edge_key. A dry run changes nothing and may try a mapping or
 // exclusions that are not saved yet.
 // in_sale: product has a variant on the Fyxx Friday sale list (bf_sale_flags).
+// stock: how many of the card's variant are left (Shopify Admin API, read only,
+// through Pulse's Shopify app like bf-admin; null when Shopify doesn't track
+// stock for it or the lookup fails). Used for "Only X left".
 // Which products are kept, and in which category, comes from bf_settings
 // "category_mapping" and "exclusions" (editable on /admin).
 
@@ -121,6 +124,55 @@ async function fetchAll(): Promise<SfProduct[]> {
     after = p.pageInfo.endCursor;
   }
   throw new Error(`More than ${MAX_PAGES * 250} products; stopped to be safe`);
+}
+
+// ── Stock (Admin API, read only) ─────────────────────────────────────────
+let adminToken: { value: string; at: number } | null = null;
+async function adminGql(query: string, variables: Record<string, unknown>) {
+  const store = Deno.env.get("SHOPIFY_STORE");
+  if (!store) throw new Error("SHOPIFY_STORE not set");
+  if (!adminToken || Date.now() - adminToken.at > 30 * 60_000) {
+    const r = await fetch(`https://${store}/admin/oauth/access_token`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        client_id: Deno.env.get("SHOPIFY_CLIENT_ID"),
+        client_secret: Deno.env.get("SHOPIFY_CLIENT_SECRET"),
+        grant_type: "client_credentials",
+      }),
+    });
+    const t = (await r.json()).access_token;
+    if (!t) throw new Error(`Shopify sign-in failed (${r.status})`);
+    adminToken = { value: t, at: Date.now() };
+  }
+  const res = await fetch(`https://${store}/admin/api/2026-10/graphql.json`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "X-Shopify-Access-Token": adminToken.value },
+    body: JSON.stringify({ query, variables }),
+  });
+  const j = await res.json();
+  if (j.errors) throw new Error(`Shopify: ${JSON.stringify(j.errors).slice(0, 300)}`);
+  return j.data;
+}
+
+const STOCK_QUERY = `
+  query bfStock($ids: [ID!]!) {
+    nodes(ids: $ids) {
+      ... on ProductVariant { id inventoryQuantity inventoryItem { tracked } }
+    }
+  }`;
+
+/** Units left per variant id (only variants whose stock Shopify tracks). */
+async function stockFor(variantIds: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  for (let i = 0; i < variantIds.length; i += 250) {
+    const data = await adminGql(STOCK_QUERY, { ids: variantIds.slice(i, i + 250) });
+    for (const n of data.nodes ?? []) {
+      if (n?.id && n.inventoryItem?.tracked && typeof n.inventoryQuantity === "number")
+        out.set(n.id, n.inventoryQuantity);
+    }
+  }
+  return out;
 }
 
 const has = (list: string[] | undefined, v: string) => !!list && list.includes(v);
@@ -302,6 +354,17 @@ Deno.serve(async (req) => {
     const counts: Record<string, number> = {};
     for (const r of rows) counts[r.main_category] = (counts[r.main_category] ?? 0) + 1;
 
+    // Units left for the variant each card shows. A failure only means no
+    // "Only X left" labels until the next run; it never stops the sync.
+    let stockError: string | null = null;
+    let stock = new Map<string, number>();
+    try {
+      stock = await stockFor(rows.filter((r) => r.in_sale).map((r) => r.variant_id));
+    } catch (e) {
+      stockError = String((e as Error).message ?? e).slice(0, 200);
+    }
+    for (const r of rows) (r as Record<string, unknown>).stock = stock.get(r.variant_id) ?? null;
+
     if (body.dry_run) {
       // In-stock counts per main / sub, and in-stock products left without a category.
       const tree: Record<string, Record<string, number>> = {};
@@ -369,6 +432,8 @@ Deno.serve(async (req) => {
       ok: true,
       count: rows.length,
       on_sale_list_in_stock: rows.filter((r) => r.in_sale && r.available).length,
+      stock_known: stock.size,
+      stock_error: stockError,
       removed: stale.length,
       counts,
       duration_ms: Date.now() - started,
