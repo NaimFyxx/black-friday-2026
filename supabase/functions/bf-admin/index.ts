@@ -9,6 +9,9 @@
 //       reads Shopify orders placed through the Black Friday site, using
 //       Pulse's Shopify app (SHOPIFY_STORE / SHOPIFY_CLIENT_ID /
 //       SHOPIFY_CLIENT_SECRET). READ ONLY. Never changes any secret.
+//   { key, action: "day_sales", since, until }    -> all Shopify orders in the
+//       range (every channel), count and total, split into in store (Point of
+//       Sale) and online (everything else). Cancelled and test orders left out.
 //   { key, action: "probe" }                      -> which optional secrets exist
 //       (true/false per NAME only, never values)
 //   { key, action: "meta", since, until }          -> Meta ad results per campaign
@@ -149,6 +152,43 @@ async function siteOrders(since: string, until: string) {
   return { orders, afterVisit };
 }
 
+const DAY_SALES_QUERY = `
+  query bfDaySales($q: String!, $after: String) {
+    orders(first: 250, after: $after, query: $q, sortKey: CREATED_AT) {
+      pageInfo { hasNextPage endCursor }
+      nodes {
+        createdAt cancelledAt test sourceName
+        totalPriceSet { shopMoney { amount } }
+      }
+    }
+  }
+`;
+
+/** All orders in the range (every channel), for the sales forecast on /admin. */
+async function daySales(since: string, until: string) {
+  const q = `created_at:>='${since}' AND created_at:<'${until}'`;
+  const sum = { orders: 0, total: 0 };
+  const online = { orders: 0, total: 0 };
+  const inStore = { orders: 0, total: 0 };
+  let after: string | null = null;
+  for (let p = 0; p < MAX_PAGES; p++) {
+    // deno-lint-ignore no-explicit-any
+    const d: any = await gql(DAY_SALES_QUERY, { q, after });
+    for (const o of d.orders.nodes) {
+      if (o.cancelledAt || o.test) continue;
+      const amount = Number(o.totalPriceSet.shopMoney.amount) || 0;
+      const bucket = o.sourceName === "pos" ? inStore : online;
+      bucket.orders += 1;
+      bucket.total += amount;
+      sum.orders += 1;
+      sum.total += amount;
+    }
+    if (!d.orders.pageInfo.hasNextPage) break;
+    after = d.orders.pageInfo.endCursor;
+  }
+  return { status: "ok", ...sum, online, inStore };
+}
+
 // ── Meta Ads (read only) ──
 const META_API = "https://graph.facebook.com/v23.0";
 const META_AD_ACCOUNT = "act_4226871230742646"; // "Fyxx Ads"
@@ -275,6 +315,21 @@ Deno.serve(async (req) => {
       const until = new Date(body.until).toISOString();
       const { orders, afterVisit } = await siteOrders(since, until);
       return json({ status: "ok", orders, afterVisit });
+    } catch (e) {
+      console.error("[bf-admin]", String((e as Error).message));
+      return json({ status: "error", message: String((e as Error).message).slice(0, 300) });
+    }
+  }
+
+  if (body.action === "day_sales") {
+    if (!isIso(body.since) || !isIso(body.until)) return json({ error: "Bad range" }, 400);
+    if (!Deno.env.get("SHOPIFY_CLIENT_ID") || !Deno.env.get("SHOPIFY_CLIENT_SECRET")) {
+      return json({ status: "not_configured" });
+    }
+    try {
+      return json(
+        await daySales(new Date(body.since).toISOString(), new Date(body.until).toISOString()),
+      );
     } catch (e) {
       console.error("[bf-admin]", String((e as Error).message));
       return json({ status: "error", message: String((e as Error).message).slice(0, 300) });
