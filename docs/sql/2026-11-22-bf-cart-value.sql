@@ -1,0 +1,7 @@
+-- Applied 2026-11-22 (migrations bf_cart_value_totals, bf_cart_value_full_price).
+-- bf_event_full_value(e): quantity x the variant's regular price (higher of price
+--   and compare_at_price in bf_products), falling back to the logged value.
+-- bf_cart_value_totals(since, until): {value, value_full, adds, people} over
+--   add_to_cart events, same filters as bf_top_added (no internal, no test sources).
+-- bf_top_added: each row now also has value_full.
+-- All service-role only (security definer, no grants to anon/authenticated).

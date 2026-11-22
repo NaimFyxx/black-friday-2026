@@ -691,3 +691,9 @@ Migration bf_events_referrer_internal (`docs/sql/2026-11-22-bf-events-referrer-i
   - A variant already in this browser's cart keeps the higher of the two quantities, not the sum.
   - The drawer still opens, it still runs once per link per tab, and UTMs are still written to the cart at checkout.
 - Tested locally against real Shopify carts: same device (no change), second browser with its own items (all items in one cart, cart ID kept, Olmeca 1 vs 3 became 3), fresh browser (takes the email cart). Live test pending Publish.
+
+## 2026-11-22 late: cart value on /admin
+- "Most added to cart" now has four tiles above the table: Cart value (full price), Add to carts, People, Average per person. The table's Value column is now "Full value".
+- Full value = quantity x the regular price from bf_products (the higher of price and compare-at), so it stays at full price after Pulse sets the sale prices. Removals are not subtracted. SQL: docs/sql/2026-11-22-bf-cart-value.sql.
+- Next (later conversation): full value vs discounted value vs margin once prices are set. Cost stays server-side.
+- Live retests after Publish passed: reminder form shows "Done" (subscriptions 202), cart link merge (same device unchanged, second browser keeps its cart and gets all lines, higher quantity wins, runs once per tab).

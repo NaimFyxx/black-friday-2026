@@ -503,6 +503,8 @@ export type TopAddedRow = {
   adds: number;
   people: number;
   value: number;
+  /** quantity x regular price (higher of price and compare-at): stays full after the sale starts */
+  value_full: number;
   top_source: string | null;
   top_source_adds: number;
 };
@@ -527,13 +529,31 @@ export const getTopAdded = createServerFn({ method: "GET" })
       p_until: new Date(now.getTime() + 60_000).toISOString(),
     });
     if (error) throw new Error(error.message);
+    const { data: tot, error: totErr } = await client.rpc("bf_cart_value_totals", {
+      p_since: since.toISOString(),
+      p_until: new Date(now.getTime() + 60_000).toISOString(),
+    });
+    if (totErr) throw new Error(totErr.message);
+    const t = (tot ?? {}) as {
+      value?: unknown;
+      value_full?: unknown;
+      adds?: unknown;
+      people?: unknown;
+    };
     return {
       since: since.toISOString(),
+      totals: {
+        value: n(t.value),
+        valueFull: n(t.value_full),
+        adds: n(t.adds),
+        people: n(t.people),
+      },
       rows: ((rows as TopAddedRow[] | null) ?? []).map((r) => ({
         ...r,
         adds: n(r.adds),
         people: n(r.people),
         value: n(r.value),
+        value_full: n(r.value_full),
         top_source_adds: n(r.top_source_adds),
       })),
     };

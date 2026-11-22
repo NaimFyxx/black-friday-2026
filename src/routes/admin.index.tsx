@@ -260,6 +260,21 @@ function TopAddedSection() {
           ))}
         </div>
       </div>
+      {data && !error ? (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard
+            label="Cart value"
+            value={fmtMoney(data.totals.valueFull)}
+            sub="full price, everything added"
+          />
+          <StatCard label="Add to carts" value={String(data.totals.adds)} />
+          <StatCard label="People" value={String(data.totals.people)} />
+          <StatCard
+            label="Average per person"
+            value={data.totals.people ? fmtMoney(data.totals.valueFull / data.totals.people) : "–"}
+          />
+        </div>
+      ) : null}
       {error ? (
         <ErrorBox error={error} />
       ) : isLoading ? (
@@ -277,7 +292,7 @@ function TopAddedSection() {
                   <th className="px-4 py-3 font-medium">Product</th>
                   <th className="px-4 py-3 text-right font-medium">Adds</th>
                   <th className="px-4 py-3 text-right font-medium">People</th>
-                  <th className="px-4 py-3 text-right font-medium">Value</th>
+                  <th className="px-4 py-3 text-right font-medium">Full value</th>
                   <th className="px-4 py-3 font-medium">Top source</th>
                 </tr>
               </thead>
@@ -300,7 +315,9 @@ function TopAddedSection() {
                     </td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{r.adds}</td>
                     <td className="px-4 py-2.5 text-right tabular-nums">{r.people}</td>
-                    <td className="px-4 py-2.5 text-right tabular-nums">{fmtMoney(r.value)}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">
+                      {fmtMoney(r.value_full)}
+                    </td>
                     <td className="px-4 py-2.5">
                       {r.top_source ?? "(direct)"}{" "}
                       <span className="text-xs text-muted-foreground">({r.top_source_adds})</span>
@@ -313,8 +330,10 @@ function TopAddedSection() {
         </Panel>
       )}
       <p className="text-xs text-muted-foreground">
-        From this site's own tracking (add to cart events). People = browser sessions. Source =
-        where the shopper first came from. Test visits (utm_source claude-qa or test) are left out.
+        From this site's own tracking (add to cart events). Value = quantity x the full (regular)
+        price, also after the sale prices are set; items removed from a cart are not taken off.
+        People = browser sessions. Source = where the shopper first came from. Test visits
+        (utm_source claude-qa or test) are left out.
         {data && <> Since {fmtRange({ since: data.since, until: new Date().toISOString() })}.</>}
       </p>
     </section>
