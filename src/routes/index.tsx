@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import {
   catalogQueryOptions,
   facetsQueryOptions,
+  mainInGroup,
   type CatalogFacets,
   type CatalogFilters,
   type SortKey,
@@ -279,7 +280,7 @@ function Storefront() {
 /** Inside a section (The Cellar...), only that section's category circles show. */
 function groupMains(facets: CatalogFacets, group: string | undefined) {
   const g = group ? facets.groups.find((x) => x.name === group) : undefined;
-  return g ? facets.mains.filter((m) => g.mains.includes(m.name)) : facets.mains;
+  return g ? facets.mains.filter((m) => mainInGroup(g.mains, m.name)) : facets.mains;
 }
 
 function CatalogSearch({ value, onSearch }: { value: string | undefined; onSearch: (q: string | undefined) => void }) {

@@ -366,3 +366,25 @@ is in the page before 10:00. The text after the % is `sale_label_preview`
 
 Update: the blurred "88" read as a real number, so it is now a blurred blank
 patch (no digits at all) between "-" and "%".
+
+## 2026-11-22: Sale sizes only, accessories in the header sections
+
+Decisions from the owner: crossed-out Shopify prices keep showing before
+10:00 (real current markdowns). Sizes not on the sale list are hidden.
+
+- Sizes: `src/lib/sale-variants.functions.ts` (`getSaleVariantIds`, server
+  only, service role) returns the in-sale variant ids of one product from
+  `bf_sale_flags`, or `filter: false` when `sale_list_filter` is off.
+  `onlySaleVariants` trims a Shopify product to those sizes. Used by the
+  product page loader and the landing-page size picker. If the check fails,
+  no size can be added ("Not available right now"), never all sizes.
+- Header sections can hold one type of a category: `nav_groups.mains` entry
+  "Main/Sub". Wine accessories in The Cellar, Bar accessories in The Bar,
+  Cigar accessories in The Humidor. Migration `bf_nav_group_subs`
+  (`docs/sql/2026-11-22-bf-nav-group-subs.sql`): `bf_visible` matches
+  "Main/Sub", `bf_catalog_facets` sub counts respect the section. Front end:
+  `mainInGroup` in `src/lib/catalog.ts`.
+- Counts: The Cellar 354, The Bar 580, The Humidor 94 (= all 1028).
+  Accessories 11 / 27 / 19.
+- Tested locally with Grey Goose (4 sizes in Shopify, 2 on the sale): page
+  and picker show only 70cl and 100cl.

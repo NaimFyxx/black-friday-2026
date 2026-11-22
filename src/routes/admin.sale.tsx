@@ -357,7 +357,7 @@ function SalePage() {
             </Field>
             <Field
               label="Header sections (JSON)"
-              hint="The links in the site header, e.g. The Cellar. Each shows the products of its main categories (names exactly as in the category mapping)."
+              hint="The links in the site header, e.g. The Cellar. Each shows the products of its main categories (names exactly as in the category mapping). For one type of a category write Category/Type, e.g. Accessories/Wine accessories."
             >
               <Textarea
                 rows={8}

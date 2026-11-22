@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import {
   bandLabel,
   facetsQueryOptions,
+  mainInGroup,
   SORT_LABELS,
   type CatalogFacets,
   type CatalogFilters,
@@ -167,7 +168,7 @@ function FilterSheet({
                 mains={
                   draft.group
                     ? f.mains.filter((m) =>
-                        f.groups.find((g) => g.name === draft.group)?.mains.includes(m.name),
+                        mainInGroup(f.groups.find((g) => g.name === draft.group)?.mains, m.name),
                       )
                     : f.mains
                 }

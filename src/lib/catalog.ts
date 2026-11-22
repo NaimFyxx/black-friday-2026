@@ -141,6 +141,14 @@ export const facetsQueryOptions = (f: CatalogFilters) =>
     placeholderData: (prev) => prev, // keep chips steady while counts refresh
   });
 
+/**
+ * Is a main category part of a nav section? Sections list mains ("Whisky") or
+ * one sub of a main ("Accessories/Wine accessories").
+ */
+export function mainInGroup(groupMains: string[] | undefined, main: string): boolean {
+  return !!groupMains?.some((t) => t === main || t.startsWith(`${main}/`));
+}
+
 /** "-15%" under the threshold, "Save JOD 12.000" at or above it. */
 export function discountBadge(
   item: Pick<CatalogItem, "price" | "discount_percent" | "saved_amount">,

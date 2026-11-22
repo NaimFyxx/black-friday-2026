@@ -25,6 +25,7 @@ import {
 } from "@/lib/shopify";
 import { sizedImage } from "@/lib/catalog";
 import { parseDescription } from "@/lib/product-description";
+import { onlySaleVariants } from "@/lib/sale-variants.functions";
 import { useCartStore } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +33,8 @@ export const Route = createFileRoute("/product/$handle")({
   loader: async ({ params }) => {
     const product = await getProductByHandle(params.handle);
     if (!product) throw notFound();
-    return product;
+    // Only sizes on the Fyxx Friday sale list can be chosen and added.
+    return onlySaleVariants(product);
   },
   head: ({ loaderData }) => {
     const title = loaderData ? `${loaderData.title} | Fyxx` : "Product | Fyxx";
@@ -306,6 +308,8 @@ function ProductPage() {
                   <Loader2 className="h-5 w-5 animate-spin" />
                 ) : selected?.availableForSale ? (
                   "Add to cart"
+                ) : variants.length === 0 ? (
+                  "Not available right now"
                 ) : (
                   "Sold out"
                 )}

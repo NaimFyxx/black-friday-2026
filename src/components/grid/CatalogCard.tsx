@@ -13,6 +13,8 @@ import {
 } from "@/lib/shopify";
 import { cn } from "@/lib/utils";
 
+import { onlySaleVariants } from "@/lib/sale-variants.functions";
+
 import { VariantPicker } from "./VariantPicker";
 import { useCartStore } from "@/stores/cartStore";
 
@@ -72,7 +74,11 @@ export const CatalogCard = memo(function CatalogCard({
   const handleAdd = async () => {
     setPending(true);
     try {
-      const node = await getProductByHandle(item.handle).catch(() => null);
+      // Only sizes on the Fyxx Friday sale list can be picked. If anything
+      // fails, the catalog's own (in-sale) variant is added below.
+      const node = await getProductByHandle(item.handle)
+        .then((p) => (p ? onlySaleVariants(p) : null))
+        .catch(() => null);
       const variants = node?.variants.edges.map((e) => e.node) ?? [];
       if (node && variants.length > 1) {
         setPicker(node);
@@ -142,8 +148,12 @@ export const CatalogCard = memo(function CatalogCard({
           {preSaleLabel && item.in_sale && !badge && (
             <span className="ff-num absolute top-2 left-2 max-w-[calc(100%-1rem)] rounded-full bg-ff-red px-2.5 py-1 text-[11px] leading-tight text-ff-cream">
               {/* A blurred blank, not a number: the real discount isn't known before 10:00. */}
-              -<span aria-hidden className="mx-0.5 inline-block h-2.5 w-4 rounded-sm bg-ff-cream/80 align-middle blur-[2px]" />%{" "}
-              <span className="ff-subline">{preSaleLabel}</span>
+              -
+              <span
+                aria-hidden
+                className="mx-0.5 inline-block h-2.5 w-4 rounded-sm bg-ff-cream/80 align-middle blur-[2px]"
+              />
+              % <span className="ff-subline">{preSaleLabel}</span>
             </span>
           )}
           {badge && (
