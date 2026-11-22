@@ -582,3 +582,14 @@ planned prices):
   num_items). Same-tab checkout now waits for GA4 to send begin_checkout
   (beacon, event_callback, max ~1.2 s) before leaving. GA4 add_to_cart and
   Meta AddToCart unchanged.
+
+## 2026-11-22: GA4 parameters
+
+- No GA4 event sends campaign_name any more (it could override the real UTM
+  campaign in GA4 reports). The label is `promo_name: "fyxx-friday-2026-11-27"`
+  (gtag set + every event: campaign_view, view_item, add_to_cart,
+  begin_checkout, js_error, came_from_app, scroll_depth). `GA_PROMO_NAME` in
+  src/lib/analytics.ts. Klaviyo events and the Clarity tag keep their own
+  campaign label (not GA4).
+- GA4 item_id is the plain variant number (e.g. 43189192786167), like Meta and
+  Shopify's own GA4 data.

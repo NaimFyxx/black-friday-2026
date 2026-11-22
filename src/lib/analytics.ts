@@ -1,7 +1,7 @@
 // Client-side analytics helpers (GA4 + Meta Pixel).
 //
 // Ported from the Fyxx Cup 2026 and Valentine's 2026 campaign sites. Every GA
-// event is tagged with `campaign_name: "black_friday_2026"` so Black Friday data
+// event is tagged with `promo_name: "fyxx-friday-2026-11-27"` so Fyxx Friday data
 // is easy to filter in the shared GA4 property (Christmas, Valentine's and Fyxx
 // Cup report to the same Measurement ID). The trackers are loaded deferred in
 // __root.tsx; these helpers no-op safely before then (calls queue on the stubs).
@@ -17,6 +17,9 @@ import { cartToken } from "@/lib/cart-token";
 import { useCartStore } from "@/stores/cartStore";
 
 export const CAMPAIGN_NAME = "black_friday_2026";
+/** Label on every GA4 event. Not campaign_name: that would override the real
+ *  UTM campaign in GA4 reports. */
+export const GA_PROMO_NAME = "fyxx-friday-2026-11-27";
 
 type EventParams = Record<string, unknown>;
 
@@ -33,7 +36,7 @@ function tw(): TrackerWindow | null {
 
 /** Fire a GA4 event, always tagged with the campaign for easy filtering. */
 export function trackEvent(name: string, params: EventParams = {}): void {
-  tw()?.gtag?.("event", name, { campaign_name: CAMPAIGN_NAME, ...params });
+  tw()?.gtag?.("event", name, { promo_name: GA_PROMO_NAME, ...params });
 }
 
 /** Fire a standard Meta Pixel event (AddToCart, InitiateCheckout, ...).
@@ -210,7 +213,8 @@ export type TrackedItem = {
 
 function gaItem(i: TrackedItem) {
   return {
-    item_id: i.id,
+    // Plain variant number, as Meta and Shopify's own GA4 data use.
+    item_id: shopifyVariantId(i.id),
     item_name: i.name,
     item_variant: i.variant,
     price: i.price,
@@ -363,7 +367,7 @@ export function trackBeginCheckout(items: TrackedItem[]): Promise<void> {
     const gtag = tw()?.gtag;
     if (!gtag) return finish();
     gtag("event", "begin_checkout", {
-      campaign_name: CAMPAIGN_NAME,
+      promo_name: GA_PROMO_NAME,
       currency,
       value,
       items: items.map(gaItem),

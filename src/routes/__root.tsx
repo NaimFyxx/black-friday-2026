@@ -18,7 +18,12 @@ import { Toaster } from "../components/ui/sonner";
 import { useCartSync } from "../hooks/useCartSync";
 import { useKlaviyoFormsOff } from "../hooks/useKlaviyoFormsOff";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { CAMPAIGN_NAME, trackCampaignView, trackPixelPageView } from "../lib/analytics";
+import {
+  CAMPAIGN_NAME,
+  GA_PROMO_NAME,
+  trackCampaignView,
+  trackPixelPageView,
+} from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
 import { restoreCartFromUrl } from "../lib/cart-restore";
 import { readPreview, usePreview, useSim } from "../lib/preview";
@@ -79,6 +84,7 @@ const TRACKING_SNIPPET = `
   if (window.__bfTrackingLoaded) return;
   window.__bfTrackingLoaded = true;
   var CAMPAIGN = '${CAMPAIGN_NAME}';
+  var PROMO = '${GA_PROMO_NAME}';
 
   // Meta Pixel base code (standard), skipped on the private /admin pages.
   var onAdmin = location.pathname === '/admin' || location.pathname.indexOf('/admin/') === 0;
@@ -98,9 +104,10 @@ const TRACKING_SNIPPET = `
   function gtag(){dataLayer.push(arguments);}
   window.gtag = gtag;
   gtag('js', new Date());
-  // Tag EVERY GA event with the campaign so Black Friday data is easy to filter
-  // out of the shared GA4 property.
-  gtag('set', { campaign_name: CAMPAIGN });
+  // Tag EVERY GA event so Fyxx Friday data is easy to filter in the shared GA4
+  // property. promo_name, not campaign_name: campaign_name would override the
+  // real UTM campaign in GA4 reports.
+  gtag('set', { promo_name: PROMO });
 
   // Forward uncaught JS errors to GA4 so we can see when a release breaks the
   // page for real users.
@@ -108,12 +115,12 @@ const TRACKING_SNIPPET = `
   window.addEventListener('error', function(e){
     var entry = { msg: e.message || 'Script error', src: e.filename || 'unknown', line: e.lineno || 0, col: e.colno || 0, ts: Date.now() };
     window.__errorLog.push(entry);
-    gtag('event', 'js_error', { error_message: String(entry.msg).substring(0,150), error_source: entry.src, error_line: entry.line, campaign_name: CAMPAIGN });
+    gtag('event', 'js_error', { error_message: String(entry.msg).substring(0,150), error_source: entry.src, error_line: entry.line, promo_name: PROMO });
   });
   window.addEventListener('unhandledrejection', function(e){
     var reason = e.reason ? (e.reason.message || String(e.reason)).substring(0,150) : 'unknown';
     window.__errorLog.push({ msg: reason, src: 'unhandled_promise', ts: Date.now() });
-    gtag('event', 'js_error', { error_message: reason, error_source: 'unhandled_promise', campaign_name: CAMPAIGN });
+    gtag('event', 'js_error', { error_message: reason, error_source: 'unhandled_promise', promo_name: PROMO });
   });
 
   // Did the visitor arrive from the FYXX app? (?from=app)
@@ -129,7 +136,7 @@ const TRACKING_SNIPPET = `
     document.head.appendChild(s);
     gtag('config', '${GA_ID}', { page_path: location.pathname + location.search });
     if (fromApp) {
-      gtag('event', 'came_from_app', { source: 'app', destination: CAMPAIGN, campaign_name: CAMPAIGN });
+      gtag('event', 'came_from_app', { source: 'app', destination: CAMPAIGN, promo_name: PROMO });
       gtag('set', 'user_properties', { traffic_source: 'app' });
     }
   }
@@ -166,7 +173,7 @@ const TRACKING_SNIPPET = `
         thresholds.forEach(function(th){
           if (p >= th && !fired[th]) {
             fired[th] = true;
-            gtag('event', 'scroll_depth', { percent_scrolled: th, page_path: location.pathname, campaign_name: CAMPAIGN });
+            gtag('event', 'scroll_depth', { percent_scrolled: th, page_path: location.pathname, promo_name: PROMO });
           }
         });
         ticking = false;
