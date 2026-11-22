@@ -9,6 +9,7 @@ import { CategoryCircles } from "@/components/grid/CategoryCircles";
 import { FilterBar } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
+import { YourUsual } from "@/components/grid/YourUsual";
 import { TeaserHero } from "@/components/hero/TeaserHero";
 import { QuickLinks } from "@/components/grid/QuickLinks";
 import { SaleEndCountdown } from "@/components/hero/SaleEndCountdown";
@@ -307,6 +308,7 @@ function Storefront() {
             </div>
           ) : (
             <>
+              <YourUsual threshold={threshold} preview={preview} />
               {sale && facets && <TopDeals items={facets.top_deals} threshold={threshold} />}
 
               {/* "shop": where the header sections (The Cellar...) and the hero button land. */}
