@@ -593,3 +593,24 @@ planned prices):
   campaign label (not GA4).
 - GA4 item_id is the plain variant number (e.g. 43189192786167), like Meta and
   Shopify's own GA4 data.
+
+## 2026-11-22: Final QA round + "Most added to cart"
+
+Migration bf_final_qa (`docs/sql/2026-11-22-bf-final-qa.sql`):
+- Default sale sort rotates category groups (bf_settings.discount_sort_groups:
+  Wine, Spirits, Cigars, Accessories; `bf_sort_group`), each in biggest-%
+  order with lower price first at the same %. Sold out still last. Other
+  sorts unchanged. Admin preview still ~0.3 s.
+- Ticker texts per state: ticker_preview / ticker_sale / ticker_ended
+  ("|"-separated; empty hides the bar). Cart bar hidden after the sale.
+- Cart note during the sale: sale_cart_note "Fyxx Friday prices are live
+  until midnight. No code needed." (before the sale unchanged).
+- Hero pop-up title: reminder.title_empty "Remind me at 10:00 on Friday" when
+  the cart is empty, reminder.title otherwise.
+- All editable on /admin/sale (ticker fields, cart note during the sale,
+  reminder JSON title_empty).
+- /admin (Sources page): "Most added to cart" table from bf_events
+  (event add_to_cart): product, adds, people (distinct session_id), value,
+  top first-touch utm_source; Today (Amman) / Since launch (CAMPAIGN_START).
+  `bf_top_added(p_since, p_until)` (service role only), `getTopAdded`.
+  Excludes bf_settings.test_utm_sources (claude-qa, test).

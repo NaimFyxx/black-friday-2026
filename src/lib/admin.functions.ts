@@ -491,3 +491,47 @@ export const deleteSavedReport = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ── Most added to cart ────────────────────────────────────────────────
+
+export type TopAddedRow = {
+  product: string;
+  handle: string | null;
+  adds: number;
+  people: number;
+  value: number;
+  top_source: string | null;
+  top_source_adds: number;
+};
+
+/** Products by add-to-carts (bf_events), "today" (Amman) or since launch.
+ *  Test visits (bf_settings.test_utm_sources: claude-qa, test) are left out. */
+export const getTopAdded = createServerFn({ method: "GET" })
+  .validator((d: unknown) => z.object({ range: z.enum(["today", "launch"]) }).parse(d))
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const now = new Date();
+    // Amman is UTC+3 all year: today's 00:00 there.
+    const amman = new Date(now.getTime() + 3 * 3_600_000);
+    const todayStart = new Date(
+      Date.UTC(amman.getUTCFullYear(), amman.getUTCMonth(), amman.getUTCDate()) - 3 * 3_600_000,
+    );
+    const since = data.range === "today" ? todayStart : new Date(CAMPAIGN_START);
+    const client = await db();
+    const { data: rows, error } = await client.rpc("bf_top_added", {
+      p_since: since.toISOString(),
+      p_until: new Date(now.getTime() + 60_000).toISOString(),
+    });
+    if (error) throw new Error(error.message);
+    return {
+      since: since.toISOString(),
+      rows: ((rows as TopAddedRow[] | null) ?? []).map((r) => ({
+        ...r,
+        adds: n(r.adds),
+        people: n(r.people),
+        value: n(r.value),
+        top_source_adds: n(r.top_source_adds),
+      })),
+    };
+  });

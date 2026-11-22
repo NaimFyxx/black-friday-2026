@@ -12,6 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { googleCalendarUrl, icsDataUrl } from "@/lib/calendar";
 import { hasReminder } from "@/lib/reminder";
+import { selectCartCount, useCartStore } from "@/stores/cartStore";
 import type { TeaserInfo } from "@/lib/teaser";
 
 /** Under the hero countdown: "Remind me at 10:00" and "Add to calendar". */
@@ -20,6 +21,8 @@ export function HeroReminder({ info }: { info: TeaserInfo }) {
   // Signed up already (now or earlier): keep the dialog open for the thank-you,
   // but don't offer the link again on later visits.
   const [open, setOpen] = useState(false);
+  // Empty cart: "Remind me at 10:00 on Friday"; with items: "Send me my cart...".
+  const cartCount = useCartStore(selectCartCount);
   const [reminded, setReminded] = useState(false);
   useEffect(() => {
     setReminded(hasReminder());
@@ -38,7 +41,9 @@ export function HeroReminder({ info }: { info: TeaserInfo }) {
             {copy.hero_link}
           </DialogTrigger>
           <DialogContent className="border-ff-black/15 bg-ff-cream sm:max-w-md">
-            <DialogTitle className="ff-headline text-xl text-ff-black">{copy.title}</DialogTitle>
+            <DialogTitle className="ff-headline text-xl text-ff-black">
+              {cartCount === 0 ? (copy.title_empty ?? copy.title) : copy.title}
+            </DialogTitle>
             <DialogDescription className="sr-only">
               Leave your email and we will send you a reminder when the sale starts.
             </DialogDescription>

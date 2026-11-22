@@ -13,6 +13,7 @@ import { TeaserHero } from "@/components/hero/TeaserHero";
 import { QuickLinks } from "@/components/grid/QuickLinks";
 import { SaleEndCountdown } from "@/components/hero/SaleEndCountdown";
 import { usePreview, useSim } from "@/lib/preview";
+import { cn } from "@/lib/utils";
 import { SpinWidget } from "@/components/spin/SpinWidget";
 import { Input } from "@/components/ui/input";
 import {
@@ -184,6 +185,19 @@ function Storefront() {
     return () => io.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
+  // Ticker text per state (bf_settings ticker_preview / ticker_sale /
+  // ticker_ended, parts separated by "|").
+  const tickerText =
+    (state === "ended"
+      ? teaser?.copy.ticker_ended
+      : state === "sale"
+        ? teaser?.copy.ticker_sale
+        : teaser?.copy.ticker_preview) ?? "FYXX FRIDAY | FRI 27 NOV | FROM 10:00 | UP TO 50% OFF";
+  const tickerParts = tickerText
+    .split("|")
+    .map((t) => t.trim())
+    .filter(Boolean);
+
   return (
     <main className="min-h-screen bg-ff-cream text-ff-black">
       <h1 className="sr-only">Fyxx Friday: Friday 27 November from 10:00, one day only</h1>
@@ -191,22 +205,24 @@ function Storefront() {
           hover; stays still for visitors who ask for reduced motion. */}
       <div
         id="top"
-        className="ff-ticker overflow-hidden bg-ff-red py-2 text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg"
+        className={cn(
+          "ff-ticker overflow-hidden bg-ff-red py-2 text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg",
+          // An empty ticker text in /admin hides the bar.
+          tickerParts.length === 0 && "hidden",
+        )}
       >
-        <span className="sr-only">Fyxx Friday, Friday 27 November from 10:00. Up to 50% off.</span>
+        <span className="sr-only">{tickerParts.join(". ")}</span>
         <div aria-hidden="true" className="ff-ticker-track flex w-max whitespace-nowrap">
           {[0, 1].map((half) => (
             <div key={half} className="flex shrink-0">
               {Array.from({ length: 4 }, (_, k) => (
                 <span key={k} className="flex shrink-0 items-center">
-                  <span className="px-4 md:px-6">FYXX FRIDAY</span>
-                  <span>|</span>
-                  <span className="px-4 md:px-6">FRI 27 NOV</span>
-                  <span>|</span>
-                  <span className="px-4 md:px-6">FROM 10:00</span>
-                  <span>|</span>
-                  <span className="px-4 md:px-6">UP TO 50% OFF</span>
-                  <span>|</span>
+                  {tickerParts.map((part, j) => (
+                    <span key={j} className="flex items-center">
+                      <span className="px-4 md:px-6">{part}</span>
+                      <span>|</span>
+                    </span>
+                  ))}
                 </span>
               ))}
             </div>
@@ -365,7 +381,7 @@ function Storefront() {
         </div>
       </section>
 
-      <FloatingCart sale={sale} ended={state === "ended"} />
+      {state !== "ended" && <FloatingCart sale={sale} />}
       <BackToTop raised={mounted && cartCount > 0} />
       {state !== "ended" && <SpinWidget raised={mounted && cartCount > 0} />}
     </main>

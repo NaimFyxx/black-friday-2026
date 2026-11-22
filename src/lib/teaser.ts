@@ -22,6 +22,8 @@ export interface ReminderCopy {
   enabled?: boolean;
   list_id?: string;
   title?: string;
+  /** Pop-up title when the cart is empty. */
+  title_empty?: string;
   hero_link?: string;
   placeholder?: string;
   button?: string;
@@ -59,6 +61,12 @@ export interface TeaserInfo {
     no_code_note?: string;
     /** During the sale, before the countdown to sale_end: "Ends at midnight". */
     sale_end_label?: string;
+    /** Cart note during the sale. */
+    sale_cart_note?: string;
+    /** Ticker per state, parts separated by "|". */
+    ticker_preview?: string;
+    ticker_sale?: string;
+    ticker_ended?: string;
     /** Card label before the sale for products on the sale list. */
     sale_label_preview?: string;
   };

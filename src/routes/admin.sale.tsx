@@ -33,6 +33,10 @@ type Form = {
   quick_links: string;
   reminder: string;
   no_code_note: string;
+  ticker_preview: string;
+  ticker_sale: string;
+  ticker_ended: string;
+  sale_cart_note: string;
   sale_list_filter: string;
   sale_label_preview: string;
   category_mapping: string;
@@ -69,6 +73,10 @@ function SalePage() {
       quick_links: JSON.stringify(s["quick_links"] ?? [], null, 2),
       reminder: JSON.stringify(s["reminder"] ?? {}, null, 2),
       no_code_note: String(s["no_code_note"] ?? ""),
+      ticker_preview: String(s["ticker_preview"] ?? ""),
+      ticker_sale: String(s["ticker_sale"] ?? ""),
+      ticker_ended: String(s["ticker_ended"] ?? ""),
+      sale_cart_note: String(s["sale_cart_note"] ?? ""),
       sale_list_filter: s["sale_list_filter"] === false ? "false" : "true",
       sale_label_preview: String(s["sale_label_preview"] ?? ""),
       discount_filters: ((s["discount_filters"] as number[] | undefined) ?? [10, 20, 30]).join(
@@ -137,6 +145,10 @@ function SalePage() {
       quick_links: quickLinks,
       reminder,
       no_code_note: form.no_code_note,
+      ticker_preview: form.ticker_preview,
+      ticker_sale: form.ticker_sale,
+      ticker_ended: form.ticker_ended,
+      sale_cart_note: form.sale_cart_note,
       sale_list_filter: form.sale_list_filter === "true",
       sale_label_preview: form.sale_label_preview,
       discount_filters: form.discount_filters
@@ -411,7 +423,7 @@ function SalePage() {
             </Field>
             <Field
               label="Reminder form (JSON)"
-              hint='"Send me my cart at 10:00" in the cart and "Remind me at 10:00" in the header. list_id is the Klaviyo list (Fyxx Friday 2026 - Cart reminder = Wwe9ax). "enabled": false hides both.'
+              hint='"Send me my cart at 10:00" in the cart and "Remind me at 10:00" in the header. list_id is the Klaviyo list (Fyxx Friday 2026 - Cart reminder = Wwe9ax). "title_empty" is the pop-up title when the cart is empty. "enabled": false hides both.'
             >
               <Textarea
                 rows={10}
@@ -427,6 +439,39 @@ function SalePage() {
               <Input
                 value={form.no_code_note}
                 onChange={(e) => set("no_code_note")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Ticker before the sale"
+              hint="Moving red bar at the top. Separate parts with |, e.g. FYXX FRIDAY | FRI 27 NOV"
+            >
+              <Input
+                value={form.ticker_preview}
+                onChange={(e) => set("ticker_preview")(e.target.value)}
+              />
+            </Field>
+            <Field label="Ticker during the sale" hint="Shown from sale start until midnight.">
+              <Input
+                value={form.ticker_sale}
+                onChange={(e) => set("ticker_sale")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Ticker after the sale"
+              hint="Shown after the sale ends. Leave empty to hide the ticker."
+            >
+              <Input
+                value={form.ticker_ended}
+                onChange={(e) => set("ticker_ended")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Cart note during the sale"
+              hint="Replaces the before-the-sale cart note while the sale is on."
+            >
+              <Input
+                value={form.sale_cart_note}
+                onChange={(e) => set("sale_cart_note")(e.target.value)}
               />
             </Field>
             <p className="text-xs text-muted-foreground">

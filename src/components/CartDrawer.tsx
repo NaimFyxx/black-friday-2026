@@ -253,13 +253,18 @@ export function CartDrawer() {
 /** Teaser phase only: tells shoppers the prices drop on the day (text from bf_settings). */
 function TeaserCartNote() {
   const { data } = useQuery(teaserQueryOptions(usePreview()));
-  const note = data?.state === "preview" ? data.copy.teaser_cart_note : undefined;
-  // "Prices drop automatically. No code needed." before and during the sale.
-  const noCode = data && data.state !== "ended" ? data.copy.no_code_note : undefined;
-  if (!note && !noCode) return null;
+  // Before the sale: the teaser note + "Prices drop automatically. No code
+  // needed." During the sale: the Friday note. After the sale: nothing.
+  const text =
+    data?.state === "preview"
+      ? [data.copy.teaser_cart_note, data.copy.no_code_note].filter(Boolean).join(" ")
+      : data?.state === "sale"
+        ? (data.copy.sale_cart_note ?? "")
+        : "";
+  if (!text) return null;
   return (
     <p className="ff-small mt-2 rounded-md bg-ff-warm-cream px-3 py-2 text-xs text-ff-burgundy">
-      {[note, noCode].filter(Boolean).join(" ")}
+      {text}
     </p>
   );
 }

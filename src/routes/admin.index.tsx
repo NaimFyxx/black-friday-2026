@@ -17,7 +17,7 @@ import {
   StatCard,
   type RangeKey,
 } from "@/components/admin/AdminUi";
-import { getSources, type SourceRow } from "@/lib/admin.functions";
+import { getSources, getTopAdded, type SourceRow } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/")({
   component: SourcesPage,
@@ -99,7 +99,102 @@ function SourcesPage() {
           </p>
         </>
       )}
+
+      <TopAddedSection />
     </>
+  );
+}
+
+/** "Most added to cart": adds, people (sessions), value, top first-touch source. */
+function TopAddedSection() {
+  const [range, setRange] = useState<"today" | "launch">("today");
+  const fn = useServerFn(getTopAdded);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-top-added", range],
+    queryFn: () => fn({ data: { range } }),
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const rows = data?.rows ?? [];
+  return (
+    <section className="mt-10 space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold">Most added to cart</h2>
+        <div className="inline-flex rounded-md border border-border p-0.5 text-sm">
+          {(["today", "launch"] as const).map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setRange(k)}
+              className={
+                range === k
+                  ? "rounded bg-foreground px-3 py-1 text-background"
+                  : "rounded px-3 py-1 text-muted-foreground hover:text-foreground"
+              }
+            >
+              {k === "today" ? "Today" : "Since launch"}
+            </button>
+          ))}
+        </div>
+      </div>
+      {error ? (
+        <ErrorBox error={error} />
+      ) : isLoading ? (
+        <Loading />
+      ) : (
+        <Panel className="overflow-x-auto p-0">
+          {rows.length === 0 ? (
+            <p className="p-8 text-center text-sm text-muted-foreground">
+              No add to carts in this range yet.
+            </p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                  <th className="px-4 py-3 font-medium">Product</th>
+                  <th className="px-4 py-3 text-right font-medium">Adds</th>
+                  <th className="px-4 py-3 text-right font-medium">People</th>
+                  <th className="px-4 py-3 text-right font-medium">Value</th>
+                  <th className="px-4 py-3 font-medium">Top source</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.product} className="border-b border-border/60 last:border-0">
+                    <td className="px-4 py-2.5 font-medium">
+                      {r.handle ? (
+                        <a
+                          href={`/product/${r.handle}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline"
+                        >
+                          {r.product}
+                        </a>
+                      ) : (
+                        r.product
+                      )}
+                    </td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{r.adds}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{r.people}</td>
+                    <td className="px-4 py-2.5 text-right tabular-nums">{fmtMoney(r.value)}</td>
+                    <td className="px-4 py-2.5">
+                      {r.top_source ?? "(direct)"}{" "}
+                      <span className="text-xs text-muted-foreground">({r.top_source_adds})</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Panel>
+      )}
+      <p className="text-xs text-muted-foreground">
+        From this site's own tracking (add to cart events). People = browser sessions. Source =
+        where the shopper first came from. Test visits (utm_source claude-qa or test) are left out.
+        {data && <> Since {fmtRange({ since: data.since, until: new Date().toISOString() })}.</>}
+      </p>
+    </section>
   );
 }
 
