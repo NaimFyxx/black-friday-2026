@@ -1,15 +1,26 @@
 // Cart restore link for the 10:00 Fyxx Friday email:
 //   https://friday.myfyxx.com/?cart=<CartID>&utm_...
 // CartID is sent with every Klaviyo "Added to Cart" event (cartToken below).
-// On load: if that Shopify cart still has items, it becomes this browser's
-// cart and the cart drawer opens. Works on any device, and opens the site in
-// the browser (a myfyxx.com checkout link can open the Fyxx app instead).
-// Unknown or empty carts are ignored. Each link is used once per browser tab
+// On load, if that Shopify cart still has items:
+//   - this browser has no cart, an empty cart, or the same cart: the email
+//     cart becomes this browser's cart;
+//   - this browser has a different cart with items: that cart is kept and the
+//     email cart's lines are added to it. A variant already in the browser
+//     cart is not added twice: it keeps the higher of the two quantities.
+// Then the cart drawer opens. Works on any device, and opens the site in the
+// browser (a myfyxx.com checkout link can open the Fyxx app instead).
+// Unknown or empty email carts are ignored. Each link is used once per browser tab
 // (sessionStorage), so a reload doesn't overwrite changes made since. The
 // address bar is left alone (changing it during start-up upsets hydration);
 // UTMs are captured as usual.
 
-import { formatCheckoutUrl, type CartItem } from "@/lib/shopify-cart";
+import {
+  addLineToShopifyCart,
+  fetchCartLines,
+  formatCheckoutUrl,
+  updateShopifyCartLine,
+  type CartItem,
+} from "@/lib/shopify-cart";
 import { storefrontApiRequest } from "@/lib/shopify";
 import { useCartStore } from "@/stores/cartStore";
 import { useCartUi } from "@/stores/cartUiStore";
@@ -147,13 +158,78 @@ export async function restoreCartFromUrl(): Promise<void> {
     if (!cart || cart.totalQuantity === 0) return; // gone or empty: ignore
     const items = cart.lines.nodes.map(toItem).filter((i): i is CartItem => i !== null);
     if (items.length === 0) return;
-    useCartStore.setState({
-      cartId: cart.id,
-      checkoutUrl: formatCheckoutUrl(cart.checkoutUrl),
-      items,
-    });
+    const takeEmailCart = () =>
+      useCartStore.setState({
+        cartId: cart.id,
+        checkoutUrl: formatCheckoutUrl(cart.checkoutUrl),
+        items,
+      });
+
+    await cartHydrated();
+    const mine = useCartStore.getState();
+    if (!mine.cartId || sameCart(mine.cartId, cart.id)) {
+      takeEmailCart();
+    } else {
+      const live = await fetchCartLines(mine.cartId);
+      if (live && live.totalQuantity === 0) {
+        takeEmailCart(); // this browser's cart is empty or gone
+      } else if (!live && mine.items.length === 0) {
+        takeEmailCart();
+      } else {
+        const merged = await mergeInto(mine.cartId, mine.items, items);
+        if (merged === "cart-not-found") takeEmailCart();
+        else {
+          useCartStore.setState({ items: merged });
+          await useCartStore.getState().syncCart(); // fresh prices and quantities
+        }
+      }
+    }
     useCartUi.getState().setOpen(true);
   } catch {
     // a broken link must never break the page
   }
+}
+
+/** Cart IDs without the "?key=" part. */
+function sameCart(a: string, b: string): boolean {
+  return a.split("?")[0] === b.split("?")[0];
+}
+
+/** The saved cart is read from localStorage on start; wait for it if needed. */
+function cartHydrated(): Promise<void> {
+  const p = useCartStore.persist;
+  if (!p || p.hasHydrated()) return Promise.resolve();
+  return new Promise((resolve) => {
+    const off = p.onFinishHydration(() => {
+      off();
+      resolve();
+    });
+  });
+}
+
+/**
+ * Add the email cart's lines to this browser's cart. A variant that is already
+ * there keeps the higher quantity (not the sum). Returns the new item list.
+ */
+async function mergeInto(
+  cartId: string,
+  mine: CartItem[],
+  incoming: CartItem[],
+): Promise<CartItem[] | "cart-not-found"> {
+  const result = [...mine];
+  for (const item of incoming) {
+    const i = result.findIndex((m) => m.variantId === item.variantId);
+    const have = result[i];
+    if (have) {
+      if (item.quantity <= have.quantity || !have.lineId) continue;
+      const r = await updateShopifyCartLine(cartId, have.lineId, item.quantity);
+      if (r.cartNotFound) return "cart-not-found";
+      if (r.success) result[i] = { ...have, quantity: item.quantity };
+    } else {
+      const r = await addLineToShopifyCart(cartId, { ...item, lineId: null });
+      if (r.cartNotFound) return "cart-not-found";
+      if (r.success) result.push({ ...item, lineId: r.lineId ?? null });
+    }
+  }
+  return result;
 }

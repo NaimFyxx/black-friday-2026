@@ -682,3 +682,12 @@ Migration bf_events_referrer_internal (`docs/sql/2026-11-22-bf-events-referrer-i
 - Reminder sign-up: the client subscriptions call now sends `revision: 2025-01-15` (KLAVIYO_REVISION in campaign-config.ts). Without it Klaviyo returns 400. This is the only direct Klaviyo API call the site makes. Events and identify go through klaviyo.js, which sets its own revision.
 - Klaviyo only accepts client calls from the myfyxx.com origins (localhost gets 403), so real tests must run on friday.myfyxx.com.
 - klaviyo.js: the loader has not changed since 11 Nov. It loads on every page after the first tap or after 3 seconds, so a check made in the first 3 seconds shows window.klaviyo undefined. Live test 20:36 UTC: identify 202, 2 Added to Cart (S3AtNP) events with CartID landed on the profile.
+
+## 2026-11-22 late: ?cart= link merges instead of replacing
+- Before: opening the email cart link swapped this browser's cart for the email cart, so items already in this browser disappeared.
+- Now (src/lib/cart-restore.ts):
+  - This browser has no cart, an empty cart, or the same cart ID: the email cart is used, as before.
+  - This browser has a different cart with items: it is kept, and the email cart's lines are added to it with cartLinesAdd.
+  - A variant already in this browser's cart keeps the higher of the two quantities, not the sum.
+  - The drawer still opens, it still runs once per link per tab, and UTMs are still written to the cart at checkout.
+- Tested locally against real Shopify carts: same device (no change), second browser with its own items (all items in one cart, cart ID kept, Olmeca 1 vs 3 became 3), fresh browser (takes the email cart). Live test pending Publish.
