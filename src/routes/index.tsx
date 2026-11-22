@@ -268,13 +268,6 @@ function Storefront() {
         </div>
       </section>
 
-      <footer id="footer" className={sale || cartCount > 0 ? "bg-ff-burgundy pb-20 text-ff-cream" : "bg-ff-burgundy text-ff-cream"}>
-        <div className="mx-auto flex max-w-[1320px] flex-col gap-2 px-6 py-10 text-[11px] tracking-[0.18em] text-ff-cream uppercase">
-          <img src="/brand/fyxx-friday-logo-cream.svg" alt="Fyxx Friday" width={2587} height={1446} loading="lazy" className="mb-2 h-12 w-auto self-start" />
-          <span>Wine · spirits · cigars</span>
-          <span>Amman · Jordan</span>
-        </div>
-      </footer>
 
       <FloatingCart sale={sale} />
       <BackToTop raised={mounted && cartCount > 0} />

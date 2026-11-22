@@ -12,6 +12,7 @@ import {
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { SiteFooter } from "../components/SiteFooter";
 import { SiteHeader } from "../components/SiteHeader";
 import { Toaster } from "../components/ui/sonner";
 import { useCartSync } from "../hooks/useCartSync";
@@ -391,6 +392,7 @@ function RootComponent() {
       {!isAdminPage && <SiteHeader />}
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {!isAdminPage && <SiteFooter />}
       <Toaster position="top-center" />
     </QueryClientProvider>
   );
