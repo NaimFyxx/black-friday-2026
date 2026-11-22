@@ -57,12 +57,18 @@ export function TeaserHero({
               {copy.teaser_subline}
             </p>
           )}
-          {info.sale_start && (
-            <Countdown
-              target={info.sale_start}
-              label={copy.teaser_countdown_label ?? ""}
-              onDone={onSaleStarted}
-            />
+          {info.updating ? (
+            <p className="ff-subline mt-4 text-base text-ff-cream md:text-lg" role="status">
+              {copy.teaser_updating_note || "Prices are updating, refresh in a few minutes"}
+            </p>
+          ) : (
+            info.sale_start && (
+              <Countdown
+                target={info.sale_start}
+                label={copy.teaser_countdown_label ?? ""}
+                onDone={onSaleStarted}
+              />
+            )
           )}
           {copy.teaser_button && (
             <button

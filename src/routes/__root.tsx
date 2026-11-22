@@ -20,7 +20,8 @@ import { useKlaviyoFormsOff } from "../hooks/useKlaviyoFormsOff";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CAMPAIGN_NAME, trackCampaignView, trackPixelPageView } from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
-import { readPreview, usePreview } from "../lib/preview";
+import { readPreview, usePreview, useSim } from "../lib/preview";
+import { simAllowed } from "../lib/preview-sim.functions";
 import { getTrackingState, reportClientError } from "../lib/track.functions";
 
 // Send a client error to the /admin error log. Deduped per page load so one
@@ -244,9 +245,22 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+// One admin check per page load in the browser (every request on the server).
+let adminCheckCache: Promise<boolean> | null = null;
+function adminCheck(): Promise<boolean> {
+  const run = () => simAllowed().catch(() => false);
+  if (typeof window === "undefined") return run();
+  return (adminCheckCache ??= run());
+}
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Hidden preview (?preview=friday / ended): see src/lib/preview.ts.
-  beforeLoad: () => ({ preview: readPreview() }),
+  // Admins on ?preview=friday also see the planned Friday prices (sim).
+  beforeLoad: async () => {
+    const preview = readPreview();
+    const sim = preview === "friday" ? await adminCheck() : false;
+    return { preview, sim };
+  },
   // Ask the server once per full page load whether to track this visitor
   // (the /admin Tracking switches). Fails open: an error means "track".
   loader: async () => {
@@ -406,11 +420,18 @@ function RootComponent() {
 /** Small strip on preview pages only, so nobody mistakes them for the live site. */
 function PreviewBanner() {
   const preview = usePreview();
+  const sim = useSim();
   if (!preview) return null;
   return (
     <div className="ff-small bg-ff-black px-4 py-1.5 text-center text-xs text-ff-cream">
-      Preview: {preview === "friday" ? "Friday sale" : "after the sale"} view. Prices come from
-      Shopify as they are now.{" "}
+      Preview:{" "}
+      {preview === "friday"
+        ? sim
+          ? "Friday sale view with the planned Friday prices (admin only, nothing is changed)."
+          : "Friday sale view. Prices come from Shopify as they are now."
+        : preview === "updating"
+          ? "Friday 10:00 view when Shopify prices are not ready yet."
+          : "after the sale view."}{" "}
       <a href="/?preview=off" className="underline">
         Exit preview
       </a>

@@ -444,3 +444,30 @@ page, `?preview=off` goes back. Display only.
 - Note: in the sale state the shop lists only products with a Shopify
   compare-at above the price, so the Friday preview shows only the products
   marked down in Shopify right now (29 on 22 Nov).
+
+## 2026-11-22: Preview part 2 (admin price simulation, safety net)
+
+- Tracking data cleared on request: `bf_events` and `bf_error_log` emptied
+  (568 and 18 test rows). `bf_spins` test row left for Naim.
+- A. Admin price simulation: admin (bf_admin session) + `?preview=friday`
+  shows the planned Friday prices from `bf_sale_list` (sale_price as price,
+  price_now crossed out) for every in_sale product: grid, filters, sorting,
+  badges, top deals, "up to", product pages. DB: `bf_catalog_sim`,
+  `bf_catalog_facets_sim`, `bf_sim_variant_prices` (service role only).
+  `bf_visible` uses the planned prices only when the transaction variable
+  `bf.sim` equals the secret `bf_settings.sim_token` (set only by the sim
+  functions; setting bf.sim by hand does nothing). Cost is never read.
+  Site: `src/lib/preview-sim.functions.ts` (admin check, then service-role
+  RPC; results as JSON text), root `beforeLoad` adds `sim` to the context
+  (one admin check per page load), query keys include it. Non-admins get the
+  public preview (Shopify prices). The cart still uses live Shopify prices.
+- B. Already in place: in the sale state `bf_visible` lists only in_sale
+  products (switch `sale_list_filter` on) whose Shopify compare-at is above the
+  price. Other Shopify markdowns don't show.
+- C. Safety net: `bf_sale_state(p_preview)` returns state "preview" with
+  `updating: true` when it is sale time but fewer than
+  `bf_settings.sale_min_marked` (500) sale products have a crossed-out price.
+  The hero shows `teaser_updating_note` instead of the countdown, the teaser
+  re-checks every minute and the shop reloads when prices are ready.
+  `?preview=updating` shows it. Text and number editable (note on /admin/sale,
+  sale_min_marked in bf_settings).

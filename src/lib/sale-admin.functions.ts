@@ -33,6 +33,7 @@ const KEYS = [
   "teaser_countdown_label",
   "teaser_button",
   "teaser_cart_note",
+  "teaser_updating_note",
 ] as const;
 
 async function admin() {
@@ -182,6 +183,7 @@ const SaveInput = z
     teaser_countdown_label: copy(40),
     teaser_button: copy(40).pipe(z.string().min(1, "The button text can't be empty")),
     teaser_cart_note: copy(200),
+    teaser_updating_note: copy(120),
     sale_list_filter: z.boolean(),
     sale_label_preview: copy(60),
   })

@@ -10,7 +10,7 @@ import { FilterBar } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { TeaserHero } from "@/components/hero/TeaserHero";
-import { usePreview } from "@/lib/preview";
+import { usePreview, useSim } from "@/lib/preview";
 import { SpinWidget } from "@/components/spin/SpinWidget";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,7 +25,8 @@ import { teaserQueryOptions } from "@/lib/teaser";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 
 const SORTS: SortKey[] = ["discount", "price_asc", "price_desc", "newest"];
-const text = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim().slice(0, 80) : undefined);
+const text = (v: unknown) =>
+  typeof v === "string" && v.trim() ? v.trim().slice(0, 80) : undefined;
 
 export const Route = createFileRoute("/")({
   // Filters, sort and search live in the URL, so "back" from a product
@@ -50,9 +51,11 @@ export const Route = createFileRoute("/")({
   // matches the server instead of refetching from empty.
   loader: async ({ context, deps }) => {
     await Promise.all([
-      context.queryClient.ensureQueryData(facetsQueryOptions(deps, context.preview)),
+      context.queryClient.ensureQueryData(facetsQueryOptions(deps, context.preview, context.sim)),
       context.queryClient.ensureQueryData(teaserQueryOptions(context.preview)),
-      context.queryClient.ensureInfiniteQueryData(catalogQueryOptions(deps, context.preview)),
+      context.queryClient.ensureInfiniteQueryData(
+        catalogQueryOptions(deps, context.preview, context.sim),
+      ),
     ]);
     return dehydrate(context.queryClient);
   },
@@ -63,12 +66,14 @@ export const Route = createFileRoute("/")({
       { title: "Fyxx Friday | 27 November" },
       {
         name: "description",
-        content: "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
+        content:
+          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
       },
       { property: "og:title", content: "Fyxx Friday | 27 November" },
       {
         property: "og:description",
-        content: "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
+        content:
+          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://friday.myfyxx.com/" },
@@ -76,12 +81,16 @@ export const Route = createFileRoute("/")({
       { property: "og:image", content: "https://friday.myfyxx.com/brand/og-fyxx-friday.jpg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
-      { property: "og:image:alt", content: "Fyxx Friday, Friday 27 November from 10:00. One day only." },
+      {
+        property: "og:image:alt",
+        content: "Fyxx Friday, Friday 27 November from 10:00. One day only.",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Fyxx Friday | 27 November" },
       {
         name: "twitter:description",
-        content: "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
+        content:
+          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
       },
       { name: "twitter:image", content: "https://friday.myfyxx.com/brand/og-fyxx-friday.jpg" },
     ],
@@ -107,10 +116,17 @@ function Storefront() {
   }
 
   const preview = usePreview();
-  const { data: facets } = useQuery(facetsQueryOptions(filters, preview));
+  const sim = useSim();
+  const { data: facets } = useQuery(facetsQueryOptions(filters, preview, sim));
   const { data: teaser } = useQuery(teaserQueryOptions(preview));
+  // Safety net over (Shopify prices ready): reload the shop in the sale view.
+  const wasUpdating = useRef(false);
+  useEffect(() => {
+    if (wasUpdating.current && !teaser?.updating) void queryClient.invalidateQueries();
+    wasUpdating.current = !!teaser?.updating;
+  }, [teaser?.updating, queryClient]);
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery(
-    catalogQueryOptions(filters, preview),
+    catalogQueryOptions(filters, preview, sim),
   );
   const items = (data?.pages ?? []).flatMap((page) => page.items);
   const state = facets?.state ?? data?.pages[0]?.state ?? "preview";
@@ -136,7 +152,12 @@ function Storefront() {
   const gridTop = useRef<HTMLDivElement>(null);
   const setFilters = useCallback(
     (patch: Partial<CatalogFilters>) => {
-      navigate({ to: "/", search: (prev) => ({ ...prev, ...patch }), replace: true, resetScroll: false });
+      navigate({
+        to: "/",
+        search: (prev) => ({ ...prev, ...patch }),
+        replace: true,
+        resetScroll: false,
+      });
       // If the shopper is down the grid, bring them back to the top of the results.
       const el = gridTop.current;
       if (el && el.getBoundingClientRect().top < 0) {
@@ -166,7 +187,10 @@ function Storefront() {
       <h1 className="sr-only">Fyxx Friday: Friday 27 November from 10:00, one day only</h1>
       {/* Moving ticker: the message scrolls right to left on a loop. Pauses on
           hover; stays still for visitors who ask for reduced motion. */}
-      <div id="top" className="ff-ticker overflow-hidden bg-ff-red py-2 text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg">
+      <div
+        id="top"
+        className="ff-ticker overflow-hidden bg-ff-red py-2 text-xs font-semibold tracking-[0.08em] text-ff-cream md:text-lg"
+      >
         <span className="sr-only">Fyxx Friday, Friday 27 November from 10:00. Up to 50% off.</span>
         <div aria-hidden="true" className="ff-ticker-track flex w-max whitespace-nowrap">
           {[0, 1].map((half) => (
@@ -201,12 +225,30 @@ function Storefront() {
           {/* Fyxx Friday logo + the four campaign bottles, centred. During the
               sale the headline "Up to X% off" sits under them. */}
           <div className="flex flex-col items-center gap-4 pb-5">
-            {!showHero && <div aria-hidden="true" className="flex items-end justify-center">
-              <img src="/brand/fyxx-friday-logo-red.svg" alt="" width={2587} height={1446} fetchPriority="high" className="h-16 w-auto md:h-24" />
-              <img src="/brand/fyxx-friday-bottles.webp" alt="" width={942} height={1202} fetchPriority="high" className="-ml-4 h-24 w-auto md:-ml-6 md:h-36" />
-            </div>}
+            {!showHero && (
+              <div aria-hidden="true" className="flex items-end justify-center">
+                <img
+                  src="/brand/fyxx-friday-logo-red.svg"
+                  alt=""
+                  width={2587}
+                  height={1446}
+                  fetchPriority="high"
+                  className="h-16 w-auto md:h-24"
+                />
+                <img
+                  src="/brand/fyxx-friday-bottles.webp"
+                  alt=""
+                  width={942}
+                  height={1202}
+                  fetchPriority="high"
+                  className="-ml-4 h-24 w-auto md:-ml-6 md:h-36"
+                />
+              </div>
+            )}
             {sale && facets?.headline_upto ? (
-              <p className="ff-headline text-3xl text-ff-red uppercase md:text-5xl">Up to {facets.headline_upto}% off</p>
+              <p className="ff-headline text-3xl text-ff-red uppercase md:text-5xl">
+                Up to {facets.headline_upto}% off
+              </p>
             ) : null}
             {state !== "ended" && (
               <div className="w-full max-w-sm">
@@ -217,15 +259,24 @@ function Storefront() {
 
           {state === "ended" ? (
             <div className="py-20 text-center">
-              <p className="ff-headline text-3xl text-ff-red uppercase md:text-4xl">Fyxx Friday is over</p>
-              <p className="ff-subline mt-3 text-base text-ff-black">Thank you for shopping with us. See you next year.</p>
+              <p className="ff-headline text-3xl text-ff-red uppercase md:text-4xl">
+                Fyxx Friday is over
+              </p>
+              <p className="ff-subline mt-3 text-base text-ff-black">
+                Thank you for shopping with us. See you next year.
+              </p>
             </div>
           ) : (
             <>
               {sale && facets && <TopDeals items={facets.top_deals} threshold={threshold} />}
 
               {/* "shop": where the header sections (The Cellar...) and the hero button land. */}
-              <div id="shop" ref={filtersAnchor} aria-hidden="true" className="scroll-mt-[100px] md:scroll-mt-[88px]" />
+              <div
+                id="shop"
+                ref={filtersAnchor}
+                aria-hidden="true"
+                className="scroll-mt-[100px] md:scroll-mt-[88px]"
+              />
               {facets && (
                 <div className="pt-4 pb-2">
                   <CategoryCircles
@@ -242,15 +293,27 @@ function Storefront() {
 
               {/* Product count and sort live in the filter bar; this marks the top of the grid. */}
               <div ref={gridTop} className="flex h-4 items-center justify-center">
-                {isFetching && !isFetchingNextPage && <Loader2 className="h-3 w-3 animate-spin text-ff-black/50" />}
+                {isFetching && !isFetchingNextPage && (
+                  <Loader2 className="h-3 w-3 animate-spin text-ff-black/50" />
+                )}
               </div>
 
               {items.length === 0 ? (
-                <p className="ff-subline py-24 text-center text-sm text-ff-black">No products found</p>
+                <p className="ff-subline py-24 text-center text-sm text-ff-black">
+                  No products found
+                </p>
               ) : (
                 <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 md:gap-y-12 lg:grid-cols-4">
                   {items.map((item, i) => (
-                    <CatalogCard key={item.product_id} item={item} threshold={threshold} eager={i < 4} preSaleLabel={state === "preview" ? (teaser?.copy.sale_label_preview ?? null) : null} />
+                    <CatalogCard
+                      key={item.product_id}
+                      item={item}
+                      threshold={threshold}
+                      eager={i < 4}
+                      preSaleLabel={
+                        state === "preview" ? (teaser?.copy.sale_label_preview ?? null) : null
+                      }
+                    />
                   ))}
                 </div>
               )}
@@ -264,7 +327,13 @@ function Storefront() {
                     onClick={() => fetchNextPage()}
                     className="ff-subline inline-flex h-11 items-center gap-2 rounded-full border border-ff-red px-8 text-sm text-ff-red"
                   >
-                    {isFetchingNextPage ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading</> : "Load more"}
+                    {isFetchingNextPage ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading
+                      </>
+                    ) : (
+                      "Load more"
+                    )}
                   </button>
                 </div>
               )}
@@ -272,7 +341,6 @@ function Storefront() {
           )}
         </div>
       </section>
-
 
       <FloatingCart sale={sale} />
       <BackToTop raised={mounted && cartCount > 0} />
@@ -287,7 +355,13 @@ function groupMains(facets: CatalogFacets, group: string | undefined) {
   return g ? facets.mains.filter((m) => mainInGroup(g.mains, m.name)) : facets.mains;
 }
 
-function CatalogSearch({ value, onSearch }: { value: string | undefined; onSearch: (q: string | undefined) => void }) {
+function CatalogSearch({
+  value,
+  onSearch,
+}: {
+  value: string | undefined;
+  onSearch: (q: string | undefined) => void;
+}) {
   const [term, setTerm] = useState(value ?? "");
   // The last search we sent. When the page's search changes to that value it
   // is our own search coming back: never write it into the box, or letters

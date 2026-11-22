@@ -9,6 +9,7 @@ import { infiniteQueryOptions, queryOptions } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { Preview } from "@/lib/preview";
+import { simCatalog, simFacets } from "@/lib/preview-sim.functions";
 import { formatJod, type ShopifyProduct } from "@/lib/shopify";
 
 export type SaleState = "preview" | "sale" | "ended";
@@ -106,8 +107,15 @@ export async function fetchCatalogPage(
   f: CatalogFilters,
   offset: number,
   preview: Preview | null = null,
+  sim = false,
 ): Promise<CatalogPage> {
-  const { data, error } = await rpc("bf_catalog", { p: { ...params(f, preview), offset } });
+  const p = { ...params(f, preview), offset };
+  // Admin preview with planned Friday prices; anything wrong -> public preview.
+  if (sim) {
+    const r = await simCatalog({ data: { p } }).catch(() => null);
+    if (r) return JSON.parse(r) as CatalogPage;
+  }
+  const { data, error } = await rpc("bf_catalog", { p });
   if (error) throw new Error(error.message);
   return data as CatalogPage;
 }
@@ -115,7 +123,12 @@ export async function fetchCatalogPage(
 export async function fetchFacets(
   f: CatalogFilters,
   preview: Preview | null = null,
+  sim = false,
 ): Promise<CatalogFacets> {
+  if (sim) {
+    const r = await simFacets({ data: { p: params(f, preview) } }).catch(() => null);
+    if (r) return JSON.parse(r) as CatalogFacets;
+  }
   const { data, error } = await rpc("bf_catalog_facets", { p: params(f, preview) });
   if (error) throw new Error(error.message);
   return data as CatalogFacets;
@@ -132,20 +145,28 @@ const filterKey = (f: CatalogFilters, preview: Preview | null) => [
   f.sort ?? "",
 ];
 
-export const catalogQueryOptions = (f: CatalogFilters, preview: Preview | null = null) =>
+export const catalogQueryOptions = (
+  f: CatalogFilters,
+  preview: Preview | null = null,
+  sim = false,
+) =>
   infiniteQueryOptions({
-    queryKey: ["bf-catalog", ...filterKey(f, preview)],
-    queryFn: ({ pageParam }) => fetchCatalogPage(f, pageParam, preview),
+    queryKey: ["bf-catalog", sim ? "sim" : "", ...filterKey(f, preview)],
+    queryFn: ({ pageParam }) => fetchCatalogPage(f, pageParam, preview, sim),
     initialPageParam: 0,
     getNextPageParam: (last) => (last.has_more ? last.offset + last.limit : undefined),
     staleTime: 60_000,
     gcTime: 30 * 60_000, // keep loaded pages so "back" from a product restores them
   });
 
-export const facetsQueryOptions = (f: CatalogFilters, preview: Preview | null = null) =>
+export const facetsQueryOptions = (
+  f: CatalogFilters,
+  preview: Preview | null = null,
+  sim = false,
+) =>
   queryOptions({
-    queryKey: ["bf-facets", ...filterKey(f, preview)],
-    queryFn: () => fetchFacets(f, preview),
+    queryKey: ["bf-facets", sim ? "sim" : "", ...filterKey(f, preview)],
+    queryFn: () => fetchFacets(f, preview, sim),
     staleTime: 60_000,
     gcTime: 30 * 60_000,
     placeholderData: (prev) => prev, // keep chips steady while counts refresh

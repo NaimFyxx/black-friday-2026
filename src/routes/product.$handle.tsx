@@ -26,11 +26,12 @@ import {
 import { sizedImage } from "@/lib/catalog";
 import { parseDescription } from "@/lib/product-description";
 import { onlySaleVariants } from "@/lib/sale-variants.functions";
+import { simVariantPrices } from "@/lib/preview-sim.functions";
 import { useCartStore } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/product/$handle")({
-  loader: async ({ params }) => {
+  loader: async ({ params, context }) => {
     const product = await getProductByHandle(params.handle);
     if (!product) throw notFound();
     // Start downloading the photo now (also when a card is only touched or
@@ -42,7 +43,9 @@ export const Route = createFileRoute("/product/$handle")({
       img.srcset = productImage(url).srcSet;
     }
     // Only sizes on the Fyxx Friday sale list can be chosen and added.
-    return onlySaleVariants(product);
+    const shown = await onlySaleVariants(product);
+    // Admin on ?preview=friday: planned Friday prices (display only).
+    return context.sim ? withSimPrices(shown) : shown;
   },
   // A card touched a moment ago already loaded this: don't fetch it twice.
   preloadStaleTime: 30_000,
@@ -99,6 +102,25 @@ export const Route = createFileRoute("/product/$handle")({
     </div>
   ),
 });
+
+/** Planned Friday prices on the sale-list sizes (admin preview only). */
+async function withSimPrices(product: ShopifyProductNode): Promise<ShopifyProductNode> {
+  const prices = await simVariantPrices({ data: { productId: product.id } }).catch(() => null);
+  if (!prices) return product;
+  const money = (n: number) => ({ amount: Number(n).toFixed(3), currencyCode: "JOD" });
+  return {
+    ...product,
+    variants: {
+      ...product.variants,
+      edges: product.variants.edges.map((e) => {
+        const p = prices[e.node.id];
+        return p
+          ? { node: { ...e.node, price: money(p.price), compareAtPrice: money(p.compare_at) } }
+          : e;
+      }),
+    },
+  };
+}
 
 /** Main product photo from the Shopify CDN at the size the screen needs. */
 function productImage(url: string) {

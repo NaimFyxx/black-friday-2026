@@ -12,6 +12,8 @@ export interface TeaserInfo {
   state: SaleState;
   sale_start: string | null;
   sale_end: string | null;
+  /** Safety net: sale time reached but Shopify prices aren't ready yet. */
+  updating?: boolean;
   /** Set while the hidden preview is on. */
   preview?: Preview;
   /** Header navigation sections (bf_settings.nav_groups). */
@@ -22,6 +24,7 @@ export interface TeaserInfo {
     teaser_countdown_label?: string;
     teaser_button?: string;
     teaser_cart_note?: string;
+    teaser_updating_note?: string;
     /** Card label before the sale for products on the sale list. */
     sale_label_preview?: string;
   };
@@ -44,6 +47,9 @@ export const teaserQueryOptions = (preview: Preview | null = null) =>
     },
     staleTime: 60_000,
     gcTime: 30 * 60_000,
+    // While prices are updating, look again every minute so the sale
+    // appears by itself once Shopify is ready.
+    refetchInterval: (q) => (q.state.data?.updating ? 60_000 : false),
   });
 
 /** "5d 03h 12m 08s" until the given time ("03h 12m 08s" on the last day). */

@@ -39,6 +39,7 @@ type Form = {
   teaser_countdown_label: string;
   teaser_button: string;
   teaser_cart_note: string;
+  teaser_updating_note: string;
 };
 
 function SalePage() {
@@ -74,6 +75,7 @@ function SalePage() {
       teaser_countdown_label: String(s["teaser_countdown_label"] ?? ""),
       teaser_button: String(s["teaser_button"] ?? ""),
       teaser_cart_note: String(s["teaser_cart_note"] ?? ""),
+      teaser_updating_note: String(s["teaser_updating_note"] ?? ""),
     });
   }, [data, form]);
 
@@ -129,6 +131,7 @@ function SalePage() {
       teaser_countdown_label: form.teaser_countdown_label,
       teaser_button: form.teaser_button,
       teaser_cart_note: form.teaser_cart_note,
+      teaser_updating_note: form.teaser_updating_note,
     });
   };
 
@@ -267,6 +270,15 @@ function SalePage() {
               <Input
                 value={form.teaser_cart_note}
                 onChange={(e) => set("teaser_cart_note")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Line when Friday prices aren't ready"
+              hint="Safety net: shown in the header instead of the countdown if at sale time too few sale products have a crossed-out price in Shopify (sale_min_marked). Preview with ?preview=updating."
+            >
+              <Input
+                value={form.teaser_updating_note}
+                onChange={(e) => set("teaser_updating_note")(e.target.value)}
               />
             </Field>
           </Panel>
