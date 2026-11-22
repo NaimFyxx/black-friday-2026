@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useSearch } from "@tanstack/react-router";
 
 import { CartDrawer } from "@/components/CartDrawer";
+import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 // its products on the landing page. Phones get the sections as a slim second
 // row (fixed height, so nothing moves while the names load).
 export function SiteHeader() {
-  const { data } = useQuery(teaserQueryOptions());
+  const { data } = useQuery(teaserQueryOptions(usePreview()));
   // Drawn after the page loads (server and first paint match); the rows keep
   // their height, so nothing shifts.
   const [mounted, setMounted] = useState(false);

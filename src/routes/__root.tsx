@@ -20,6 +20,7 @@ import { useKlaviyoFormsOff } from "../hooks/useKlaviyoFormsOff";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CAMPAIGN_NAME, trackCampaignView, trackPixelPageView } from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
+import { readPreview, usePreview } from "../lib/preview";
 import { getTrackingState, reportClientError } from "../lib/track.functions";
 
 // Send a client error to the /admin error log. Deduped per page load so one
@@ -244,6 +245,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  // Hidden preview (?preview=friday / ended): see src/lib/preview.ts.
+  beforeLoad: () => ({ preview: readPreview() }),
   // Ask the server once per full page load whether to track this visitor
   // (the /admin Tracking switches). Fails open: an error means "track".
   loader: async () => {
@@ -254,7 +257,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     }
   },
   shouldReload: false,
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, match }) => ({
     // Each content route, / included, sets its own head(). No og:image here on purpose:
     // every page without its own would inherit this one.
     meta: [
@@ -269,11 +272,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Fyxx: Wine, Spirits & Cigars in Amman" },
       {
         property: "og:description",
-        content:
-          "Browse every wine, spirit and cigar in the Fyxx cellar and check out securely.",
+        content: "Browse every wine, spirit and cigar in the Fyxx cellar and check out securely.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      // Hidden preview pages must never be indexed.
+      ...(match.context.preview ? [{ name: "robots", content: "noindex, nofollow" }] : []),
     ],
     links: [
       {
@@ -389,11 +393,27 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {!isAdminPage && <PreviewBanner />}
       {!isAdminPage && <SiteHeader />}
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       {!isAdminPage && <SiteFooter />}
       <Toaster position="top-center" />
     </QueryClientProvider>
+  );
+}
+
+/** Small strip on preview pages only, so nobody mistakes them for the live site. */
+function PreviewBanner() {
+  const preview = usePreview();
+  if (!preview) return null;
+  return (
+    <div className="ff-small bg-ff-black px-4 py-1.5 text-center text-xs text-ff-cream">
+      Preview: {preview === "friday" ? "Friday sale" : "after the sale"} view. Prices come from
+      Shopify as they are now.{" "}
+      <a href="/?preview=off" className="underline">
+        Exit preview
+      </a>
+    </div>
   );
 }

@@ -10,6 +10,7 @@ import { FilterBar } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { TeaserHero } from "@/components/hero/TeaserHero";
+import { usePreview } from "@/lib/preview";
 import { SpinWidget } from "@/components/spin/SpinWidget";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,9 +50,9 @@ export const Route = createFileRoute("/")({
   // matches the server instead of refetching from empty.
   loader: async ({ context, deps }) => {
     await Promise.all([
-      context.queryClient.ensureQueryData(facetsQueryOptions(deps)),
-      context.queryClient.ensureQueryData(teaserQueryOptions()),
-      context.queryClient.ensureInfiniteQueryData(catalogQueryOptions(deps)),
+      context.queryClient.ensureQueryData(facetsQueryOptions(deps, context.preview)),
+      context.queryClient.ensureQueryData(teaserQueryOptions(context.preview)),
+      context.queryClient.ensureInfiniteQueryData(catalogQueryOptions(deps, context.preview)),
     ]);
     return dehydrate(context.queryClient);
   },
@@ -105,10 +106,11 @@ function Storefront() {
     hydrate(queryClient, dehydratedState);
   }
 
-  const { data: facets } = useQuery(facetsQueryOptions(filters));
-  const { data: teaser } = useQuery(teaserQueryOptions());
+  const preview = usePreview();
+  const { data: facets } = useQuery(facetsQueryOptions(filters, preview));
+  const { data: teaser } = useQuery(teaserQueryOptions(preview));
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery(
-    catalogQueryOptions(filters),
+    catalogQueryOptions(filters, preview),
   );
   const items = (data?.pages ?? []).flatMap((page) => page.items);
   const state = facets?.state ?? data?.pages[0]?.state ?? "preview";

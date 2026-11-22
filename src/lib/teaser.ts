@@ -6,11 +6,14 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { supabase } from "@/integrations/supabase/client";
 import type { SaleState } from "@/lib/catalog";
+import type { Preview } from "@/lib/preview";
 
 export interface TeaserInfo {
   state: SaleState;
   sale_start: string | null;
   sale_end: string | null;
+  /** Set while the hidden preview is on. */
+  preview?: Preview;
   /** Header navigation sections (bf_settings.nav_groups). */
   nav_groups?: string[];
   copy: {
@@ -29,11 +32,13 @@ type Rpc = (
   args?: Record<string, unknown>,
 ) => Promise<{ data: unknown; error: { message: string } | null }>;
 
-export const teaserQueryOptions = () =>
+export const teaserQueryOptions = (preview: Preview | null = null) =>
   queryOptions({
-    queryKey: ["bf-teaser"],
+    queryKey: ["bf-teaser", preview ?? ""],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as unknown as Rpc).call(supabase, "bf_teaser");
+      const { data, error } = await (supabase.rpc as unknown as Rpc).call(supabase, "bf_teaser", {
+        p: { preview },
+      });
       if (error) throw new Error(error.message);
       return data as TeaserInfo;
     },

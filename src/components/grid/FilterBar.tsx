@@ -13,6 +13,7 @@ import {
   type CatalogFilters,
   type SortKey,
 } from "@/lib/catalog";
+import { usePreview } from "@/lib/preview";
 import { cn } from "@/lib/utils";
 
 /**
@@ -139,7 +140,8 @@ function FilterSheet({
   useEffect(() => {
     if (open) setDraft(filters);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-  const { data: f } = useQuery({ ...facetsQueryOptions(draft), enabled: open });
+  const preview = usePreview();
+  const { data: f } = useQuery({ ...facetsQueryOptions(draft, preview), enabled: open });
   const set = (patch: Partial<CatalogFilters>) => setDraft((d) => ({ ...d, ...patch }));
 
   const sortOptions: SortKey[] = sale

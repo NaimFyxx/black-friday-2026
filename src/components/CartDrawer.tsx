@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/sheet";
 import { trackBeginCheckout } from "@/lib/analytics";
 import { formatJod, formatPrice } from "@/lib/shopify";
+import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { refreshCartAttributes, type CartItem } from "@/lib/shopify-cart";
 import { withStoredUtm } from "@/lib/utm-attribution";
@@ -240,7 +241,7 @@ export function CartDrawer() {
 
 /** Teaser phase only: tells shoppers the prices drop on the day (text from bf_settings). */
 function TeaserCartNote() {
-  const { data } = useQuery(teaserQueryOptions());
+  const { data } = useQuery(teaserQueryOptions(usePreview()));
   const note = data?.state === "preview" ? data.copy.teaser_cart_note : undefined;
   if (!note) return null;
   return (

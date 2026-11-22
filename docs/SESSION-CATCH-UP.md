@@ -427,3 +427,20 @@ UTM test (local, real Shopify cart): visit 1 qa/test/fyxx-friday-2026-11-27/
 qa-ad/TEST1 reached the checkout URL and the cart attributes; visit 2 with
 meta/paid/second-touch/ad-2/whisky/TEST2 replaced all of them on the same cart.
 First touch stayed on the old record; bf_events payloads carried first touch.
+
+## 2026-11-22: Conversion pack, phase 0: hidden preview switch
+
+`?preview=friday` shows the sale version, `?preview=ended` the after-sale
+page, `?preview=off` goes back. Display only.
+- DB (migration `bf_preview_state`, `docs/sql/2026-11-22-bf-preview.sql`):
+  `bf_sale_state(p_preview text)` (service only) overrides the state;
+  `bf_catalog` / `bf_catalog_facets` read `p.preview`; new `bf_teaser(p jsonb)`
+  (old no-argument one kept). Nothing is written; prices stay Shopify's.
+- Site: `src/lib/preview.ts` reads the URL param (server and browser), keeps it
+  in a session cookie `bf_preview` so product pages and header links follow,
+  `usePreview()` from the root route context. Query keys include it.
+  Preview pages get `robots: noindex, nofollow` and a black strip with
+  "Exit preview". Not linked anywhere else.
+- Note: in the sale state the shop lists only products with a Shopify
+  compare-at above the price, so the Friday preview shows only the products
+  marked down in Shopify right now (29 on 22 Nov).
