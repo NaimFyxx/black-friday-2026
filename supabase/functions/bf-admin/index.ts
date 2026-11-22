@@ -158,18 +158,43 @@ const DAY_SALES_QUERY = `
       pageInfo { hasNextPage endCursor }
       nodes {
         createdAt cancelledAt test sourceName
+        app { name }
         totalPriceSet { shopMoney { amount } }
       }
     }
   }
 `;
 
-/** All orders in the range (every channel), for the sales forecast on /admin. */
+type Bucket = { orders: number; total: number };
+const bucket = (): Bucket => ({ orders: 0, total: 0 });
+
+/** Which channel an order belongs to, from the Shopify app that created it. */
+function channelOf(o: { sourceName?: string | null; app?: { name?: string } | null }) {
+  const app = (o.app?.name ?? "").toLowerCase();
+  const src = (o.sourceName ?? "").toLowerCase();
+  if (src === "pos" || app.includes("point of sale")) return "inStore";
+  if (src === "web" || app === "online store") return "website";
+  if (app.includes("mobile app") || app.includes("appmaker")) return "app";
+  if (src === "shopify_draft_order" || app.includes("draft") || app.includes("shopify mobile"))
+    return "staff";
+  return "other";
+}
+
+/**
+ * All orders in the range (every channel), for the sales forecast on /admin.
+ * Channels: website, app (Digital = both), inStore (Point of Sale), staff
+ * (draft orders and orders made in the Shopify phone app), other.
+ */
 async function daySales(since: string, until: string) {
   const q = `created_at:>='${since}' AND created_at:<'${until}'`;
-  const sum = { orders: 0, total: 0 };
-  const online = { orders: 0, total: 0 };
-  const inStore = { orders: 0, total: 0 };
+  const sum = bucket();
+  const channels: Record<string, Bucket> = {
+    website: bucket(),
+    app: bucket(),
+    inStore: bucket(),
+    staff: bucket(),
+    other: bucket(),
+  };
   let after: string | null = null;
   for (let p = 0; p < MAX_PAGES; p++) {
     // deno-lint-ignore no-explicit-any
@@ -177,16 +202,21 @@ async function daySales(since: string, until: string) {
     for (const o of d.orders.nodes) {
       if (o.cancelledAt || o.test) continue;
       const amount = Number(o.totalPriceSet.shopMoney.amount) || 0;
-      const bucket = o.sourceName === "pos" ? inStore : online;
-      bucket.orders += 1;
-      bucket.total += amount;
+      const c = channels[channelOf(o)];
+      c.orders += 1;
+      c.total += amount;
       sum.orders += 1;
       sum.total += amount;
     }
     if (!d.orders.pageInfo.hasNextPage) break;
     after = d.orders.pageInfo.endCursor;
   }
-  return { status: "ok", ...sum, online, inStore };
+  const online = bucket();
+  for (const k of ["website", "app", "staff", "other"]) {
+    online.orders += channels[k].orders;
+    online.total += channels[k].total;
+  }
+  return { status: "ok", ...sum, online, inStore: channels.inStore, channels };
 }
 
 // ── Meta Ads (read only) ──
