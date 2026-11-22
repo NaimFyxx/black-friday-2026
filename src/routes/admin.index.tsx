@@ -95,11 +95,11 @@ function SourcesPage() {
             Visits are browser sessions on this site. Orders and revenue are paid Shopify orders
             placed through this site (cancelled orders excluded), credited to the source the shopper
             first arrived from. Tip: add <code>?utm_source=instagram&amp;utm_medium=story</code>{" "}
-            style tags to every link you share so it shows up here. Visits without tags show where
-            they came from in the Medium column (for example <code>instagram.com</code>, or{" "}
-            <code>direct</code> for typed links, bookmarks and most apps); visits recorded before 22
-            Nov show <em>(none)</em>. The team's own visits (preview link or signed in to /admin on
-            that browser) are left out.
+            style tags to every link you share so it shows up here. Visits without tags ("No tag")
+            show where they came from in the Medium column (for example <code>instagram.com</code>,
+            or <code>direct</code> for typed links, bookmarks and most apps); visits recorded before
+            22 Nov show <em>not recorded</em>. The team's own visits (preview link or signed in to
+            /admin on that browser) are left out.
           </p>
         </>
       )}
@@ -231,9 +231,24 @@ function SourcesTable({ rows, currency }: { rows: SourceRow[]; currency: string 
             key={`${r.utm_source}|${r.utm_medium}|${r.utm_campaign}`}
             className="border-b border-border/60 last:border-0"
           >
-            <td className="px-4 py-2.5 font-medium">{label(r.utm_source)}</td>
-            <td className="px-4 py-2.5">{label(r.utm_medium)}</td>
-            <td className="px-4 py-2.5">{label(r.utm_campaign)}</td>
+            {/* No UTM tags: "No tag", the medium column shows where they came from. */}
+            <td className="px-4 py-2.5 font-medium">
+              {r.utm_source ?? <span className="text-muted-foreground">No tag</span>}
+            </td>
+            <td className="px-4 py-2.5">
+              {r.utm_source === null && r.utm_medium === null ? (
+                <span className="text-muted-foreground">not recorded (before 22 Nov)</span>
+              ) : (
+                label(r.utm_medium)
+              )}
+            </td>
+            <td className="px-4 py-2.5">
+              {r.utm_source === null ? (
+                <span className="text-muted-foreground">-</span>
+              ) : (
+                label(r.utm_campaign)
+              )}
+            </td>
             <td className="px-4 py-2.5 text-right tabular-nums">{r.sessions.toLocaleString()}</td>
             <td className="px-4 py-2.5 text-right tabular-nums">
               {r.product_views.toLocaleString()}
