@@ -12,7 +12,7 @@
 import type { TrackedEventName } from "@/lib/campaign-config";
 import { primaryImage } from "@/lib/shopify";
 import { recordEvent } from "@/lib/track.functions";
-import { getFirstTouchUtm } from "@/lib/utm-attribution";
+import { getFirstReferrer, getFirstTouchUtm } from "@/lib/utm-attribution";
 import { cartToken } from "@/lib/cart-token";
 import { useCartStore } from "@/stores/cartStore";
 
@@ -129,6 +129,7 @@ function logEvent(
       sessionId,
       path: window.location.pathname,
       ...utm,
+      referrer: getFirstReferrer(),
       fromApp: utm.utm_source === "fyxx_app",
       value: extra.value !== undefined && Number.isFinite(extra.value) ? extra.value : undefined,
       currency: extra.currency,

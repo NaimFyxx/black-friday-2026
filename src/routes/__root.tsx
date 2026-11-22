@@ -24,7 +24,7 @@ import {
   trackCampaignView,
   trackPixelPageView,
 } from "../lib/analytics";
-import { captureUtmFromUrl } from "../lib/utm-attribution";
+import { captureReferrer, captureUtmFromUrl } from "../lib/utm-attribution";
 import { restoreCartFromUrl } from "../lib/cart-restore";
 import { readPreview, usePreview, useSim } from "../lib/preview";
 import { useMounted } from "../hooks/useMounted";
@@ -418,6 +418,7 @@ function RootComponent() {
   }, [router]);
   useEffect(() => {
     captureUtmFromUrl();
+    captureReferrer();
     // Link from the 10:00 email: ?cart=<id> loads that Shopify cart here.
     void restoreCartFromUrl();
     // Admin visits aren't shoppers: keep them out of the visit counts.

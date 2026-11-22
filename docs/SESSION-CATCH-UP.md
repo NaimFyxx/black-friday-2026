@@ -632,3 +632,17 @@ Migration bf_final_qa (`docs/sql/2026-11-22-bf-final-qa.sql`):
 - "Object Not Found Matching Id:*, MethodName:update" (Microsoft Outlook /
   Defender link scanners) is never logged (browser and server both drop it),
   the /admin/errors page filters it, and the 49 existing rows were deleted.
+
+## 2026-11-22: Referrer for untagged visits, internal visits excluded
+
+Migration bf_events_referrer_internal (`docs/sql/2026-11-22-bf-events-referrer-internal.sql`):
+- bf_events.referrer: first-touch referring site (hostname, or "direct"),
+  kept in localStorage "fyxx:ref_first" (captureReferrer in
+  utm-attribution.ts), stored only when there is no utm_source.
+- bf_events.internal: set on the server in recordEvent when the browser has
+  the bf_preview cookie or an /admin session. Stored but excluded from
+  bf_source_funnel, bf_activity_daily, bf_top_added and the AI report.
+- Sources: untagged sessions show the referrer in the Medium column
+  ("(none)" for visits before this change). Note on /admin explains it.
+- Team phones not signed in to /admin and without a preview link still
+  count: sign in to /admin once on each (session lasts 400 days).

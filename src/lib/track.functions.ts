@@ -28,6 +28,7 @@ const EventInput = z.object({
   utm_campaign: short(200),
   utm_content: short(200),
   utm_term: short(200),
+  referrer: short(100),
   fromApp: z.boolean().optional(),
   value: z.number().finite().min(0).max(1_000_000).optional(),
   currency: short(8),
@@ -56,6 +57,14 @@ export const recordEvent = createServerFn({ method: "POST" })
       // Respect the admin tracking switches (site-wide off, or this device excluded).
       const { shouldTrack } = await import("./tracking-settings.server");
       if (!(await shouldTrack())) return { ok: true };
+      // The team's own visits: hidden-preview cookie or signed in to /admin.
+      // Stored, but left out of every dashboard count.
+      const { getCookie } = await import("@tanstack/react-start/server");
+      let internal = !!getCookie("bf_preview");
+      if (!internal) {
+        const { isAdmin } = await import("./admin-session.server");
+        internal = await isAdmin().catch(() => false);
+      }
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       // bf_events is a new table not yet in the generated types.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -69,6 +78,8 @@ export const recordEvent = createServerFn({ method: "POST" })
         utm_campaign: data.utm_campaign ?? null,
         utm_content: data.utm_content ?? null,
         utm_term: data.utm_term ?? null,
+        referrer: data.utm_source ? null : (data.referrer ?? null),
+        internal,
         from_app: data.fromApp ?? false,
         value: data.value ?? null,
         currency: data.currency ?? null,

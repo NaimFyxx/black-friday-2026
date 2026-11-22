@@ -97,3 +97,37 @@ export function withStoredUtm(url: string): string {
     return url;
   }
 }
+
+// ── Referrer (for visitors without UTMs) ──────────────────────────────
+
+export const REFERRER_FIRST_KEY = "fyxx:ref_first";
+
+/**
+ * First touch: the site this browser first arrived from (hostname, e.g.
+ * "instagram.com", "l.facebook.com", "google.com") or "direct" (typed,
+ * bookmark, WhatsApp and most apps send nothing). Written once, on the first
+ * page load ever; the dashboard shows it for visits without utm_source.
+ */
+export function captureReferrer(): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (window.localStorage.getItem(REFERRER_FIRST_KEY)) return;
+    let ref = "direct";
+    if (document.referrer) {
+      const host = new URL(document.referrer).hostname.replace(/^www\./, "");
+      if (host && host !== window.location.hostname.replace(/^www\./, "")) ref = host;
+    }
+    window.localStorage.setItem(REFERRER_FIRST_KEY, ref.slice(0, 100));
+  } catch {
+    // no storage: nothing to remember
+  }
+}
+
+export function getFirstReferrer(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    return window.localStorage.getItem(REFERRER_FIRST_KEY) ?? undefined;
+  } catch {
+    return undefined;
+  }
+}

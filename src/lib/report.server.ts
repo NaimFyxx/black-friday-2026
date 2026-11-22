@@ -312,6 +312,7 @@ async function loadProducts(client: Loose, r: Range) {
       .from("bf_events")
       .select("event, variant_id, product_title, items")
       .in("event", ["view_item", "add_to_cart", "begin_checkout"])
+      .eq("internal", false) // the team's own visits don't count
       .gte("created_at", r.since)
       .lt("created_at", r.until)
       .order("id", { ascending: true })

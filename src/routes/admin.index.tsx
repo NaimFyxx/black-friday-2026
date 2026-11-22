@@ -95,7 +95,11 @@ function SourcesPage() {
             Visits are browser sessions on this site. Orders and revenue are paid Shopify orders
             placed through this site (cancelled orders excluded), credited to the source the shopper
             first arrived from. Tip: add <code>?utm_source=instagram&amp;utm_medium=story</code>{" "}
-            style tags to every link you share so it shows up here.
+            style tags to every link you share so it shows up here. Visits without tags show where
+            they came from in the Medium column (for example <code>instagram.com</code>, or{" "}
+            <code>direct</code> for typed links, bookmarks and most apps); visits recorded before 22
+            Nov show <em>(none)</em>. The team's own visits (preview link or signed in to /admin on
+            that browser) are left out.
           </p>
         </>
       )}
