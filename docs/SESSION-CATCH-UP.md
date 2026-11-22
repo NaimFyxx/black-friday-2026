@@ -363,3 +363,6 @@ number, then "% off on Friday" (replaces "Marked down on Friday"). The blurred
 number is always the stand-in "88", never the real discount, so nothing real
 is in the page before 10:00. The text after the % is `sale_label_preview`
 (now "off on Friday"), editable in /admin/sale; empty hides the badge.
+
+Update: the blurred "88" read as a real number, so it is now a blurred blank
+patch (no digits at all) between "-" and "%".
