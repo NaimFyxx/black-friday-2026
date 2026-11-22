@@ -614,3 +614,21 @@ Migration bf_final_qa (`docs/sql/2026-11-22-bf-final-qa.sql`):
   top first-touch utm_source; Today (Amman) / Since launch (CAMPAIGN_START).
   `bf_top_added(p_since, p_until)` (service role only), `getTopAdded`.
   Excludes bf_settings.test_utm_sources (claude-qa, test).
+
+## 2026-11-22: Hydration (#418) hardening, Outlook scanner errors
+
+- 10 x React #418 on "/" (16:30 to 17:03 UTC, from 2 phones: one iPhone,
+  one Android, repeated within minutes). Not reproducible here: production
+  builds of the old and new code, iPhone/Android, Amman time zone, Arabic
+  locale, empty/full cart, reminder signed up or not, ?preview=friday and the
+  admin preview (faked admin) all hydrate without errors.
+- Hardening anyway: `src/hooks/useMounted.ts`. Drawn only after the page has
+  loaded, with same-size placeholders (0 px shift measured): hero countdown,
+  "Ends at midnight" countdown, "Remind me / Add to calendar" row, preview
+  strip. Cart badge and cart bar already were.
+- Every client error now stores a context in bf_error_log.detail.context:
+  preview cookie, cart item count, reminder signed up, page translated by the
+  browser (html class/lang), time zone, query string. Next #418 will say why.
+- "Object Not Found Matching Id:*, MethodName:update" (Microsoft Outlook /
+  Defender link scanners) is never logged (browser and server both drop it),
+  the /admin/errors page filters it, and the 49 existing rows were deleted.

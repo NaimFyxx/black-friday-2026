@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { googleCalendarUrl, icsDataUrl } from "@/lib/calendar";
+import { useMounted } from "@/hooks/useMounted";
 import { hasReminder } from "@/lib/reminder";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 import type { TeaserInfo } from "@/lib/teaser";
@@ -18,6 +19,7 @@ import type { TeaserInfo } from "@/lib/teaser";
 /** Under the hero countdown: "Remind me at 10:00" and "Add to calendar". */
 export function HeroReminder({ info }: { info: TeaserInfo }) {
   const copy = info.reminder;
+  const mounted = useMounted();
   // Signed up already (now or earlier): keep the dialog open for the thank-you,
   // but don't offer the link again on later visits.
   const [open, setOpen] = useState(false);
@@ -29,6 +31,9 @@ export function HeroReminder({ info }: { info: TeaserInfo }) {
   }, [open]);
   const canCalendar = !!info.sale_start && !!info.sale_end;
   if (!copy?.enabled && !canCalendar) return null;
+  // Depends on this browser (signed up already? cart?): drawn after load, in a
+  // row of the same height so nothing moves.
+  if (!mounted) return <div aria-hidden className="mt-3 h-5" />;
   const link =
     "ff-small inline-flex items-center gap-1.5 text-sm text-ff-cream underline underline-offset-4 hover:text-ff-red";
 

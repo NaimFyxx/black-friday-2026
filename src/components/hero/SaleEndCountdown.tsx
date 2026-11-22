@@ -26,7 +26,13 @@ export function SaleEndCountdown({
   return (
     <p className="ff-subline text-base text-ff-black md:text-lg" aria-live="off">
       {label}{" "}
-      <span className="ff-num text-ff-red">{left === null ? "" : formatCountdown(left)}</span>
+      {left === null ? (
+        <span className="ff-num invisible text-ff-red" aria-hidden>
+          00h 00m 00s
+        </span>
+      ) : (
+        <span className="ff-num text-ff-red">{formatCountdown(left)}</span>
+      )}
     </p>
   );
 }

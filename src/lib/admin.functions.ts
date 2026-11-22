@@ -344,6 +344,8 @@ export const getErrorLog = createServerFn({ method: "GET" }).handler(async () =>
   const recent = await client
     .from("bf_error_log")
     .select("id, created_at, area, message, path, user_agent")
+    // Outlook / Defender link scanners, not visitors.
+    .not("message", "like", "Object Not Found Matching Id:%")
     .order("created_at", { ascending: false })
     .limit(100);
   if (isMissing(recent.error))
@@ -354,6 +356,7 @@ export const getErrorLog = createServerFn({ method: "GET" }).handler(async () =>
   const week = await client
     .from("bf_error_log")
     .select("area, created_at")
+    .not("message", "like", "Object Not Found Matching Id:%")
     .gte("created_at", since7d)
     .limit(5000);
 

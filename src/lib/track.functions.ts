@@ -94,12 +94,15 @@ const ErrorInput = z.object({
   area: z.string().trim().min(1).max(60),
   message: z.string().max(1000),
   stack: z.string().max(2000).optional(),
+  context: z.string().max(500).optional(),
   path: short(300),
 });
 
 export const reportClientError = createServerFn({ method: "POST" })
   .validator((d: unknown) => ErrorInput.parse(d))
   .handler(async ({ data }) => {
+    // Outlook / Defender link scanners, not visitors (also filtered in the browser).
+    if (/Object Not Found Matching Id:\d+, MethodName:update/.test(data.message)) return;
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { getRequestHeader } = await import("@tanstack/react-start/server");
@@ -110,7 +113,10 @@ export const reportClientError = createServerFn({ method: "POST" })
         message: data.message,
         path: data.path ?? null,
         user_agent: (getRequestHeader("user-agent") ?? "").slice(0, 300) || null,
-        detail: data.stack ? { stack: data.stack } : null,
+        detail:
+          data.stack || data.context
+            ? { stack: data.stack ?? null, context: data.context ?? null }
+            : null,
       });
     } catch {
       // best-effort

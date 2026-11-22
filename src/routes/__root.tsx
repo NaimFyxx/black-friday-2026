@@ -27,6 +27,7 @@ import {
 import { captureUtmFromUrl } from "../lib/utm-attribution";
 import { restoreCartFromUrl } from "../lib/cart-restore";
 import { readPreview, usePreview, useSim } from "../lib/preview";
+import { useMounted } from "../hooks/useMounted";
 import { KLAVIYO_COMPANY_ID } from "../lib/campaign-config";
 import { simAllowed } from "../lib/preview-sim.functions";
 import { getTrackingState, reportClientError } from "../lib/track.functions";
@@ -34,8 +35,35 @@ import { getTrackingState, reportClientError } from "../lib/track.functions";
 // Send a client error to the /admin error log. Deduped per page load so one
 // crash loop can't spam it, and capped at 5 reports per page.
 const reportedErrors = new Set<string>();
+// Not real visitors: Microsoft Outlook / Defender link scanners opening email
+// links throw this from their own script. Never logged.
+const BOT_ERROR = /Object Not Found Matching Id:\d+, MethodName:update/;
+
+/** What this browser had going on, to explain errors like React #418. */
+function errorContext(): string {
+  try {
+    const cart = JSON.parse(localStorage.getItem("shopify-cart") ?? "{}") as {
+      state?: { items?: unknown[] };
+    };
+    const html = document.documentElement;
+    return JSON.stringify({
+      preview: /bf_preview=(\w+)/.exec(document.cookie)?.[1] ?? null,
+      cart_items: cart.state?.items?.length ?? 0,
+      reminder: localStorage.getItem("fyxx:reminder") === "1",
+      // Browser page translation (Chrome / Safari) rewrites text before React loads.
+      translated: /translated/.test(html.className) || (html.lang !== "" && html.lang !== "en"),
+      lang: html.lang,
+      tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      query: location.search.slice(0, 200),
+    });
+  } catch {
+    return "";
+  }
+}
+
 function logClientError(area: string, message: string, stack?: string) {
   if (typeof window === "undefined") return;
+  if (BOT_ERROR.test(message)) return;
   const key = `${area}:${message}`.slice(0, 200);
   if (reportedErrors.has(key) || reportedErrors.size >= 5) return;
   reportedErrors.add(key);
@@ -44,6 +72,7 @@ function logClientError(area: string, message: string, stack?: string) {
       area,
       message: message.slice(0, 1000) || "Unknown error",
       stack: stack?.slice(0, 2000),
+      context: errorContext().slice(0, 500) || undefined,
       path: window.location.pathname.slice(0, 300),
     },
   }).catch(() => {});
@@ -431,7 +460,9 @@ function RootComponent() {
 function PreviewBanner() {
   const preview = usePreview();
   const sim = useSim();
-  if (!preview) return null;
+  // Cookie and admin based: drawn after load only (internal preview tool).
+  const mounted = useMounted();
+  if (!preview || !mounted) return null;
   return (
     <div className="ff-small bg-ff-black px-4 py-1.5 text-center text-xs text-ff-cream">
       Preview:{" "}

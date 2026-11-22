@@ -112,21 +112,29 @@ function Countdown({
   onDone: () => void;
 }) {
   const end = new Date(target).getTime();
-  const [now, setNow] = useState(() => Date.now());
+  // null until the page has loaded in the browser: the server's clock and the
+  // visitor's differ, so the digits are drawn only after hydration.
+  const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    setNow(Date.now());
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
-  const left = end - now;
+  const left = now === null ? null : end - now;
   useEffect(() => {
-    if (left <= 0) onDone();
-  }, [left <= 0]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (left !== null && left <= 0) onDone();
+  }, [left !== null && left <= 0]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <p className="ff-subline mt-4 text-base text-ff-cream md:text-lg" aria-live="off">
       {label}{" "}
-      <span className="ff-num text-ff-red" suppressHydrationWarning>
-        {formatCountdown(left)}
-      </span>
+      {left === null ? (
+        // Same width as the digits, so nothing moves when they appear.
+        <span className="ff-num invisible text-ff-red" aria-hidden>
+          0d 00h 00m 00s
+        </span>
+      ) : (
+        <span className="ff-num text-ff-red">{formatCountdown(left)}</span>
+      )}
     </p>
   );
 }
