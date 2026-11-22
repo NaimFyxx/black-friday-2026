@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { ExternalLink, Loader2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { Loader2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,14 @@ export function CartDrawer() {
   const isOpen = useCartUi((s) => s.open);
   const setIsOpen = useCartUi((s) => s.setOpen);
   const [mounted, setMounted] = useState(false);
+  // Checkout clicked: keep the spinner until the browser leaves for Shopify.
+  const [goingToCheckout, setGoingToCheckout] = useState(false);
+  useEffect(() => {
+    // Back button from checkout (page restored from cache): button usable again.
+    const reset = () => setGoingToCheckout(false);
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
+  }, []);
   const items = useCartStore((state) => state.items);
   const isLoading = useCartStore((state) => state.isLoading);
   const isSyncing = useCartStore((state) => state.isSyncing);
@@ -73,14 +81,12 @@ export function CartDrawer() {
       );
       // Carry the latest campaign (UTMs + fbclid) onto checkout.
       const normal = withStoredUtm(checkoutUrl);
-      // Open the tab now (inside the tap, so phones allow it), then send it to
-      // the checkout page directly so the Fyxx app does not take over (see
-      // checkout-handoff.functions.ts). Falls back to the normal link.
-      const tab = window.open("about:blank", "_blank");
-      setIsOpen(false);
+      // Checkout opens in this tab. It goes to the checkout page directly so
+      // the Fyxx app does not take over (see checkout-handoff.functions.ts),
+      // and falls back to the normal link.
+      setGoingToCheckout(true);
       const go = (url: string) => {
-        if (tab && !tab.closed) tab.location.href = url;
-        else window.location.href = url;
+        window.location.href = url;
       };
       // Latest campaign onto the cart first (orders read it), then hand off.
       const cartId = useCartStore.getState().cartId;
@@ -140,7 +146,7 @@ export function CartDrawer() {
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="truncate font-display text-lg leading-tight">
+                      <h4 className="line-clamp-2 font-display text-lg leading-tight">
                         {item.product.node.title}
                       </h4>
                       {/* Size etc.; nothing for single-option products ("Default Title"). */}
@@ -219,15 +225,12 @@ export function CartDrawer() {
                   onClick={handleCheckout}
                   size="lg"
                   className="mt-4 w-full rounded-full"
-                  disabled={items.length === 0 || isLoading || isSyncing}
+                  disabled={items.length === 0 || isLoading || isSyncing || goingToCheckout}
                 >
-                  {isLoading || isSyncing ? (
+                  {isLoading || isSyncing || goingToCheckout ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    <>
-                      <ExternalLink className="h-4 w-4" />
-                      Checkout
-                    </>
+                    "Checkout"
                   )}
                 </Button>
               </div>

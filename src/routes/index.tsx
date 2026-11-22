@@ -67,13 +67,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
+          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off. Wine, spirits, cigars and accessories marked down, delivered in Amman.",
       },
       { property: "og:title", content: "Fyxx Friday | 27 November" },
       {
         property: "og:description",
         content:
-          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
+          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off. Wine, spirits, cigars and accessories marked down, delivered in Amman.",
       },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://friday.myfyxx.com/" },
@@ -90,7 +90,7 @@ export const Route = createFileRoute("/")({
       {
         name: "twitter:description",
         content:
-          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off wine, spirits and cigars, delivered in Amman.",
+          "Fyxx Friday. One day only, Friday 27 November from 10:00. Up to 50% off. Wine, spirits, cigars and accessories marked down, delivered in Amman.",
       },
       { name: "twitter:image", content: "https://friday.myfyxx.com/brand/og-fyxx-friday.jpg" },
     ],

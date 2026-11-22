@@ -1,9 +1,9 @@
 /**
  * Cart + checkout mutations against the Shopify Storefront API.
  *
- * Every checkout URL comes from the API response — never hand-built. The URL is
- * opened in a new tab with `channel=online_store` so it does not hit the
- * storefront password wall.
+ * Every checkout URL comes from the API response, never hand-built. Checkout
+ * opens in the same tab (see CartDrawer), with `channel=online_store` so it
+ * does not hit the storefront password wall.
  */
 
 import { getSessionId, trackingOff } from "@/lib/analytics";

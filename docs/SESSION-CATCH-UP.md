@@ -471,3 +471,13 @@ page, `?preview=off` goes back. Display only.
   re-checks every minute and the shop reloads when prices are ready.
   `?preview=updating` shows it. Text and number editable (note on /admin/sale,
   sale_min_marked in bf_settings).
+
+## 2026-11-22: Conversion pack, phase 1
+
+- Meta, og and twitter descriptions: "Fyxx Friday. One day only, Friday 27
+  November from 10:00. Up to 50% off. Wine, spirits, cigars and accessories
+  marked down, delivered in Amman."
+- Checkout opens in the same tab (UTMs + fbclid still on the link, cart
+  attributes refreshed first, app handoff kept). The button shows a spinner
+  until the browser leaves; the new-tab icon is gone.
+- Cart drawer: product names wrap to 2 lines instead of "Olmeca ...".
