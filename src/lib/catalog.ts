@@ -34,6 +34,8 @@ export interface CatalogItem {
   handle: string;
   title: string;
   vendor: string | null;
+  /** Shopify product type (Wine, Whisky, Cigars...), shown under the title. */
+  product_type?: string | null;
   main_category: string;
   sub_category: string | null;
   image_url: string | null;

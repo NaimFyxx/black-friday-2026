@@ -730,3 +730,8 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 - Sales forecast now compares Fyxx Friday 2025 vs 2026 by channel, whole day 00:00 to midnight Amman: Total, Digital (website + app), Website, Mobile app, In store (Point of Sale), Staff orders (draft orders and Shopify phone app). Channel comes from the order's Shopify app (bf-admin day_sales, deployed v18 by MCP because the auto-deploy didn't pick it up).
 - Last year by this method: 155 orders, JOD 14,268.564 (website 7 / 646.130, app 55 / 4,162.180, in store 65 / 3,983.020, staff 28 / 5,477.234). Pace uses whole-day hourly shares (forecast_last_year.share_by_hour).
 - "So far today" now counts from 00:00 Amman on Friday (same window as last year). Cart estimate label: "Digital, estimate from carts". Odoo in-store data: later.
+
+## 2026-11-22 late: Fyxx first, product type on cards, Fyxx photos in circles
+- Category circle photos: each category now uses a product whose vendor contains "Fyxx" (category_mapping[].image_handle). Live immediately (looked up at query time).
+- Default product order: vendor contains Fyxx, then UMG, then Zumot, then the rest (bf_settings.vendor_priority). Only when the shopper hasn't picked a sort.
+- Product type (Shopify) under the title on every catalog card.

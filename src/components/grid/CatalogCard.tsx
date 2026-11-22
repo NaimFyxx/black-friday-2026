@@ -180,16 +180,20 @@ export const CatalogCard = memo(function CatalogCard({
           )}
         </div>
         <div className="mt-3">
-          <h3
-            className={cn(
-              // Room for three full lines on every card (size/line-height set
-              // together, so the reserved height always matches the text).
-              "ff-subline mt-1 line-clamp-3 text-ff-black",
-              compact ? "h-[60px] text-sm/5" : "h-[60px] text-[15px]/5 md:h-[72px] md:text-lg/6",
-            )}
-          >
-            {item.title}
-          </h3>
+          {/* Fixed height (three title lines + the type line) keeps cards lined up. */}
+          <div className={cn("mt-1", compact ? "h-[80px]" : "h-[80px] md:h-[96px]")}>
+            <h3
+              className={cn(
+                "ff-subline line-clamp-3 text-ff-black",
+                compact ? "text-sm/5" : "text-[15px]/5 md:text-lg/6",
+              )}
+            >
+              {item.title}
+            </h3>
+            {item.product_type ? (
+              <p className="ff-small truncate text-xs/5 text-ff-black/60">{item.product_type}</p>
+            ) : null}
+          </div>
           <p className="mt-1 flex min-h-6 flex-wrap items-baseline gap-x-2 leading-6">
             <span
               className={cn(

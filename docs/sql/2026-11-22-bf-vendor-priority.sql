@@ -1,0 +1,8 @@
+-- Applied 2026-11-22 (migrations bf_catalog_vendor_priority, bf_card_product_type).
+-- bf_settings.vendor_priority = ["fyxx","umg","zumot"]: in the default order (no
+--   sort picked by the shopper) products whose vendor contains these words come
+--   first, in that order, then everyone else. A picked sort (price, newest,
+--   discount) is kept as chosen. bf_catalog only (bf_catalog_sim calls it).
+-- bf_card now also returns product_type (shown under the title on cards).
+-- bf_settings.category_mapping[].image_handle switched to a Fyxx-vendor product
+--   per category (most added to cart / viewed, well-known bottle on ties).
