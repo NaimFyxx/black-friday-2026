@@ -548,3 +548,37 @@ planned prices):
   (bf_settings.ended_copy).
 - bf_teaser returns low_stock_max, ended, goes_well_with, copy.sale_end_label.
 - AGENTS.md: checkout opens in the same tab (owner's decision).
+
+## 2026-11-22: Phase 3 changes, cart restore link, admin preview fix, phase 4
+
+- low_stock_max = 3. goes_well_with: wine -> Wine accessories, spirits ->
+  Bar accessories.
+- Cart restore link for the 10:00 email: `friday.myfyxx.com/?cart=<CartID>`
+  (`src/lib/cart-restore.ts`, `src/lib/cart-token.ts`). Loads that Shopify cart
+  (Storefront API) into this browser and opens the cart drawer; unknown or
+  empty carts are ignored; once per tab (sessionStorage); UTMs captured as
+  usual; the address bar is not changed (that broke hydration).
+  Klaviyo "Added to Cart" now has **CartID** (URL-safe token). Template
+  **TtqUgk** button: https://friday.myfyxx.com/?cart={{ event.CartID }}&utm_source=
+  klaviyo&utm_medium=email&utm_campaign=fyxx-friday-2026-11-27&utm_content=
+  fri-27-cart-reminder (plain site link with the same UTMs when no cart).
+- **Note for the email session (owner's decision, 22 Nov):** people on the
+  reminder list Wwe9ax ("Fyxx Friday 2026 - Cart reminder") SKIP both Friday
+  launch emails (09:00 and 10:00). They still get the 17:00 resend and pushes.
+  Flow for the 10:00 cart email: trigger "Added to Cart" (API metric S3AtNP);
+  filters: in list Wwe9ax, and Added to Cart zero times since starting this
+  flow; delay until 10:00 Friday (account timezone Asia/Amman); template
+  TtqUgk; Klaviyo UTM tracking off; Smart Sending off; go live now; switch off
+  Saturday. List members with no cart event: a 10:00 campaign with the same
+  template (shows the no-cart version).
+- Admin preview bug (shop showed 29 Shopify markdowns, "Up to 29%"): the admin
+  facets call took 7.4 s and hit the 8 s API timeout after phase 3 added
+  more passes (Top deals). Fixed with a primary-key lookup in bf_visible
+  (0.24 s, migration bf_sim_lookup_indexed). Admin calls now retry once
+  before falling back.
+- Sticky Add to cart bar: scroll check (live site verified at 390 px).
+- Phase 4 (tracking): checkout click sends GA4 begin_checkout (currency JOD,
+  value, items) and Meta InitiateCheckout (value, currency JOD, content_ids,
+  num_items). Same-tab checkout now waits for GA4 to send begin_checkout
+  (beacon, event_callback, max ~1.2 s) before leaving. GA4 add_to_cart and
+  Meta AddToCart unchanged.

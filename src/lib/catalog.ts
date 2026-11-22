@@ -117,7 +117,10 @@ export async function fetchCatalogPage(
   const p = { ...params(f, preview), offset, ...(limit ? { limit } : {}) };
   // Admin preview with planned Friday prices; anything wrong -> public preview.
   if (sim) {
-    const r = await simCatalog({ data: { p } }).catch(() => null);
+    // One retry before falling back to the public preview (Shopify prices).
+    const r = await simCatalog({ data: { p } })
+      .catch(() => simCatalog({ data: { p } }))
+      .catch(() => null);
     if (r) return JSON.parse(r) as CatalogPage;
   }
   const { data, error } = await rpc("bf_catalog", { p });
@@ -131,7 +134,10 @@ export async function fetchFacets(
   sim = false,
 ): Promise<CatalogFacets> {
   if (sim) {
-    const r = await simFacets({ data: { p: params(f, preview) } }).catch(() => null);
+    const p = params(f, preview);
+    const r = await simFacets({ data: { p } })
+      .catch(() => simFacets({ data: { p } }))
+      .catch(() => null);
     if (r) return JSON.parse(r) as CatalogFacets;
   }
   const { data, error } = await rpc("bf_catalog_facets", { p: params(f, preview) });

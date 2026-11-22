@@ -13,6 +13,7 @@ import type { TrackedEventName } from "@/lib/campaign-config";
 import { primaryImage } from "@/lib/shopify";
 import { recordEvent } from "@/lib/track.functions";
 import { getFirstTouchUtm } from "@/lib/utm-attribution";
+import { cartToken } from "@/lib/cart-token";
 import { useCartStore } from "@/stores/cartStore";
 
 export const CAMPAIGN_NAME = "black_friday_2026";
@@ -335,18 +336,42 @@ function trackKlaviyoAddedToCart(item: TrackedItem): void {
     Items: lines,
     // From the Storefront API cart response (never built by hand).
     CheckoutURL: cart.checkoutUrl ?? undefined,
+    // For the email's restore link: friday.myfyxx.com/?cart=<CartID> (URL-safe).
+    CartID: cartToken(cart.cartId),
     Currency: PIXEL_CURRENCY,
     campaign_name: CAMPAIGN_NAME,
   });
 }
 
 /** The shopper clicked Checkout. */
-export function trackBeginCheckout(items: TrackedItem[]): void {
+export function trackBeginCheckout(items: TrackedItem[]): Promise<void> {
   const first = items[0];
-  if (!first) return;
+  if (!first) return Promise.resolve();
   const currency = first.currency;
   const value = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
-  trackEvent("begin_checkout", { currency, value, items: items.map(gaItem) });
+  // Checkout opens in this tab: resolve once GA4 has sent begin_checkout (or
+  // after ~1 s at most), so the page doesn't leave before the hit goes out.
+  const sent = new Promise<void>((resolve) => {
+    let done = false;
+    const finish = () => {
+      if (!done) {
+        done = true;
+        resolve();
+      }
+    };
+    setTimeout(finish, 1200);
+    const gtag = tw()?.gtag;
+    if (!gtag) return finish();
+    gtag("event", "begin_checkout", {
+      campaign_name: CAMPAIGN_NAME,
+      currency,
+      value,
+      items: items.map(gaItem),
+      transport_type: "beacon",
+      event_callback: finish,
+      event_timeout: 1000,
+    });
+  });
   trackPixel("InitiateCheckout", {
     content_ids: items.map((i) => shopifyVariantId(i.id)),
     content_type: "product",
@@ -360,4 +385,5 @@ export function trackBeginCheckout(items: TrackedItem[]): void {
     itemCount: items.reduce((n, i) => n + i.quantity, 0),
     items,
   });
+  return sent;
 }

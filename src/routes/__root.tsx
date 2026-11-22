@@ -20,6 +20,7 @@ import { useKlaviyoFormsOff } from "../hooks/useKlaviyoFormsOff";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CAMPAIGN_NAME, trackCampaignView, trackPixelPageView } from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
+import { restoreCartFromUrl } from "../lib/cart-restore";
 import { readPreview, usePreview, useSim } from "../lib/preview";
 import { KLAVIYO_COMPANY_ID } from "../lib/campaign-config";
 import { simAllowed } from "../lib/preview-sim.functions";
@@ -381,6 +382,8 @@ function RootComponent() {
   }, [router]);
   useEffect(() => {
     captureUtmFromUrl();
+    // Link from the 10:00 email: ?cart=<id> loads that Shopify cart here.
+    void restoreCartFromUrl();
     // Admin visits aren't shoppers: keep them out of the visit counts.
     if (!window.location.pathname.startsWith("/admin")) trackCampaignView();
   }, []);

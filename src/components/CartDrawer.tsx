@@ -71,7 +71,7 @@ export function CartDrawer() {
   const handleCheckout = () => {
     const checkoutUrl = getCheckoutUrl();
     if (checkoutUrl) {
-      trackBeginCheckout(
+      const tracked = trackBeginCheckout(
         items.map((item) => ({
           id: item.variantId,
           name: item.product.node.title,
@@ -93,9 +93,12 @@ export function CartDrawer() {
       };
       // Latest campaign onto the cart first (orders read it), then hand off.
       const cartId = useCartStore.getState().cartId;
-      (cartId ? refreshCartAttributes(cartId).catch(() => {}) : Promise.resolve())
-        .then(() => prepareCheckoutFn({ data: { url: normal } }))
-        .then((r) => go(r ? withStoredUtm(r.url) : normal))
+      // Also wait (max ~1 s) for GA4 begin_checkout to go out before leaving.
+      const prepared = (
+        cartId ? refreshCartAttributes(cartId).catch(() => {}) : Promise.resolve()
+      ).then(() => prepareCheckoutFn({ data: { url: normal } }));
+      Promise.all([prepared, tracked.catch(() => {})])
+        .then(([r]) => go(r ? withStoredUtm(r.url) : normal))
         .catch(() => go(normal));
     }
   };

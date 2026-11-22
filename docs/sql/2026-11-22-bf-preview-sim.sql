@@ -144,3 +144,10 @@ on conflict (key) do nothing;
 
 -- (migration bf_teaser_updating_note) bf_settings.teaser_updating_note
 -- "Prices are updating, refresh in a few minutes", added to bf_teaser() copy.
+
+-- (migration bf_sim_lookup_indexed, 22 Nov) Performance fix: the planned-price
+-- lookup in bf_visible compared text ('gid://.../' || l.variant_id), so every
+-- simulated row scanned bf_sale_list. bf_catalog_facets_sim took 7.4 s and hit
+-- the 8 s API statement timeout (admin preview fell back to Shopify prices).
+-- Now: l.variant_id = nullif(substring(b.variant_id from '(\d+)$'), '')::bigint
+-- (primary key lookup): 0.24 s.
