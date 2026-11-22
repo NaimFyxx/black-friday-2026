@@ -669,3 +669,11 @@ Migration bf_events_referrer_internal (`docs/sql/2026-11-22-bf-events-referrer-i
 - /admin Sources page: "After the Friday site" section (clicks to website /
   app by link, website orders after a visit and revenue by first source),
   `getLeaving`, `bf_outbound`. App orders can't be linked (no shared browser).
+
+- Update (same day): outbound links are NOT given UTM tags any more. Both
+  sites send to the same GA4 property (G-N6PW62SXRQ) and Meta pixel
+  (1207780626389959) with the same visitor cookies (_ga, _fbp on
+  .myfyxx.com, checked live), so GA4 and Meta already follow a visitor from
+  friday.myfyxx.com to a purchase on myfyxx.com; tags would have replaced the
+  real source (e.g. an Instagram ad) with "fyxx-friday-site". Clicks are
+  still logged and the fyxx_friday cookie is still written.

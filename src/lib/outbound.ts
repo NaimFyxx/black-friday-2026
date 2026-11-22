@@ -2,9 +2,10 @@
 //
 // 1. Every click on a link to myfyxx.com (not this site) or to the app (the
 //    onelink / App Store / Google Play links) is logged ("outbound" event in
-//    bf_events + GA4 outbound_click), and the link gets UTM tags so Shopify's
-//    own reports show the visit: utm_source=fyxx-friday-site, utm_medium=referral,
-//    utm_campaign=fyxx-friday-2026-11-27, utm_content=<which link>.
+//    bf_events + GA4 outbound_click). Links are NOT given UTM tags: both sites
+//    share the GA4 property and Meta pixel with the same visitor cookie, so
+//    tags would only replace the visitor's real source (e.g. an Instagram ad)
+//    with "the Friday site" in GA4 and Shopify reports.
 // 2. A first-party cookie `fyxx_friday` on .myfyxx.com (30 days) records that
 //    this browser visited the Friday site and where it first came from. A small
 //    snippet in the myfyxx.com Shopify theme (docs/shopify-theme-fyxx-friday.md)
@@ -14,7 +15,6 @@
 import { trackOutbound } from "@/lib/analytics";
 import { getFirstReferrer, getFirstTouchUtm } from "@/lib/utm-attribution";
 
-const CAMPAIGN = "fyxx-friday-2026-11-27";
 const APP_HOSTS = ["onelink.to", "apps.apple.com", "play.google.com"];
 
 function destinationOf(url: URL): "website" | "app" | null {
@@ -27,13 +27,6 @@ function destinationOf(url: URL): "website" | "app" | null {
   }
   return null;
 }
-
-const slug = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 40) || "link";
 
 /** Listen for clicks on outbound links (whole page, once). */
 export function startOutboundTracking(): void {
@@ -52,13 +45,6 @@ export function startOutboundTracking(): void {
       const destination = destinationOf(url);
       if (!destination) return;
       const label = (a.dataset["outLabel"] || a.textContent || "").trim().slice(0, 80) || "link";
-      if (!url.searchParams.has("utm_source")) {
-        url.searchParams.set("utm_source", "fyxx-friday-site");
-        url.searchParams.set("utm_medium", "referral");
-        url.searchParams.set("utm_campaign", CAMPAIGN);
-        url.searchParams.set("utm_content", slug(label));
-        a.href = url.toString(); // the browser follows the tagged link
-      }
       trackOutbound(destination, label, url.toString());
     },
     true,

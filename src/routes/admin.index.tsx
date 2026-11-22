@@ -217,8 +217,7 @@ function LeavingSection({ range }: { range: { since: string; until: string } }) 
             </Panel>
           </div>
           <p className="text-xs text-muted-foreground">
-            Clicks: visitors tapping a link from this site to myfyxx.com or the Fyxx app (the links
-            carry utm_source=fyxx-friday-site, so Shopify's own reports show them too). Website
+            Clicks: visitors tapping a link from this site to myfyxx.com or the Fyxx app. Website
             orders: paid orders on myfyxx.com from a browser that visited this site in the 30 days
             before (needs the small snippet in the myfyxx.com theme). App orders can't be linked:
             the app doesn't share the browser. Team visits are left out.
