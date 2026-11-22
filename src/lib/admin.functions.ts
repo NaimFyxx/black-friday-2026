@@ -625,3 +625,132 @@ export const getLeaving = createServerFn({ method: "GET" })
       shopify: shop.status,
     };
   });
+
+// ── Sales forecast (box above "Most added to cart") ────────────────────
+
+export type DaySales = {
+  orders: number;
+  total: number;
+  online: { orders: number; total: number };
+  inStore: { orders: number; total: number };
+};
+type LastYear = DaySales & {
+  day: string;
+  share_by_hour: Record<string, number>;
+};
+export type SalesForecast = {
+  mode: "before" | "friday" | "after";
+  now: string;
+  saleStart: string;
+  saleEnd: string;
+  lastYear: LastYear | null;
+  carts: { value: number; carts: number; units: number; rates: number[] } | null;
+  today:
+    (DaySales & { status: "ok" }) | { status: "not_configured" | "error"; message?: string } | null;
+  pace: number | null;
+  tooEarlyBefore: number;
+};
+
+/**
+ * Before the sale: cart value at Friday prices (bf_cart_forecast) and last
+ * year. From sale_start: Shopify orders since then (all channels, via
+ * bf-admin day_sales) and the pace by midnight. Totals only: no prices or cost.
+ */
+export const getSalesForecast = createServerFn({ method: "GET" }).handler(
+  async (): Promise<SalesForecast> => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const { ammanHour, paceByMidnight } = await import("./forecast");
+    const client = await db();
+    const keys = [
+      "sale_start",
+      "sale_end",
+      "forecast_last_year",
+      "forecast_too_early_before_hour",
+      "forecast_buy_rates",
+    ];
+    const { data: rows, error } = await client
+      .from("bf_settings")
+      .select("key, value")
+      .in("key", keys);
+    if (error) throw new Error(error.message);
+    const cfg = new Map<string, unknown>(
+      ((rows ?? []) as Array<{ key: string; value: unknown }>).map((r) => [r.key, r.value]),
+    );
+    const saleStart = String(cfg.get("sale_start") ?? "2026-11-27T10:00:00+03:00");
+    const saleEnd = String(cfg.get("sale_end") ?? "2026-11-28T00:00:00+03:00");
+    const tooEarlyBefore = n(cfg.get("forecast_too_early_before_hour")) || 13;
+    const rates = Array.isArray(cfg.get("forecast_buy_rates"))
+      ? (cfg.get("forecast_buy_rates") as unknown[]).map(n).filter((r) => r > 0 && r <= 1)
+      : [0.2, 0.35, 0.5];
+    type Part = { orders?: unknown; total?: unknown };
+    const ly = cfg.get("forecast_last_year") as
+      | {
+          day?: unknown;
+          orders?: unknown;
+          total?: unknown;
+          online?: Part;
+          in_store?: Part;
+          share_by_hour?: Record<string, number>;
+        }
+      | undefined;
+    const lastYear: LastYear | null = ly
+      ? {
+          day: String(ly.day ?? ""),
+          orders: n(ly.orders),
+          total: n(ly.total),
+          online: { orders: n(ly.online?.orders), total: n(ly.online?.total) },
+          inStore: { orders: n(ly.in_store?.orders), total: n(ly.in_store?.total) },
+          share_by_hour: ly.share_by_hour ?? {},
+        }
+      : null;
+
+    const now = new Date();
+    const start = new Date(saleStart);
+    const end = new Date(saleEnd);
+    const mode = now < start ? "before" : now < end ? "friday" : "after";
+
+    let carts: SalesForecast["carts"] = null;
+    if (mode === "before") {
+      const { data: c, error: cErr } = await client.rpc("bf_cart_forecast");
+      if (cErr) throw new Error(cErr.message);
+      const v = (c ?? {}) as { value?: unknown; carts?: unknown; units?: unknown };
+      carts = { value: n(v.value), carts: n(v.carts), units: n(v.units), rates };
+    }
+
+    let today: SalesForecast["today"] = null;
+    let pace: number | null = null;
+    if (mode !== "before") {
+      const { callBfAdmin } = await import("./bf-edge.server");
+      const until = mode === "friday" ? new Date(now.getTime() + 60_000) : end;
+      try {
+        const r = await callBfAdmin<
+          (DaySales & { status: "ok" }) | { status: "not_configured" | "error"; message?: string }
+        >({ action: "day_sales", since: start.toISOString(), until: until.toISOString() });
+        today = r;
+        if (r.status === "ok" && mode === "friday" && lastYear) {
+          pace = paceByMidnight({
+            soFar: r.total,
+            hour: ammanHour(now),
+            shareByHour: lastYear.share_by_hour,
+            tooEarlyBefore,
+          });
+        }
+      } catch (e) {
+        today = { status: "error", message: (e as Error).message };
+      }
+    }
+
+    return {
+      mode,
+      now: now.toISOString(),
+      saleStart,
+      saleEnd,
+      lastYear,
+      carts,
+      today,
+      pace,
+      tooEarlyBefore,
+    };
+  },
+);

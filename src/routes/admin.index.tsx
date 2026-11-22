@@ -29,7 +29,15 @@ import {
   type Range,
   type RangeKey,
 } from "@/components/admin/AdminUi";
-import { getLeaving, getSources, getTopAdded, type SourceRow } from "@/lib/admin.functions";
+import {
+  getLeaving,
+  getSalesForecast,
+  getSources,
+  getTopAdded,
+  type DaySales,
+  type SourceRow,
+} from "@/lib/admin.functions";
+import { formatJod } from "@/lib/shopify";
 import { describeCampaign, describeSource, type SourceKind } from "@/lib/source-labels";
 
 export const Route = createFileRoute("/admin/")({
@@ -133,6 +141,8 @@ function OverviewPage() {
           </Section>
         </>
       )}
+
+      <SalesForecastSection />
 
       <TopAddedSection />
 
@@ -378,6 +388,128 @@ function LeavingSection({ range }: { range: Range }) {
 }
 
 /** "Most added to cart": adds, visits, full value, top first-touch source. */
+/** "Sales forecast": carts at Friday prices before the sale, live sales and pace on the day. */
+function SalesForecastSection() {
+  const fn = useServerFn(getSalesForecast);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-sales-forecast"],
+    queryFn: () => fn(),
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    retry: 1,
+  });
+  const ly = data?.lastYear ?? null;
+  const today = data?.today && data.today.status === "ok" ? (data.today as DaySales) : null;
+  return (
+    <Section
+      title="Sales forecast"
+      intro={
+        data?.mode === "before"
+          ? "What the sale could bring in, from what people have in their carts now, with last year's Fyxx Friday for comparison."
+          : "Shopify sales since the sale started at 10:00, every channel, and where today is heading. Updates every 5 minutes."
+      }
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : isLoading || !data ? (
+        <Loading />
+      ) : (
+        <div className="grid gap-3 sm:grid-cols-2">
+          {data.mode === "before" && data.carts ? (
+            <Panel className="space-y-2">
+              <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+                Online, estimate from carts
+              </p>
+              <p className="font-display text-2xl tabular-nums">{formatJod(data.carts.value)}</p>
+              <p className="text-xs text-muted-foreground">
+                In {data.carts.carts} carts right now, at Friday prices.
+              </p>
+              <ul className="space-y-1 pt-1 text-sm">
+                {data.carts.rates.map((r) => (
+                  <li key={r} className="flex justify-between gap-3">
+                    <span>If {Math.round(r * 100)}% of carts buy</span>
+                    <span className="tabular-nums">{formatJod(data.carts!.value * r)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="pt-1 text-xs text-muted-foreground">
+                Items taken out of a cart are still counted, so this runs a little high.
+              </p>
+            </Panel>
+          ) : (
+            <Panel className="space-y-2">
+              <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+                {data.mode === "friday" ? "So far today" : "Fyxx Friday total"}
+              </p>
+              {today ? (
+                <>
+                  <p className="font-display text-2xl tabular-nums">{formatJod(today.total)}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {today.orders} orders since 10:00, every channel.
+                  </p>
+                  <SplitLines s={today} />
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Shopify sales can&apos;t be read right now. Try again in a few minutes.
+                </p>
+              )}
+              {data.mode === "friday" && (
+                <div className="border-t border-border pt-2">
+                  <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+                    At this pace by midnight
+                  </p>
+                  <p className="font-display text-2xl tabular-nums">
+                    {data.pace !== null ? formatJod(data.pace) : "Too early to tell"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {data.pace !== null
+                      ? "Based on last year's hour-by-hour pattern."
+                      : `Shown from ${data.tooEarlyBefore}:00. Based on last year's hour-by-hour pattern.`}
+                  </p>
+                </div>
+              )}
+            </Panel>
+          )}
+          {ly && (
+            <Panel className="space-y-2">
+              <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+                Last year, Fyxx Friday 2025
+              </p>
+              <p className="font-display text-2xl tabular-nums">{formatJod(ly.total)}</p>
+              <p className="text-xs text-muted-foreground">
+                {ly.orders} orders on 28 Nov 2025, every channel.
+              </p>
+              <SplitLines s={ly} />
+            </Panel>
+          )}
+        </div>
+      )}
+    </Section>
+  );
+}
+
+function SplitLines({ s }: { s: DaySales }) {
+  return (
+    <ul className="space-y-1 text-sm">
+      <li className="flex justify-between gap-3">
+        <span>Online (app, website, staff phone and draft orders)</span>
+        <span className="text-right tabular-nums whitespace-nowrap">
+          {formatJod(s.online.total)}
+          <span className="block text-xs text-muted-foreground">{s.online.orders} orders</span>
+        </span>
+      </li>
+      <li className="flex justify-between gap-3">
+        <span>In store (Point of Sale)</span>
+        <span className="text-right tabular-nums whitespace-nowrap">
+          {formatJod(s.inStore.total)}
+          <span className="block text-xs text-muted-foreground">{s.inStore.orders} orders</span>
+        </span>
+      </li>
+    </ul>
+  );
+}
+
 function TopAddedSection() {
   const [range, setRange] = useState<"today" | "launch">("today");
   const { data, isLoading, error } = useTopAdded(range);

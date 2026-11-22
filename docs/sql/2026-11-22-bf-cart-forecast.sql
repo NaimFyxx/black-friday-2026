@@ -1,0 +1,10 @@
+-- Applied 2026-11-22 (migration bf_cart_forecast).
+-- bf_cart_forecast(): {value, carts, units}. One cart per session (latest
+--   begin_checkout snapshot + adds after it, else all adds), priced at
+--   bf_sale_list.sale_price for in_sale items, else price_now (bf_products price
+--   as fallback). Leaves out internal visits, bf_settings.test_utm_sources and
+--   bf_settings.test_sessions. Service role only; returns totals only.
+-- bf_settings rows added: tracking_hosts, test_sessions, forecast_last_year
+--   (Shopify analytics, 28 Nov 2025 Amman: 14,245.769 / 158 orders, online
+--   10,310.749 / 93, in store 3,935.020 / 65, share_by_hour from 10:00),
+--   forecast_too_early_before_hour (13), forecast_buy_rates ([0.2,0.35,0.5]).

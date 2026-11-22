@@ -713,3 +713,12 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 - Words used everywhere: Visits, Added to cart, Went to checkout, Orders, Sales (not revenue), New customers.
 - Note: `session_id` lives in sessionStorage, so it is one browser TAB SESSION, not one person. The old "People" column (Most added to cart, clicks out) counts visits, so it is now labelled "Visits". A real visitor count would need a per-browser id (bf_events change, not done).
 - Checked locally at 390 px and 1366 px on every admin page with sample data served from Playwright (local has no service-role key, so the admin server functions can't run; the browser test fakes their answers, no app code involved).
+
+## 2026-11-22 late: tracking only on the real site, Viewed Product, sales forecast
+- Tracking (Meta, GA4, Klaviyo onsite, Clarity, bf_events) runs only on hosts in bf_settings.tracking_hosts (["friday.myfyxx.com"]). Lovable previews, the Lovable editor and localhost get the no-op stubs; recordEvent also drops events whose Origin isn't a tracked host. Locally: run with __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS=friday.myfyxx.com and map the host to test tracking.
+- Klaviyo "Viewed Product" (+ trackViewedItem) on product pages, Shopify format, only when klaviyo.isIdentified() is true.
+- /admin "Sales forecast" box above Most added to cart (src/lib/forecast.ts, getSalesForecast):
+  - before sale_start: "Online, estimate from carts" (bf_cart_forecast) with 20/35/50% lines (forecast_buy_rates) and last year (forecast_last_year);
+  - from sale_start: "So far today" (bf-admin day_sales: all Shopify orders, cancelled/test left out, online vs Point of Sale) refreshing every 5 min, and "At this pace by midnight" = so far / last year's share by that time; "Too early to tell" before forecast_too_early_before_hour (13).
+  - day_sales on 28 Nov 2025 gives 155 orders / JOD 14,268.564 vs Shopify analytics 158 / 14,245.769 (analytics counts returns and edits slightly differently).
+- My 7 live test carts from tonight are in bf_settings.test_sessions (forecast only).
