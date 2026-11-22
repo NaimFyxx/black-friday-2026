@@ -650,3 +650,22 @@ Migration bf_events_referrer_internal (`docs/sql/2026-11-22-bf-events-referrer-i
   attribute (CART_ATTR.referrer), and bf-admin uses it as the order's medium
   when there is no _utm_source, so untagged orders land on the same Sources
   row as their visits. Orders placed before this change stay on "(none)".
+
+## 2026-11-22: What goes out (clicks to myfyxx.com / the app, website orders)
+
+- `src/lib/outbound.ts`: one page-wide click listener. Links to myfyxx.com
+  (not /checkouts or /cart) or the app (onelink.to, App Store, Google Play)
+  get utm_source=fyxx-friday-site&utm_medium=referral&utm_campaign=
+  fyxx-friday-2026-11-27&utm_content=<link text> and are logged: bf_events
+  event "outbound" (destination website|app, link text in product_title) and
+  GA4 outbound_click. Migration bf_events_outbound (`docs/sql/2026-11-22-bf-outbound.sql`).
+- Cookie `fyxx_friday` on .myfyxx.com (30 days, not for preview browsers):
+  session id, first-touch source/medium (or referrer), campaign, first/last visit.
+- myfyxx.com theme snippet (`docs/shopify-theme-fyxx-friday.md`, NOT installed
+  by us) copies it onto the website cart as _bf_visit, _bf_visit_source,
+  _bf_visit_medium, _bf_visit_campaign, _bf_visit_first.
+- bf-admin "orders" now also returns `afterVisit` (orders with _bf_visit and
+  no _bf_session); existing Friday-site order numbers unchanged.
+- /admin Sources page: "After the Friday site" section (clicks to website /
+  app by link, website orders after a visit and revenue by first source),
+  `getLeaving`, `bf_outbound`. App orders can't be linked (no shared browser).

@@ -538,3 +538,70 @@ export const getTopAdded = createServerFn({ method: "GET" })
       })),
     };
   });
+
+// ── What goes out: leaving for myfyxx.com / the app ────────────────────
+
+export type OutboundRow = { destination: string; link: string; clicks: number; people: number };
+export type AfterVisitRow = {
+  source: string | null;
+  medium: string | null;
+  orders: number;
+  revenue: number;
+  new_customers: number;
+};
+
+/** Clicks out (bf_events) and myfyxx.com website orders by Friday visitors. */
+export const getLeaving = createServerFn({ method: "GET" })
+  .validator((d: unknown) => RangeInput.parse(d))
+  .handler(async ({ data: range }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const { fetchSiteOrders } = await import("./shopify-admin.server");
+    const client = await db();
+    const [out, shop] = await Promise.all([
+      client.rpc("bf_outbound", { p_since: range.since, p_until: range.until }),
+      fetchSiteOrders(range.since, range.until),
+    ]);
+    if (out.error && !isMissing(out.error)) throw new Error(out.error.message);
+    const clicks = ((out.data as OutboundRow[] | null) ?? []).map((r) => ({
+      ...r,
+      clicks: n(r.clicks),
+      people: n(r.people),
+    }));
+    const bySource = new Map<string, AfterVisitRow>();
+    let orders = 0;
+    let revenue = 0;
+    let currency = "JOD";
+    if (shop.status === "ok") {
+      for (const o of shop.afterVisit ?? []) {
+        if (o.cancelled) continue;
+        currency = o.currency || currency;
+        orders += 1;
+        revenue += o.total;
+        const k = key(o.source, o.medium);
+        const r = bySource.get(k) ?? {
+          source: o.source,
+          medium: o.medium,
+          orders: 0,
+          revenue: 0,
+          new_customers: 0,
+        };
+        r.orders += 1;
+        r.revenue += o.total;
+        if (o.isFirstOrder) r.new_customers += 1;
+        bySource.set(k, r);
+      }
+    }
+    return {
+      clicks,
+      websiteClicks: clicks
+        .filter((c) => c.destination === "website")
+        .reduce((t, c) => t + c.clicks, 0),
+      appClicks: clicks.filter((c) => c.destination === "app").reduce((t, c) => t + c.clicks, 0),
+      orders,
+      revenue: Math.round(revenue * 1000) / 1000,
+      currency,
+      bySource: [...bySource.values()].sort((a, b) => b.revenue - a.revenue),
+      shopify: shop.status,
+    };
+  });

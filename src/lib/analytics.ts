@@ -116,6 +116,9 @@ function logEvent(
     itemCount?: number;
     product?: TrackedItem;
     items?: TrackedItem[];
+    /** outbound: "website" | "app" and which link was clicked. */
+    destination?: string;
+    linkLabel?: string;
   } = {},
 ) {
   if (typeof window === "undefined" || trackingOff()) return;
@@ -136,7 +139,8 @@ function logEvent(
       itemCount: extra.itemCount,
       // Which product (view / add to cart) or which lines (checkout), for the report.
       variantId: extra.product ? shopifyVariantId(extra.product.id) : undefined,
-      productTitle: extra.product?.name,
+      productTitle: extra.product?.name ?? extra.linkLabel,
+      destination: extra.destination,
       productHandle: extra.product?.handle,
       items: extra.items?.map((i) => ({
         variant_id: shopifyVariantId(i.id),
@@ -391,4 +395,10 @@ export function trackBeginCheckout(items: TrackedItem[]): Promise<void> {
     items,
   });
   return sent;
+}
+
+/** A click that leaves the Friday site (to myfyxx.com or the app). */
+export function trackOutbound(destination: "website" | "app", label: string, url: string): void {
+  trackEvent("outbound_click", { destination, link_text: label, link_url: url.slice(0, 300) });
+  logEvent("outbound", { destination, linkLabel: label });
 }

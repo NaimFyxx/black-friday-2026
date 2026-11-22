@@ -93,6 +93,10 @@ const ORDERS_QUERY = `
 async function siteOrders(since: string, until: string) {
   const q = `created_at:>='${since}' AND created_at:<'${until}'`;
   const orders: unknown[] = [];
+  // Orders on the myfyxx.com website by browsers that visited the Friday site
+  // first (the theme snippet copies the fyxx_friday cookie onto the cart as
+  // _bf_visit...). Kept apart from the Friday site's own orders.
+  const afterVisit: unknown[] = [];
   let after: string | null = null;
   for (let p = 0; p < MAX_PAGES; p++) {
     // deno-lint-ignore no-explicit-any
@@ -102,8 +106,25 @@ async function siteOrders(since: string, until: string) {
         // deno-lint-ignore no-explicit-any
         o.customAttributes.map((a: any) => [a.key, a.value ?? ""]),
       );
-      if (!attr.has("_bf_session")) continue; // not placed through the Black Friday site
       const n = o.customer ? Number(o.customer.numberOfOrders) : NaN;
+      if (!attr.has("_bf_session")) {
+        if (attr.get("_bf_visit")) {
+          afterVisit.push({
+            id: o.id,
+            name: o.name,
+            createdAt: o.createdAt,
+            total: Number(o.totalPriceSet.shopMoney.amount) || 0,
+            currency: o.totalPriceSet.shopMoney.currencyCode,
+            cancelled: o.cancelledAt != null,
+            source: attr.get("_bf_visit_source") || null,
+            medium: attr.get("_bf_visit_medium") || null,
+            campaign: attr.get("_bf_visit_campaign") || null,
+            firstVisit: attr.get("_bf_visit_first") || null,
+            isFirstOrder: Number.isFinite(n) ? n <= 1 : null,
+          });
+        }
+        continue; // not placed through the Black Friday site
+      }
       orders.push({
         id: o.id,
         name: o.name,
@@ -125,7 +146,7 @@ async function siteOrders(since: string, until: string) {
     if (!d.orders.pageInfo.hasNextPage) break;
     after = d.orders.pageInfo.endCursor;
   }
-  return orders;
+  return { orders, afterVisit };
 }
 
 // ── Meta Ads (read only) ──
@@ -252,7 +273,8 @@ Deno.serve(async (req) => {
     try {
       const since = new Date(body.since).toISOString();
       const until = new Date(body.until).toISOString();
-      return json({ status: "ok", orders: await siteOrders(since, until) });
+      const { orders, afterVisit } = await siteOrders(since, until);
+      return json({ status: "ok", orders, afterVisit });
     } catch (e) {
       console.error("[bf-admin]", String((e as Error).message));
       return json({ status: "error", message: String((e as Error).message).slice(0, 300) });

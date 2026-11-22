@@ -21,10 +21,12 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import {
   CAMPAIGN_NAME,
   GA_PROMO_NAME,
+  getSessionId,
   trackCampaignView,
   trackPixelPageView,
 } from "../lib/analytics";
 import { captureReferrer, captureUtmFromUrl } from "../lib/utm-attribution";
+import { startOutboundTracking, writeVisitCookie } from "../lib/outbound";
 import { restoreCartFromUrl } from "../lib/cart-restore";
 import { readPreview, usePreview, useSim } from "../lib/preview";
 import { useMounted } from "../hooks/useMounted";
@@ -419,6 +421,9 @@ function RootComponent() {
   useEffect(() => {
     captureUtmFromUrl();
     captureReferrer();
+    // What goes out: clicks to myfyxx.com / the app, and a note for the main store.
+    startOutboundTracking();
+    writeVisitCookie(getSessionId());
     // Link from the 10:00 email: ?cart=<id> loads that Shopify cart here.
     void restoreCartFromUrl();
     // Admin visits aren't shoppers: keep them out of the visit counts.

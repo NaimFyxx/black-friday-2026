@@ -14,7 +14,13 @@ export const CAMPAIGN_START = "2026-11-20T00:00:00+03:00";
 export const CAMPAIGN_END = "2026-12-01T00:00:00+03:00";
 
 /** Events the site records into Supabase (bf_events.event). */
-export const TRACKED_EVENTS = ["visit", "view_item", "add_to_cart", "begin_checkout"] as const;
+export const TRACKED_EVENTS = [
+  "visit",
+  "view_item",
+  "add_to_cart",
+  "begin_checkout",
+  "outbound",
+] as const;
 export type TrackedEventName = (typeof TRACKED_EVENTS)[number];
 
 /** Cart attribute keys put on every Shopify cart (and so on every order). The

@@ -22,8 +22,23 @@ export type SiteOrder = {
   isFirstOrder: boolean | null;
 };
 
+/** A myfyxx.com website order by a browser that visited the Friday site first. */
+export type AfterVisitOrder = {
+  id: string;
+  name: string;
+  createdAt: string;
+  total: number;
+  currency: string;
+  cancelled: boolean;
+  source: string | null;
+  medium: string | null;
+  campaign: string | null;
+  firstVisit: string | null;
+  isFirstOrder: boolean | null;
+};
+
 export type SiteOrdersResult =
-  | { status: "ok"; orders: SiteOrder[] }
+  | { status: "ok"; orders: SiteOrder[]; afterVisit?: AfterVisitOrder[] }
   | { status: "not_configured" }
   | { status: "error"; message: string };
 

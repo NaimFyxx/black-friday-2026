@@ -17,7 +17,7 @@ import {
   StatCard,
   type RangeKey,
 } from "@/components/admin/AdminUi";
-import { getSources, getTopAdded, type SourceRow } from "@/lib/admin.functions";
+import { getLeaving, getSources, getTopAdded, type SourceRow } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/")({
   component: SourcesPage,
@@ -105,7 +105,127 @@ function SourcesPage() {
       )}
 
       <TopAddedSection />
+
+      <LeavingSection range={range} />
     </>
+  );
+}
+
+/** What goes out: clicks to myfyxx.com / the app, and website orders after a visit. */
+function LeavingSection({ range }: { range: { since: string; until: string } }) {
+  const fn = useServerFn(getLeaving);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-leaving", range],
+    queryFn: () => fn({ data: range }),
+    staleTime: 30_000,
+    retry: 1,
+  });
+  return (
+    <section className="mt-10 space-y-3">
+      <h2 className="text-lg font-semibold">After the Friday site</h2>
+      {error ? (
+        <ErrorBox error={error} />
+      ) : isLoading || !data ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Left for the website" value={data.websiteClicks.toLocaleString()} />
+            <StatCard label="Left for the app" value={data.appClicks.toLocaleString()} />
+            <StatCard
+              label="Website orders after a visit"
+              value={data.orders.toLocaleString()}
+              sub="paid orders on myfyxx.com"
+            />
+            <StatCard label="Their revenue" value={fmtMoney(data.revenue, data.currency)} />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <Panel className="overflow-x-auto p-0">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">Link clicked</th>
+                    <th className="px-4 py-3 font-medium">To</th>
+                    <th className="px-4 py-3 text-right font-medium">Clicks</th>
+                    <th className="px-4 py-3 text-right font-medium">People</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.clicks.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                        No clicks out yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    data.clicks.map((c) => (
+                      <tr
+                        key={`${c.destination}|${c.link}`}
+                        className="border-b border-border/60 last:border-0"
+                      >
+                        <td className="px-4 py-2.5">{c.link}</td>
+                        <td className="px-4 py-2.5">
+                          {c.destination === "app" ? "App" : "Website"}
+                        </td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{c.clicks}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{c.people}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </Panel>
+            <Panel className="overflow-x-auto p-0">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                    <th className="px-4 py-3 font-medium">First came from</th>
+                    <th className="px-4 py-3 text-right font-medium">Website orders</th>
+                    <th className="px-4 py-3 text-right font-medium">Revenue</th>
+                    <th className="px-4 py-3 text-right font-medium">New cust.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.bySource.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="p-6 text-center text-muted-foreground">
+                        No website orders from Friday visitors yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    data.bySource.map((r) => (
+                      <tr
+                        key={`${r.source}|${r.medium}`}
+                        className="border-b border-border/60 last:border-0"
+                      >
+                        <td className="px-4 py-2.5">
+                          {r.source ?? "No tag"}
+                          {r.medium ? (
+                            <span className="text-muted-foreground"> · {r.medium}</span>
+                          ) : null}
+                        </td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{r.orders}</td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">
+                          {fmtMoney(r.revenue, data.currency)}
+                        </td>
+                        <td className="px-4 py-2.5 text-right tabular-nums">{r.new_customers}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </Panel>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Clicks: visitors tapping a link from this site to myfyxx.com or the Fyxx app (the links
+            carry utm_source=fyxx-friday-site, so Shopify's own reports show them too). Website
+            orders: paid orders on myfyxx.com from a browser that visited this site in the 30 days
+            before (needs the small snippet in the myfyxx.com theme). App orders can't be linked:
+            the app doesn't share the browser. Team visits are left out.
+          </p>
+        </>
+      )}
+    </section>
   );
 }
 
