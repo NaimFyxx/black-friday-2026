@@ -677,3 +677,8 @@ Migration bf_events_referrer_internal (`docs/sql/2026-11-22-bf-events-referrer-i
   friday.myfyxx.com to a purchase on myfyxx.com; tags would have replaced the
   real source (e.g. an Instagram ad) with "fyxx-friday-site". Clicks are
   still logged and the fyxx_friday cookie is still written.
+
+## 2026-11-22 late: Klaviyo bugs
+- Reminder sign-up: the client subscriptions call now sends `revision: 2025-01-15` (KLAVIYO_REVISION in campaign-config.ts). Without it Klaviyo returns 400. This is the only direct Klaviyo API call the site makes. Events and identify go through klaviyo.js, which sets its own revision.
+- Klaviyo only accepts client calls from the myfyxx.com origins (localhost gets 403), so real tests must run on friday.myfyxx.com.
+- klaviyo.js: the loader has not changed since 11 Nov. It loads on every page after the first tap or after 3 seconds, so a check made in the first 3 seconds shows window.klaviyo undefined. Live test 20:36 UTC: identify 202, 2 Added to Cart (S3AtNP) events with CartID landed on the profile.
