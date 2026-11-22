@@ -64,6 +64,22 @@ and Pulse sets them.
 
 ## Log
 
+### 22 Nov 2026: product pages like myfyxx.com
+
+- `src/routes/product.$handle.tsx` rebuilt in the Fyxx Friday look, laid out
+  like the myfyxx.com product page: brand (title before "|") and name, a line
+  like "Red Wine · Spain · Rioja · 75cl" from Shopify tags (WineStyle_,
+  Country_, Region_) and the size, price (crossed-out original when
+  discounted), size chips, quantity stepper, Add to cart, delivery / returns /
+  points promises, then the description in sections.
+- `src/lib/product-description.ts` turns descriptionHtml (old pasted and new
+  structured styles) into intro + sections: Tasting notes, The facts (label /
+  value table), Goes with, Serving, Awards, The producer. Tests in
+  `src/test/product-description.test.ts` with real descriptions; across all
+  1,392 in-stock products 1,252 get sections, 115 intro only, 25 empty.
+- Product query now also loads `tags`.
+
+
 ### 22 Nov 2026: checkout stays in the browser for Fyxx app users
 
 - Problem: the Fyxx app (Shopney, co.shopney.fyxx) claims all myfyxx.com links

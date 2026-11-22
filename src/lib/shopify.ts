@@ -111,6 +111,8 @@ export interface ShopifyProductNode {
   descriptionHtml: string;
   productType: string;
   vendor: string;
+  /** Shopify tags, e.g. WineStyle_Red, Country_Spain, Region_Rioja. */
+  tags?: string[];
   priceRange: { minVariantPrice: ShopifyMoney };
   images: { edges: Array<{ node: ShopifyImage }> };
   variants: { edges: Array<{ node: ShopifyVariant }> };
@@ -134,6 +136,7 @@ const PRODUCT_FIELDS = `
   descriptionHtml
   productType
   vendor
+  tags
   priceRange { minVariantPrice { amount currencyCode } }
   images(first: 4) { edges { node { url altText } } }
   variants(first: 30) {
