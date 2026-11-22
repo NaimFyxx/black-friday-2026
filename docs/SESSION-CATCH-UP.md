@@ -326,3 +326,32 @@ Tested: sale state by setting `sale_start` to 1 Nov and ended state by setting
 
 Not used any more but left in place: `src/components/ProductCard.tsx`,
 `CATEGORY_COLLECTIONS` / `catalogSource` in `src/lib/shopify.ts`.
+
+## 2026-11-22: Only products on the Fyxx Friday sale list
+
+Asked for: show a product only if it has a variant with `in_sale = true` in
+`bf_sale_flags`; before Friday 27 Nov 10:00 Amman show the normal price and a
+"Marked down on Friday" label (no sale price or %); add Accessories; a switch
+in /admin to turn the filter off. The project doc
+`claude/fyxx-friday-sale-list-2026-11-22.md` was not found in the repo, so the
+comments on `bf_sale_list` / `bf_sale_flags` were used instead.
+
+Database (migration `bf_sale_list_filter`, record in
+`docs/sql/2026-11-22-bf-sale-list-filter.sql`):
+- `bf_products.in_sale` (boolean). Set by the sync, never by the site.
+- New settings: `sale_list_filter` (true = filter on) and
+  `sale_label_preview` (label text).
+- `bf_visible` hides rows with `in_sale = false` while the switch is on.
+  `bf_card` returns `in_sale`. `bf_teaser` copy includes `sale_label_preview`.
+
+Sync `bf-products-sync` (v6): reads `bf_sale_flags` server side with the
+service role (paged), picks the variant among the in_sale ones (best in stock),
+`available` means an in_sale variant is in stock. "In stock only" unchanged.
+Accessories added to `category_mapping` (Wine Accessories, Bar Accessory,
+Cigar Accessory). Beer and Cider still excluded.
+
+Site: card shows the label (top left of the photo) before the sale for
+in_sale items; /admin/sale has the switch and the label text.
+
+Counts: 1033 shown before, 1028 after (57 of them Accessories). Anon cannot
+read `bf_sale_flags`, `bf_sale_list` or `bf_products`.

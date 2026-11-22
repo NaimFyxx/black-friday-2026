@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { ErrorBox, fmtDate, Loading, PageHeader, Panel } from "@/components/admin/AdminUi";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { getSaleAdmin, refreshProductsNow, saveSaleSettings } from "@/lib/sale-admin.functions";
 
@@ -29,6 +30,8 @@ type Form = {
   price_bands: string;
   discount_filters: string;
   nav_groups: string;
+  sale_list_filter: string;
+  sale_label_preview: string;
   category_mapping: string;
   exclusions: string;
   teaser_headline: string;
@@ -59,6 +62,8 @@ function SalePage() {
       batch_size: String(s["batch_size"] ?? 24),
       price_bands: ((s["price_bands"] as number[] | undefined) ?? [20, 50, 100]).join(", "),
       nav_groups: JSON.stringify(s["nav_groups"] ?? [], null, 2),
+      sale_list_filter: s["sale_list_filter"] === false ? "false" : "true",
+      sale_label_preview: String(s["sale_label_preview"] ?? ""),
       discount_filters: ((s["discount_filters"] as number[] | undefined) ?? [10, 20, 30]).join(
         ", ",
       ),
@@ -110,6 +115,8 @@ function SalePage() {
         .map((v) => Number(v.trim()))
         .filter((v) => v > 0),
       nav_groups: navGroups,
+      sale_list_filter: form.sale_list_filter === "true",
+      sale_label_preview: form.sale_label_preview,
       discount_filters: form.discount_filters
         .split(",")
         .map((v) => Number(v.trim()))
@@ -193,6 +200,33 @@ function SalePage() {
               Before the start: normal prices, no badges. During: only discounted products, badges,
               &quot;up to&quot; and Top deals. After the end: a thank-you message.
             </p>
+          </Panel>
+
+          <Panel className="space-y-4">
+            <div className="flex items-start justify-between gap-6">
+              <div>
+                <p className="font-medium">Only show products on the Fyxx Friday sale list</p>
+                <p className="text-sm text-muted-foreground">
+                  {form.sale_list_filter === "true"
+                    ? "ON: the shop shows only products marked in_sale on the sale list (bf_sale_list)."
+                    : "OFF: the shop shows every in-stock product. Use this if the sale list has a problem."}{" "}
+                  Press Save settings to apply.
+                </p>
+              </div>
+              <Switch
+                checked={form.sale_list_filter === "true"}
+                onCheckedChange={(v) => set("sale_list_filter")(v ? "true" : "false")}
+              />
+            </div>
+            <Field
+              label="Label on sale-list products before the sale starts"
+              hint="Shown on the product photo until Friday 10:00. Leave empty to hide it."
+            >
+              <Input
+                value={form.sale_label_preview}
+                onChange={(e) => set("sale_label_preview")(e.target.value)}
+              />
+            </Field>
           </Panel>
 
           <Panel className="space-y-4">

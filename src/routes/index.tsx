@@ -245,7 +245,7 @@ function Storefront() {
               ) : (
                 <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 md:gap-y-12 lg:grid-cols-4">
                   {items.map((item, i) => (
-                    <CatalogCard key={item.product_id} item={item} threshold={threshold} eager={i < 4} />
+                    <CatalogCard key={item.product_id} item={item} threshold={threshold} eager={i < 4} preSaleLabel={state === "preview" ? (teaser?.copy.sale_label_preview ?? null) : null} />
                   ))}
                 </div>
               )}

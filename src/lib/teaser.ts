@@ -19,6 +19,8 @@ export interface TeaserInfo {
     teaser_countdown_label?: string;
     teaser_button?: string;
     teaser_cart_note?: string;
+    /** Card label before the sale for products on the sale list. */
+    sale_label_preview?: string;
   };
 }
 

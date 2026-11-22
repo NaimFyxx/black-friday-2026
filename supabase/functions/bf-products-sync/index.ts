@@ -9,6 +9,7 @@
 // Body: { key, dry_run?, mapping?, exclusions? }. `key` must match
 // bf_settings.edge_key. A dry run changes nothing and may try a mapping or
 // exclusions that are not saved yet.
+// in_sale: product has a variant on the Fyxx Friday sale list (bf_sale_flags).
 // Which products are kept, and in which category, comes from bf_settings
 // "category_mapping" and "exclusions" (editable on /admin).
 
@@ -195,9 +196,13 @@ async function collectionMembers(map: Main[]): Promise<Map<string, Set<string>>>
   return byProduct;
 }
 
-function toRow(p: SfProduct, cat: { main: string; sub: string | null }) {
-  const variants = p.variants.nodes;
-  if (!variants.length) return null;
+function toRow(p: SfProduct, cat: { main: string; sub: string | null }, saleVariants: Set<string>) {
+  const all = p.variants.nodes;
+  if (!all.length) return null;
+  // Fyxx Friday sale list: when some variants are on it, the card uses one of
+  // those (and "in stock" means one of those is in stock).
+  const onSale = all.filter((v) => saleVariants.has(v.id));
+  const variants = onSale.length ? onSale : all;
   const info = variants.map((v) => {
     const price = Number(v.price.amount);
     const cmp = v.compareAtPrice ? Number(v.compareAtPrice.amount) : null;
@@ -226,9 +231,32 @@ function toRow(p: SfProduct, cat: { main: string; sub: string | null }) {
     discount_percent: pick.disc,
     saved_amount: pick.cmp === null ? 0 : r3(pick.cmp - pick.price),
     available: inStock.length > 0,
+    in_sale: onSale.length > 0,
     shopify_created_at: p.createdAt,
     updated_at: new Date().toISOString(),
   };
+}
+
+/**
+ * Variants on the Fyxx Friday sale list (public.bf_sale_flags, in_sale = true),
+ * read with the service role; visitors never see this list. A failed read
+ * stops the sync (nothing is changed) rather than marking everything "not on
+ * sale" and emptying the landing page.
+ */
+async function saleListVariants(): Promise<Set<string>> {
+  const ids = new Set<string>();
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db
+      .from("bf_sale_flags")
+      .select("variant_gid")
+      .eq("in_sale", true)
+      .order("variant_gid")
+      .range(from, from + 999);
+    if (error) throw new Error(`sale list read failed: ${error.message}`);
+    for (const r of data ?? []) ids.add(r.variant_gid as string);
+    if (!data || data.length < 1000) break;
+  }
+  return ids;
 }
 
 async function setting<T>(key: string, fallback: T): Promise<T> {
@@ -259,11 +287,15 @@ Deno.serve(async (req) => {
     if (!Array.isArray(map) || map.length === 0)
       throw new Error("bf_settings.category_mapping is empty");
 
-    const [products, inCollections] = await Promise.all([fetchAll(), collectionMembers(map)]);
+    const [products, inCollections, saleVariants] = await Promise.all([
+      fetchAll(),
+      collectionMembers(map),
+      saleListVariants(),
+    ]);
     const rows = products
       .map((p) => {
         const c = classify(p, map, ex, inCollections);
-        return c ? toRow(p, c) : null;
+        return c ? toRow(p, c, saleVariants) : null;
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
 
@@ -336,6 +368,7 @@ Deno.serve(async (req) => {
       at: new Date().toISOString(),
       ok: true,
       count: rows.length,
+      on_sale_list_in_stock: rows.filter((r) => r.in_sale && r.available).length,
       removed: stale.length,
       counts,
       duration_ms: Date.now() - started,

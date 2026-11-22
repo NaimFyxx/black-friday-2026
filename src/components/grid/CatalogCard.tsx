@@ -27,11 +27,14 @@ export const CatalogCard = memo(function CatalogCard({
   threshold,
   compact = false,
   eager = false,
+  preSaleLabel = null,
 }: {
   item: CatalogItem;
   threshold: number;
   compact?: boolean;
   eager?: boolean;
+  /** Before Friday 10:00: label for products on the sale list ("Marked down on Friday"). */
+  preSaleLabel?: string | null;
 }) {
   const addItem = useCartStore((s) => s.addItem);
   const [pending, setPending] = useState(false);
@@ -135,6 +138,11 @@ export const CatalogCard = memo(function CatalogCard({
             <div className="ff-small flex h-full items-center justify-center text-xs text-ff-black uppercase">
               No photo
             </div>
+          )}
+          {preSaleLabel && item.in_sale && !badge && (
+            <span className="ff-subline absolute top-2 left-2 max-w-[calc(100%-1rem)] rounded-full bg-ff-burgundy px-2.5 py-1 text-[11px] leading-tight text-ff-cream">
+              {preSaleLabel}
+            </span>
           )}
           {badge && (
             <span className="ff-num absolute top-2 left-2 rounded-full bg-ff-red px-2.5 py-1 text-[11px] text-ff-cream">

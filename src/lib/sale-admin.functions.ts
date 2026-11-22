@@ -23,6 +23,8 @@ const KEYS = [
   "price_bands",
   "discount_filters",
   "nav_groups",
+  "sale_list_filter",
+  "sale_label_preview",
   "category_mapping",
   "exclusions",
   "products_last_refresh",
@@ -180,6 +182,8 @@ const SaveInput = z
     teaser_countdown_label: copy(40),
     teaser_button: copy(40).pipe(z.string().min(1, "The button text can't be empty")),
     teaser_cart_note: copy(200),
+    sale_list_filter: z.boolean(),
+    sale_label_preview: copy(60),
   })
   .refine((d) => new Date(d.sale_start) < new Date(d.sale_end), {
     message: "The sale must end after it starts",

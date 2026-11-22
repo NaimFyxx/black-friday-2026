@@ -38,6 +38,8 @@ export interface CatalogItem {
   price: number;
   compare_at_price: number | null; // null outside the sale
   discount_percent: number; // 0 outside the sale
+  /** On the Fyxx Friday sale list (bf_sale_flags). */
+  in_sale?: boolean;
   saved_amount: number; // 0 outside the sale
 }
 
