@@ -481,3 +481,30 @@ page, `?preview=off` goes back. Display only.
   attributes refreshed first, app handoff kept). The button shows a spinner
   until the browser leaves; the new-tab icon is gone.
 - Cart drawer: product names wrap to 2 lines instead of "Olmeca ...".
+
+## 2026-11-22: 50% headline, quick links, conversion pack phase 2
+
+- `upto_min_products` = 1, so "Up to X% off" = the highest discount (50%,
+  13 wine accessory variants; checked with the admin simulation).
+- Quick links (`bf_settings.quick_links`, shown during the sale above the
+  grid, `src/components/grid/QuickLinks.tsx`): Wine, Spirits, Cigars,
+  Accessories, Under 20 JOD, "Up to 50% off: wine accessories" (sale only).
+  A link with "mains" works like a header section (`bf_group_mains` also
+  looks in quick_links), "band" is a price band. Editable on /admin/sale.
+- Klaviyo list "Fyxx Friday 2026 - Cart reminder" created: id **Wwe9ax**,
+  single opt-in. Stored in `bf_settings.reminder` with all form texts.
+- Reminder form (`src/components/reminder/ReminderForm.tsx`,
+  `src/lib/reminder.ts`): in the cart drawer before the sale ("Send me my cart
+  at 10:00 on Friday") and as "Remind me at 10:00" under the hero countdown.
+  On submit: klaviyo identify (email) -> the current cart re-sent as
+  "Added to Cart" -> client subscription API (company XuTPpc, revision
+  2024-10-15, marketing consent SUBSCRIBED) to list Wwe9ax -> thank-you;
+  localStorage "fyxx:reminder" so it isn't shown again.
+- Klaviyo event on every add to cart: **"Added to Cart"** (src/lib/analytics.ts,
+  with Items, ItemNames, $value, CheckoutURL, AddedItem* fields).
+- "Add to calendar" next to it: Google Calendar link and an .ics (data URL),
+  from sale_start to sale_end minus 1 minute, title "Fyxx Friday", link
+  tagged utm_source=calendar&utm_medium=reminder&utm_campaign=fyxx-friday-2026-11-27.
+- `bf_settings.no_code_note` "Prices drop automatically. No code needed." in
+  the cart note and under the price on product pages (not after the sale).
+- Tested with Klaviyo mocked (no real profile created).

@@ -264,6 +264,38 @@ export function trackAddToCart(item: TrackedItem): void {
   trackKlaviyoAddedToCart(item);
 }
 
+/** Tell Klaviyo who this visitor is (they typed their email in a site form),
+ *  so their Added to Cart events from now on are kept on their profile.
+ *  Queued like events, so it runs before any event sent after it. */
+export function identifyKlaviyo(email: string): void {
+  const w = tw();
+  if (!w) return;
+  try {
+    const cmd = ["identify", { email }];
+    if (typeof w.klaviyo?.push === "function") w.klaviyo.push(cmd);
+    else (w._klOnsite = w._klOnsite || []).push(cmd);
+  } catch {
+    // never break the form over analytics
+  }
+}
+
+/** Right after identify: send the current cart again as "Added to Cart", so
+ *  items added before the visitor gave their email reach Klaviyo too. */
+export function resendKlaviyoCart(): void {
+  const items = useCartStore.getState().items;
+  const last = items[items.length - 1];
+  if (!last) return;
+  trackKlaviyoAddedToCart({
+    id: last.variantId,
+    name: last.product.node.title,
+    handle: last.product.node.handle,
+    variant: last.variantTitle,
+    price: Number(last.price.amount) || 0,
+    currency: last.price.currencyCode,
+    quantity: last.quantity,
+  });
+}
+
 /** Klaviyo "Added to Cart" in Klaviyo's recommended format, with the whole
  *  cart, so a Klaviyo flow can email the shopper what they left behind.
  *  Call AFTER the cart store was updated, so the new item is included. */

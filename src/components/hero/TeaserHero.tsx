@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { HeroReminder } from "@/components/reminder/HeroReminder";
 import { formatCountdown, type TeaserInfo } from "@/lib/teaser";
 
 /**
@@ -70,6 +71,7 @@ export function TeaserHero({
               />
             )
           )}
+          {!info.updating && <HeroReminder info={info} />}
           {copy.teaser_button && (
             <button
               id="hero-cta"

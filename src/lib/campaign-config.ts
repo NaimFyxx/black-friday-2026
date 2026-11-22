@@ -28,3 +28,6 @@ export const CART_ATTR = {
   term: "_utm_term",
   fbclid: "_fbclid",
 } as const;
+
+/** Klaviyo public site key (company id), as in the klaviyo.js tag. Not secret. */
+export const KLAVIYO_COMPANY_ID = "XuTPpc";

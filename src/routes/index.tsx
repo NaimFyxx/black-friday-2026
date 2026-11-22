@@ -10,6 +10,7 @@ import { FilterBar } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { TeaserHero } from "@/components/hero/TeaserHero";
+import { QuickLinks } from "@/components/grid/QuickLinks";
 import { usePreview, useSim } from "@/lib/preview";
 import { SpinWidget } from "@/components/spin/SpinWidget";
 import { Input } from "@/components/ui/input";
@@ -253,6 +254,16 @@ function Storefront() {
             {state !== "ended" && (
               <div className="w-full max-w-sm">
                 <CatalogSearch value={filters.q} onSearch={(q) => setFilters({ q })} />
+              </div>
+            )}
+            {sale && teaser?.quick_links && (
+              <div className="w-full">
+                <QuickLinks
+                  links={teaser.quick_links}
+                  sale={sale}
+                  filters={filters}
+                  onPick={setFilters}
+                />
               </div>
             )}
           </div>

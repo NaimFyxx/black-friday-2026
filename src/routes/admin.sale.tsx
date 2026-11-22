@@ -30,6 +30,9 @@ type Form = {
   price_bands: string;
   discount_filters: string;
   nav_groups: string;
+  quick_links: string;
+  reminder: string;
+  no_code_note: string;
   sale_list_filter: string;
   sale_label_preview: string;
   category_mapping: string;
@@ -63,6 +66,9 @@ function SalePage() {
       batch_size: String(s["batch_size"] ?? 24),
       price_bands: ((s["price_bands"] as number[] | undefined) ?? [20, 50, 100]).join(", "),
       nav_groups: JSON.stringify(s["nav_groups"] ?? [], null, 2),
+      quick_links: JSON.stringify(s["quick_links"] ?? [], null, 2),
+      reminder: JSON.stringify(s["reminder"] ?? {}, null, 2),
+      no_code_note: String(s["no_code_note"] ?? ""),
       sale_list_filter: s["sale_list_filter"] === false ? "false" : "true",
       sale_label_preview: String(s["sale_label_preview"] ?? ""),
       discount_filters: ((s["discount_filters"] as number[] | undefined) ?? [10, 20, 30]).join(
@@ -90,10 +96,21 @@ function SalePage() {
     if (!form) return;
     setFormError(null);
     let mapping: unknown, exclusions: unknown, navGroups: unknown;
+    let quickLinks: unknown, reminder: unknown;
     try {
       navGroups = JSON.parse(form.nav_groups);
     } catch {
       return setFormError("Header sections is not valid JSON");
+    }
+    try {
+      quickLinks = JSON.parse(form.quick_links);
+    } catch {
+      return setFormError("Quick links is not valid JSON");
+    }
+    try {
+      reminder = JSON.parse(form.reminder);
+    } catch {
+      return setFormError("Reminder form is not valid JSON");
     }
     try {
       mapping = JSON.parse(form.category_mapping);
@@ -117,6 +134,9 @@ function SalePage() {
         .map((v) => Number(v.trim()))
         .filter((v) => v > 0),
       nav_groups: navGroups,
+      quick_links: quickLinks,
+      reminder,
+      no_code_note: form.no_code_note,
       sale_list_filter: form.sale_list_filter === "true",
       sale_label_preview: form.sale_label_preview,
       discount_filters: form.discount_filters
@@ -376,6 +396,37 @@ function SalePage() {
                 className="font-mono text-xs"
                 value={form.nav_groups}
                 onChange={(e) => set("nav_groups")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Quick links on Friday (JSON)"
+              hint='Chips at the top of the shop during the sale. "mains" works like a header section (Category or Category/Type), "band" is a price band (0 = under the first price band). "sale_only": true shows it only during the sale.'
+            >
+              <Textarea
+                rows={8}
+                className="font-mono text-xs"
+                value={form.quick_links}
+                onChange={(e) => set("quick_links")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="Reminder form (JSON)"
+              hint='"Send me my cart at 10:00" in the cart and "Remind me at 10:00" in the header. list_id is the Klaviyo list (Fyxx Friday 2026 - Cart reminder = Wwe9ax). "enabled": false hides both.'
+            >
+              <Textarea
+                rows={10}
+                className="font-mono text-xs"
+                value={form.reminder}
+                onChange={(e) => set("reminder")(e.target.value)}
+              />
+            </Field>
+            <Field
+              label="No code line"
+              hint="In the cart and under the price on product pages, before and during the sale."
+            >
+              <Input
+                value={form.no_code_note}
+                onChange={(e) => set("no_code_note")(e.target.value)}
               />
             </Field>
             <p className="text-xs text-muted-foreground">

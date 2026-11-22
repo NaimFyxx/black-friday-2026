@@ -23,6 +23,9 @@ const KEYS = [
   "price_bands",
   "discount_filters",
   "nav_groups",
+  "quick_links",
+  "reminder",
+  "no_code_note",
   "sale_list_filter",
   "sale_label_preview",
   "category_mapping",
@@ -176,6 +179,28 @@ const SaveInput = z
         z.object({ name: z.string().trim().min(1).max(30), mains: z.array(z.string()).min(1) }),
       )
       .max(6),
+    quick_links: z
+      .array(
+        z.object({
+          label: copy(40).pipe(z.string().min(1)),
+          mains: z.array(z.string()).min(1).optional(),
+          band: z.number().int().min(0).max(9).optional(),
+          sale_only: z.boolean().optional(),
+        }),
+      )
+      .max(8),
+    reminder: z.object({
+      enabled: z.boolean(),
+      list_id: z.string().regex(/^[A-Za-z0-9]{4,12}$/, "Klaviyo list id, like Wwe9ax"),
+      title: copy(80),
+      hero_link: copy(40),
+      placeholder: copy(40),
+      button: copy(30),
+      consent: copy(200),
+      thanks: copy(120),
+      calendar: copy(40),
+    }),
+    no_code_note: copy(120),
     category_mapping: MappingSchema,
     exclusions: ExclusionsSchema,
     teaser_headline: copy(80).pipe(z.string().min(1, "The headline can't be empty")),

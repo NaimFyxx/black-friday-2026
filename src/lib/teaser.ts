@@ -8,12 +8,36 @@ import { supabase } from "@/integrations/supabase/client";
 import type { SaleState } from "@/lib/catalog";
 import type { Preview } from "@/lib/preview";
 
+/** Shortcut chip at the top of the shop (bf_settings.quick_links). */
+export interface QuickLink {
+  label: string;
+  mains?: string[];
+  band?: number;
+  /** Only shown during the sale. */
+  sale_only?: boolean;
+}
+
+/** "Send me my cart at 10:00" form (bf_settings.reminder). */
+export interface ReminderCopy {
+  enabled?: boolean;
+  list_id?: string;
+  title?: string;
+  hero_link?: string;
+  placeholder?: string;
+  button?: string;
+  consent?: string;
+  thanks?: string;
+  calendar?: string;
+}
+
 export interface TeaserInfo {
   state: SaleState;
   sale_start: string | null;
   sale_end: string | null;
   /** Safety net: sale time reached but Shopify prices aren't ready yet. */
   updating?: boolean;
+  reminder?: ReminderCopy | null;
+  quick_links?: QuickLink[];
   /** Set while the hidden preview is on. */
   preview?: Preview;
   /** Header navigation sections (bf_settings.nav_groups). */
@@ -25,6 +49,8 @@ export interface TeaserInfo {
     teaser_button?: string;
     teaser_cart_note?: string;
     teaser_updating_note?: string;
+    /** "Prices drop automatically. No code needed." */
+    no_code_note?: string;
     /** Card label before the sale for products on the sale list. */
     sale_label_preview?: string;
   };

@@ -27,6 +27,9 @@ import { sizedImage } from "@/lib/catalog";
 import { parseDescription } from "@/lib/product-description";
 import { onlySaleVariants } from "@/lib/sale-variants.functions";
 import { simVariantPrices } from "@/lib/preview-sim.functions";
+import { usePreview } from "@/lib/preview";
+import { teaserQueryOptions } from "@/lib/teaser";
+import { useQuery } from "@tanstack/react-query";
 import { useCartStore } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
 
@@ -168,6 +171,7 @@ function metaLine(product: ShopifyProductNode, variant: ShopifyVariant | null) {
 
 function ProductPage() {
   const product = Route.useLoaderData();
+  const { data: teaser } = useQuery(teaserQueryOptions(usePreview()));
   const variants = product.variants.edges.map((edge) => edge.node);
   const [selected, setSelected] = useState<ShopifyVariant | null>(
     () => variants.find((variant) => variant.availableForSale) ?? firstVariant(product),
@@ -302,6 +306,9 @@ function ProductPage() {
                 </s>
               )}
             </p>
+            {teaser && teaser.state !== "ended" && teaser.copy.no_code_note && (
+              <p className="ff-small mt-1.5 text-sm text-ff-burgundy">{teaser.copy.no_code_note}</p>
+            )}
 
             {variants.length > 1 && (
               <fieldset className="mt-6">

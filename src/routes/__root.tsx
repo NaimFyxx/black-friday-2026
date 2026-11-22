@@ -21,6 +21,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CAMPAIGN_NAME, trackCampaignView, trackPixelPageView } from "../lib/analytics";
 import { captureUtmFromUrl } from "../lib/utm-attribution";
 import { readPreview, usePreview, useSim } from "../lib/preview";
+import { KLAVIYO_COMPANY_ID } from "../lib/campaign-config";
 import { simAllowed } from "../lib/preview-sim.functions";
 import { getTrackingState, reportClientError } from "../lib/track.functions";
 
@@ -49,7 +50,6 @@ const GA_ID = "G-N6PW62SXRQ";
 // Facebook & Instagram app fires Purchase on checkout with this same ID, so this
 // site must NEVER fire Purchase (it would double count).
 export const META_PIXEL_ID = "1207780626389959";
-const KLAVIYO_COMPANY_ID = "XuTPpc";
 // Microsoft Clarity project for the Black Friday site only (its own project,
 // not shared with the Christmas / Valentine's / Fyxx Cup pages).
 const CLARITY_ID = "zep1cjcaqz";

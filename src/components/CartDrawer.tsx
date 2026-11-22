@@ -17,6 +17,7 @@ import { trackBeginCheckout } from "@/lib/analytics";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
+import { ReminderForm } from "@/components/reminder/ReminderForm";
 import { refreshCartAttributes, type CartItem } from "@/lib/shopify-cart";
 import { withStoredUtm } from "@/lib/utm-attribution";
 import { prepareCheckout } from "@/lib/checkout-handoff.functions";
@@ -207,6 +208,7 @@ export function CartDrawer() {
                 ))}
               </ul>
 
+              <CartReminder />
               <div className="shrink-0 border-t border-border py-5">
                 <div className="flex items-baseline justify-between">
                   <span className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
@@ -246,11 +248,24 @@ export function CartDrawer() {
 function TeaserCartNote() {
   const { data } = useQuery(teaserQueryOptions(usePreview()));
   const note = data?.state === "preview" ? data.copy.teaser_cart_note : undefined;
-  if (!note) return null;
+  // "Prices drop automatically. No code needed." before and during the sale.
+  const noCode = data && data.state !== "ended" ? data.copy.no_code_note : undefined;
+  if (!note && !noCode) return null;
   return (
     <p className="ff-small mt-2 rounded-md bg-ff-warm-cream px-3 py-2 text-xs text-ff-burgundy">
-      {note}
+      {[note, noCode].filter(Boolean).join(" ")}
     </p>
+  );
+}
+
+/** Before the sale, under the items: "Send me my cart at 10:00 on Friday". */
+function CartReminder() {
+  const { data } = useQuery(teaserQueryOptions(usePreview()));
+  if (data?.state !== "preview" || !data.reminder) return null;
+  return (
+    <div className="shrink-0 border-t border-border py-4">
+      <ReminderForm copy={data.reminder} source="cart" />
+    </div>
   );
 }
 
