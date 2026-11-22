@@ -119,13 +119,8 @@ export function SiteFooter() {
 
         {/* Legal */}
         <div className="ff-small mt-12 border-t border-ff-cream/15 pt-6 text-center text-xs leading-relaxed text-ff-cream/70">
-          <p className="text-ff-cream/85">
-            © 2026 Fyxx
-          </p>
-          <p className="mt-2">
-            Fyxx &amp; The Green Room are registered brands of Al Kasra for Trade &amp; Marketing
-            L.L.C. · Swefieh Village, Ground Floor, Amman, Jordan
-          </p>
+          <p className="text-ff-cream/85">© 2026 Fyxx</p>
+          <p className="mt-2">Swefieh Village, Ground Floor, Amman, Jordan</p>
         </div>
       </div>
     </footer>
