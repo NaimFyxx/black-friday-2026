@@ -20,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import {
   catalogQueryOptions,
   facetsQueryOptions,
-  bandLabel,
   mainInGroup,
   type CatalogFacets,
   type CatalogFilters,
@@ -349,15 +348,15 @@ function Storefront() {
                     const prev = items[i - 1];
                     const heading =
                       item.block !== undefined &&
-                      item.band !== undefined &&
-                      (!prev || prev.block !== item.block || prev.band !== item.band);
-                    const band = facets?.bands.find((b) => b.index === item.band);
+                      (!prev ||
+                        prev.block !== item.block ||
+                        prev.main_category !== item.main_category);
                     return (
                       <Fragment key={item.product_id}>
                         {heading && (
                           <GridHeading
-                            eyebrow={item.block === 0 ? "Fyxx selection" : "More from our shelves"}
-                            label={band ? bandLabel(band) : ""}
+                            eyebrow={item.main_category}
+                            label={item.block === 0 ? "Fyxx selection" : "More to choose from"}
                           />
                         )}
                         <CatalogCard
@@ -460,7 +459,7 @@ function CatalogSearch({
   );
 }
 
-/** Full-width heading in the product grid (default order): "Fyxx selection, Under JOD 20".
+/** Full-width heading in the product grid (default order): "Red Wine  Fyxx selection".
  *  Sticks under the filter bar while its part of the list is on screen. */
 function GridHeading({ eyebrow, label }: { eyebrow: string; label: string }) {
   return (

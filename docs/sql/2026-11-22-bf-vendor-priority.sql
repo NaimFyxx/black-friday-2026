@@ -11,3 +11,7 @@
 --   block cheapest price band first (bf_settings.price_bands), then the other
 --   vendor_priority words (umg, zumot), then categories take turns from the cheapest.
 --   Items carry "block" and "band" so the grid shows sticky headings.
+-- Replaced again (migration bf_catalog_by_category_fyxx_first): default order is by
+--   category in category_mapping order; inside each category the Fyxx selection
+--   (vendor contains vendor_priority[1]) first, then the rest; each cheapest first.
+--   Items carry "block" (0 Fyxx / 1 rest). UMG/Zumot are no longer ordered separately.

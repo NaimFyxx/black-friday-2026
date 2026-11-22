@@ -13,7 +13,7 @@ import { simCatalog, simFacets } from "@/lib/preview-sim.functions";
 import { formatJod, type ShopifyProduct } from "@/lib/shopify";
 
 export type SaleState = "preview" | "sale" | "ended";
-/** "featured" = the default order (Fyxx selection first, then price bands; see bf_catalog). */
+/** "featured" = the default order: by category, Fyxx selection first, cheapest first (bf_catalog). */
 export type SortKey = "featured" | "discount" | "price_asc" | "price_desc" | "newest";
 
 export interface CatalogFilters {
@@ -50,10 +50,8 @@ export interface CatalogItem {
   /** Units left of this variant (null when Shopify doesn't track it). */
   stock?: number | null;
   saved_amount: number; // 0 outside the sale
-  /** Default order only: 0 = Fyxx selection, 1 = everything else. */
+  /** Default order only: 0 = Fyxx selection, 1 = the rest of the category. */
   block?: number;
-  /** Default order only: price band index (bf_settings.price_bands). */
-  band?: number;
 }
 
 export interface CatalogPage {
