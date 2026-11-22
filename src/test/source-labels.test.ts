@@ -40,6 +40,15 @@ describe("describeSource", () => {
     expect(describeSource(null, "l.instagram.com").name).toBe("From instagram.com");
   });
 
+  it("uses the team's tagging when only the source is known", () => {
+    expect(describeSource("ig", null)).toMatchObject({ name: "Instagram ads", kind: "paid" });
+    expect(describeSource("klaviyo", null)).toMatchObject({
+      name: "Email (Klaviyo)",
+      kind: "free",
+    });
+    expect(describeSource("tiktok", null)).toMatchObject({ name: "TikTok", kind: "unknown" });
+  });
+
   it("never hides an unknown value", () => {
     expect(describeSource("snippet_test", "qa")).toMatchObject({
       name: "snippet_test (qa)",
