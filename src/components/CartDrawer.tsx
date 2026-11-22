@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ExternalLink, Loader2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 
@@ -16,6 +17,7 @@ import { trackBeginCheckout } from "@/lib/analytics";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { withStoredUtm } from "@/lib/utm-attribution";
+import { prepareCheckout } from "@/lib/checkout-handoff.functions";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 import { useCartUi } from "@/stores/cartUiStore";
 
@@ -31,6 +33,7 @@ export function CartDrawer() {
   const removeItem = useCartStore((state) => state.removeItem);
   const getCheckoutUrl = useCartStore((state) => state.getCheckoutUrl);
   const syncCart = useCartStore((state) => state.syncCart);
+  const prepareCheckoutFn = useServerFn(prepareCheckout);
   const totalItems = useCartStore(selectCartCount);
 
   useEffect(() => setMounted(true), []);
@@ -67,8 +70,19 @@ export function CartDrawer() {
         })),
       );
       // Carry the first-touch source onto checkout so orders can be traced.
-      window.open(withStoredUtm(checkoutUrl), "_blank");
+      const normal = withStoredUtm(checkoutUrl);
+      // Open the tab now (inside the tap, so phones allow it), then send it to
+      // the checkout page directly so the Fyxx app does not take over (see
+      // checkout-handoff.functions.ts). Falls back to the normal link.
+      const tab = window.open("about:blank", "_blank");
       setIsOpen(false);
+      const go = (url: string) => {
+        if (tab && !tab.closed) tab.location.href = url;
+        else window.location.href = url;
+      };
+      prepareCheckoutFn({ data: { url: normal } })
+        .then((r) => go(r ? withStoredUtm(r.url) : normal))
+        .catch(() => go(normal));
     }
   };
 

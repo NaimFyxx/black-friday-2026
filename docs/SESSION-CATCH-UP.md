@@ -64,6 +64,22 @@ and Pulse sets them.
 
 ## Log
 
+### 22 Nov 2026: checkout stays in the browser for Fyxx app users
+
+- Problem: the Fyxx app (Shopney, co.shopney.fyxx) claims all myfyxx.com links
+  on phones except /checkouts/*. Shopify's cart checkout link
+  (www.myfyxx.com/cart/c/...) opened the app with an empty cart.
+- Fix (`src/lib/checkout-handoff.functions.ts`, used by CartDrawer): on
+  Checkout our server opens the /cart/c link without following it, reads the
+  real /checkouts/cn/... address and Shopify's `_shopify_essential` cookie, and
+  sets that cookie for Domain=myfyxx.com, Path=/checkouts, 2 hours (the longer
+  path makes browsers send it before an older one). The new tab goes straight
+  to /checkouts/..., which the app ignores. Only on *.myfyxx.com hosts; any
+  failure falls back to the normal link. Tested with curl (fresh browser,
+  returning visitor) and the fallback locally; live test after publish.
+- Cleaner long term: ask Shopney to exclude /cart/c/* from the app's links.
+
+
 ### 21 Nov 2026: header sections (The Cellar / The Bar / The Humidor)
 
 - Header links Home / The Cellar / About us replaced by shop sections from
