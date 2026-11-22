@@ -9,6 +9,8 @@
 
 import { getCookie, setCookie, deleteCookie } from "@tanstack/react-start/server";
 
+import { DEFAULT_TRACKING_HOSTS } from "./tracking-hosts";
+
 export const NO_TRACK_COOKIE = "bf_no_track";
 const SETTING_KEY = "tracking_enabled";
 const CACHE_MS = 15_000;
@@ -92,6 +94,47 @@ export function setDeviceExcluded(excluded: boolean): void {
     });
   } else {
     deleteCookie(NO_TRACK_COOKIE, { path: "/" });
+  }
+}
+
+/** Hosts where tracking runs (bf_settings.tracking_hosts). Lovable previews,
+ *  the Lovable editor and localhost are left out, so test traffic never
+ *  reaches Meta, GA4, Klaviyo, Clarity or bf_events. */
+let hostsCache: { value: string[]; at: number } | null = null;
+
+export async function getTrackingHosts(): Promise<string[]> {
+  if (hostsCache && Date.now() - hostsCache.at < CACHE_MS) return hostsCache.value;
+  try {
+    const client = await db();
+    const { data, error } = await client
+      .from("bf_settings")
+      .select("value")
+      .eq("key", "tracking_hosts")
+      .maybeSingle();
+    if (error && !isMissing(error)) throw new Error(error.message);
+    const raw = data?.value;
+    const value =
+      Array.isArray(raw) && raw.length
+        ? raw.map((h: unknown) => String(h).toLowerCase().trim()).filter(Boolean)
+        : DEFAULT_TRACKING_HOSTS;
+    hostsCache = { value, at: Date.now() };
+    return value;
+  } catch {
+    return DEFAULT_TRACKING_HOSTS;
+  }
+}
+
+/** Is this request coming from a tracked host? Uses the browser's Origin (or
+ *  Referer) header; a request without either is allowed. */
+export async function fromTrackedHost(): Promise<boolean> {
+  try {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const src = getRequestHeader("origin") || getRequestHeader("referer");
+    if (!src) return true;
+    const host = new URL(src).hostname.toLowerCase();
+    return (await getTrackingHosts()).includes(host);
+  } catch {
+    return true;
   }
 }
 

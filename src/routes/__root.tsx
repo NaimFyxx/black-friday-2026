@@ -33,6 +33,7 @@ import { useMounted } from "../hooks/useMounted";
 import { KLAVIYO_COMPANY_ID } from "../lib/campaign-config";
 import { simAllowed } from "../lib/preview-sim.functions";
 import { getTrackingState, reportClientError } from "../lib/track.functions";
+import { DEFAULT_TRACKING_HOSTS } from "../lib/tracking-hosts";
 
 // Send a client error to the /admin error log. Deduped per page load so one
 // crash loop can't spam it, and capped at 5 reports per page.
@@ -91,7 +92,7 @@ export const META_PIXEL_ID = "1207780626389959";
 // not shared with the Christmas / Valentine's / Fyxx Cup pages).
 const CLARITY_ID = "zep1cjcaqz";
 
-// Used instead of TRACKING_SNIPPET when tracking is switched off in /admin
+// Used instead of trackingSnippet() when tracking is switched off in /admin
 // (site-wide, or for this device): silent no-op stubs so the app's tracking
 // calls do nothing, and no third-party script is loaded at all.
 const NO_TRACKING_SNIPPET = `
@@ -107,13 +108,24 @@ window.clarity = function(){};
 // PageView from RootComponent). GA/Klaviyo/Clarity are stubbed now and loaded
 // on first interaction or after 3s to keep the page fast (Fyxx Cup pattern).
 // Not used at all when tracking is switched off (see NO_TRACKING_SNIPPET).
-const TRACKING_SNIPPET = `
+const trackingSnippet = (hosts: string[]) =>
+  `
 (function(){
   // Run once per page load. The router can re-insert head scripts on
   // client-side navigation; without this guard that re-ran init/PageView
   // and added duplicate listeners. Later PageViews come from RootComponent.
   if (window.__bfTrackingLoaded) return;
   window.__bfTrackingLoaded = true;
+  // Only on the real site (bf_settings.tracking_hosts). Lovable previews, the
+  // Lovable editor and localhost get the same no-op stubs as tracking off.
+  if (${JSON.stringify(hosts)}.indexOf(location.hostname.toLowerCase()) < 0) {
+    window.__bfTrackingOff = true;
+    window.dataLayer = [];
+    window.gtag = function(){};
+    window.fbq = function(){};
+    window.clarity = function(){};
+    return;
+  }
   var CAMPAIGN = '${CAMPAIGN_NAME}';
   var PROMO = '${GA_PROMO_NAME}';
 
@@ -306,7 +318,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     try {
       return await getTrackingState();
     } catch {
-      return { enabled: true };
+      return { enabled: true, hosts: DEFAULT_TRACKING_HOSTS };
     }
   },
   shouldReload: false,
@@ -355,7 +367,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     // Marketing + analytics stack shared with the Christmas, Valentine's and
     // Fyxx Cup campaign sites: GA4, Meta Pixel, Klaviyo, Microsoft Clarity,
     // JS-error forwarding, ?from=app detection and scroll-depth milestones.
-    scripts: [{ children: loaderData?.enabled === false ? NO_TRACKING_SNIPPET : TRACKING_SNIPPET }],
+    scripts: [
+      {
+        children:
+          loaderData?.enabled === false
+            ? NO_TRACKING_SNIPPET
+            : trackingSnippet(loaderData?.hosts ?? DEFAULT_TRACKING_HOSTS),
+      },
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,

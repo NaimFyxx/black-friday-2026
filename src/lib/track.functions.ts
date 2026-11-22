@@ -56,8 +56,10 @@ export const recordEvent = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     try {
       // Respect the admin tracking switches (site-wide off, or this device excluded).
-      const { shouldTrack } = await import("./tracking-settings.server");
+      const { shouldTrack, fromTrackedHost } = await import("./tracking-settings.server");
       if (!(await shouldTrack())) return { ok: true };
+      // Lovable previews / editor / localhost: not logged.
+      if (!(await fromTrackedHost())) return { ok: true };
       // The team's own visits: hidden-preview cookie or signed in to /admin.
       // Stored, but left out of every dashboard count.
       const { getCookie } = await import("@tanstack/react-start/server");
@@ -99,8 +101,9 @@ export const recordEvent = createServerFn({ method: "POST" })
 
 /** Is tracking on for this visitor? Read by the root route on page load. */
 export const getTrackingState = createServerFn({ method: "GET" }).handler(async () => {
-  const { shouldTrack } = await import("./tracking-settings.server");
-  return { enabled: await shouldTrack() };
+  const { shouldTrack, getTrackingHosts } = await import("./tracking-settings.server");
+  const [enabled, hosts] = await Promise.all([shouldTrack(), getTrackingHosts()]);
+  return { enabled, hosts };
 });
 
 const ErrorInput = z.object({
