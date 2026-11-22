@@ -6,7 +6,7 @@
 // Klaviyo. Once submitted, this browser is not asked again.
 
 import { identifyKlaviyo, resendKlaviyoCart } from "@/lib/analytics";
-import { KLAVIYO_COMPANY_ID } from "@/lib/campaign-config";
+import { KLAVIYO_COMPANY_ID, KLAVIYO_REVISION } from "@/lib/campaign-config";
 
 const DONE_KEY = "fyxx:reminder";
 
@@ -35,7 +35,7 @@ async function subscribe(email: string, listId: string, source: string): Promise
     `https://a.klaviyo.com/client/subscriptions/?company_id=${KLAVIYO_COMPANY_ID}`,
     {
       method: "POST",
-      headers: { "content-type": "application/vnd.api+json", revision: "2024-10-15" },
+      headers: { "content-type": "application/vnd.api+json", revision: KLAVIYO_REVISION },
       body: JSON.stringify({
         data: {
           type: "subscription",

@@ -39,3 +39,6 @@ export const CART_ATTR = {
 
 /** Klaviyo public site key (company id), as in the klaviyo.js tag. Not secret. */
 export const KLAVIYO_COMPANY_ID = "XuTPpc";
+/** Klaviyo client API version for every direct call from the browser. 2024-10-15
+ *  rejects `subscriptions` on the profile (400); 2025-01-15 accepts it (202). */
+export const KLAVIYO_REVISION = "2025-01-15";
