@@ -388,3 +388,10 @@ Decisions from the owner: crossed-out Shopify prices keep showing before
   Accessories 11 / 27 / 19.
 - Tested locally with Grey Goose (4 sizes in Shopify, 2 on the sale): page
   and picker show only 70cl and 100cl.
+
+## 2026-11-22: Home link in the header
+
+"Home" now comes before The Cellar / The Bar / The Humidor on phones and
+desktop (`src/components/SiteHeader.tsx`). It goes to the top of the landing
+page with no section, and is underlined when no section is picked. Phone row
+spacing tightened so all four fit on a 320px screen.

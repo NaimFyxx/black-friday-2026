@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useSearch } from "@tanstack/react-router";
+import { Link, useLocation, useSearch } from "@tanstack/react-router";
 
 import { CartDrawer } from "@/components/CartDrawer";
 import { teaserQueryOptions } from "@/lib/teaser";
@@ -21,6 +21,27 @@ export function SiteHeader() {
   const search = useSearch({ strict: false }) as { group?: string };
   const active = search.group;
 
+  const onHome = useLocation({ select: (l) => l.pathname }) === "/" && !active;
+  const linkClass = (on: boolean) =>
+    cn(
+      "whitespace-nowrap border-b-2 pb-0.5 transition-colors",
+      on ? "border-ff-red text-ff-cream" : "border-transparent hover:text-ff-red",
+    );
+
+  // "Home" first (top of the landing page, no section), then the sections.
+  const home = groups.length > 0 && (
+    <Link
+      key="~home"
+      to="/"
+      search={{}}
+      hash="top"
+      aria-current={onHome ? "page" : undefined}
+      className={linkClass(onHome)}
+    >
+      Home
+    </Link>
+  );
+
   const links = groups.map((g) => (
     <Link
       key={g}
@@ -28,10 +49,7 @@ export function SiteHeader() {
       search={{ group: g }}
       hash="shop"
       aria-current={active === g ? "page" : undefined}
-      className={cn(
-        "whitespace-nowrap border-b-2 pb-0.5 transition-colors",
-        active === g ? "border-ff-red text-ff-cream" : "border-transparent hover:text-ff-red",
-      )}
+      className={linkClass(active === g)}
     >
       {g}
     </Link>
@@ -60,6 +78,7 @@ export function SiteHeader() {
           aria-label="Shop sections"
           className="ff-subline hidden items-center gap-9 text-sm tracking-wide uppercase md:flex"
         >
+          {home}
           {links}
         </nav>
 
@@ -71,8 +90,9 @@ export function SiteHeader() {
       {/* Phones: the sections on their own row */}
       <nav
         aria-label="Shop sections"
-        className="ff-subline flex h-9 items-center justify-center gap-7 border-t border-ff-cream/15 text-xs tracking-wide uppercase md:hidden"
+        className="ff-subline flex h-9 items-center justify-center gap-4 border-t px-3 min-[380px]:gap-6 border-ff-cream/15 text-xs tracking-wide uppercase md:hidden"
       >
+        {home}
         {links}
       </nav>
     </header>
