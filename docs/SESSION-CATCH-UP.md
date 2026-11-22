@@ -646,3 +646,7 @@ Migration bf_events_referrer_internal (`docs/sql/2026-11-22-bf-events-referrer-i
   ("(none)" for visits before this change). Note on /admin explains it.
 - Team phones not signed in to /admin and without a preview link still
   count: sign in to /admin once on each (session lasts 400 days).
+- Orders follow the same rule: untagged carts get a hidden `_bf_referrer`
+  attribute (CART_ATTR.referrer), and bf-admin uses it as the order's medium
+  when there is no _utm_source, so untagged orders land on the same Sources
+  row as their visits. Orders placed before this change stay on "(none)".

@@ -112,7 +112,11 @@ async function siteOrders(since: string, until: string) {
         currency: o.totalPriceSet.shopMoney.currencyCode,
         cancelled: o.cancelledAt != null,
         utm_source: attr.get("_utm_source") || null,
-        utm_medium: attr.get("_utm_medium") || null,
+        // No UTM tags: the referring site (instagram.com, direct...) takes the
+        // medium's place, the same rule the Sources page uses for visits.
+        utm_medium: attr.get("_utm_source")
+          ? attr.get("_utm_medium") || null
+          : attr.get("_bf_referrer") || null,
         utm_campaign: attr.get("_utm_campaign") || null,
         utm_content: attr.get("_utm_content") || null,
         isFirstOrder: Number.isFinite(n) ? n <= 1 : null,
@@ -142,9 +146,12 @@ function pickAction(list: any[] | undefined): number {
 async function metaResults(sinceDay: string, untilDay: string) {
   const token = Deno.env.get("BLACK_FRIDAY_META_TOKEN");
   if (!token) return { status: "not_configured" };
-  const acct = await fetch(`${META_API}/${META_AD_ACCOUNT}?fields=currency,name&access_token=${encodeURIComponent(token)}`);
+  const acct = await fetch(
+    `${META_API}/${META_AD_ACCOUNT}?fields=currency,name&access_token=${encodeURIComponent(token)}`,
+  );
   const acctJson = await acct.json();
-  if (acctJson.error) return { status: "error", message: String(acctJson.error.message).slice(0, 300) };
+  if (acctJson.error)
+    return { status: "error", message: String(acctJson.error.message).slice(0, 300) };
   const params = new URLSearchParams({
     level: "campaign",
     fields: "campaign_id,campaign_name,spend,impressions,clicks,actions,action_values",
@@ -172,7 +179,12 @@ async function metaResults(sinceDay: string, untilDay: string) {
     }
     url = j.paging?.next ?? null;
   }
-  return { status: "ok", currency: acctJson.currency ?? "USD", account: acctJson.name ?? "", campaigns };
+  return {
+    status: "ok",
+    currency: acctJson.currency ?? "USD",
+    account: acctJson.name ?? "",
+    campaigns,
+  };
 }
 
 // ── AI summary through Lovable's AI gateway ──
@@ -202,7 +214,11 @@ async function aiSummary(facts: unknown) {
     }),
   });
   const j = await res.json().catch(() => ({}));
-  if (!res.ok) return { status: "error", message: `AI gateway ${res.status}: ${JSON.stringify(j).slice(0, 200)}` };
+  if (!res.ok)
+    return {
+      status: "error",
+      message: `AI gateway ${res.status}: ${JSON.stringify(j).slice(0, 200)}`,
+    };
   const text = j.choices?.[0]?.message?.content;
   if (!text) return { status: "error", message: "AI gave no text" };
   return { status: "ok", text: String(text), model: AI_MODEL };
@@ -210,13 +226,15 @@ async function aiSummary(facts: unknown) {
 
 const isDay = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
 
-const isIso = (v: unknown) => typeof v === "string" && v.length <= 40 && !Number.isNaN(Date.parse(v));
+const isIso = (v: unknown) =>
+  typeof v === "string" && v.length <= 40 && !Number.isNaN(Date.parse(v));
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
   const body = await req.json().catch(() => ({}));
   const key = await getEdgeKey();
-  if (!key || !(await sameString(String(body.key ?? ""), key))) return json({ error: "Not allowed" }, 403);
+  if (!key || !(await sameString(String(body.key ?? ""), key)))
+    return json({ error: "Not allowed" }, 403);
 
   if (body.action === "check_password") {
     const pw = Deno.env.get("BLACK_FRIDAY_ADMIN_PASSWORD") ?? "";

@@ -27,6 +27,8 @@ export const CART_ATTR = {
   content: "_utm_content",
   term: "_utm_term",
   fbclid: "_fbclid",
+  /** Only when there are no UTM tags: the referring site or "direct". */
+  referrer: "_bf_referrer",
 } as const;
 
 /** Klaviyo public site key (company id), as in the klaviyo.js tag. Not secret. */

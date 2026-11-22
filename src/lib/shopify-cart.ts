@@ -9,7 +9,7 @@
 import { getSessionId, trackingOff } from "@/lib/analytics";
 import { CART_ATTR } from "@/lib/campaign-config";
 import { storefrontApiRequest, type ShopifyProduct } from "@/lib/shopify";
-import { getStoredUtm } from "@/lib/utm-attribution";
+import { getFirstReferrer, getStoredUtm } from "@/lib/utm-attribution";
 
 /** Session + last-touch UTMs and fbclid as Shopify cart attributes (empty values dropped). */
 function campaignCartAttributes(): Array<{ key: string; value: string }> {
@@ -24,6 +24,9 @@ function campaignCartAttributes(): Array<{ key: string; value: string }> {
     [CART_ATTR.content, utm.utm_content],
     [CART_ATTR.term, utm.utm_term],
     [CART_ATTR.fbclid, utm.fbclid],
+    // Untagged visitors: where they came from, so their orders match their
+    // visits on the Sources page.
+    [CART_ATTR.referrer, utm.utm_source ? undefined : getFirstReferrer()],
   ];
   return pairs.filter((p): p is [string, string] => !!p[1]).map(([key, value]) => ({ key, value }));
 }
