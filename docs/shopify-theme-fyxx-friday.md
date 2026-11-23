@@ -29,11 +29,14 @@ visitors who have the cookie, never changes items or prices, fails silently.
     if (!m) return;
     var v = JSON.parse(decodeURIComponent(m[1]));
     if (!v || !v.sid) return;
+    // Anonymous visitor ID from the Friday site (one per browser), if present.
+    var vm = document.cookie.match(/(?:^|;\s*)fyxx_vid=([A-Za-z0-9-]{8,64})/);
+    var vid = vm ? vm[1] : '';
     fetch('/cart.js', { credentials: 'same-origin' })
       .then(function (r) { return r.json(); })
       .then(function (cart) {
         var a = (cart && cart.attributes) || {};
-        if (a._bf_visit === v.sid) return; // already tagged
+        if (a._bf_visit === v.sid && (a._bf_visit_visitor || '') === vid) return; // already tagged
         return fetch('/cart/update.js', {
           method: 'POST',
           credentials: 'same-origin',
@@ -43,7 +46,8 @@ visitors who have the cookie, never changes items or prices, fails silently.
             _bf_visit_source: v.src || '',
             _bf_visit_medium: v.med || '',
             _bf_visit_campaign: v.camp || '',
-            _bf_visit_first: v.first || ''
+            _bf_visit_first: v.first || '',
+            _bf_visit_visitor: vid
           } })
         });
       })
@@ -57,3 +61,13 @@ Remove it after the campaign (the cookie expires 30 days after the last visit).
 
 Not covered: the Fyxx app (it doesn't share the browser's cookies) and
 "Buy it now" buttons that skip the cart.
+
+## Update 23 Nov 2026: visitor ID
+
+The Friday site also sets `fyxx_vid` (on .myfyxx.com, 400 days): an anonymous
+random ID per browser. The snippet above copies it as `_bf_visit_visitor`, so
+bf-admin can tell whether a website order came from a visitor who came back.
+In the live version (layout/theme.liquid, which re-applies the attributes after
+load, after cart changes and before checkout) add the same three things: read
+`fyxx_vid`, include `_bf_visit_visitor` in the attributes, and re-apply when it
+differs from the cart's value.
