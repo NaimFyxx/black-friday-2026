@@ -48,7 +48,7 @@ import {
   getVisitors,
 } from "@/lib/admin.functions";
 import { formatJod } from "@/lib/shopify";
-import { describeCampaign, describeSource, type SourceKind } from "@/lib/source-labels";
+import { describeSource, type SourceKind } from "@/lib/source-labels";
 
 export const Route = createFileRoute("/admin/")({
   component: OverviewPage,
@@ -140,15 +140,10 @@ function OverviewPage() {
           >
             <SourcesList rows={data.rows} currency={cur} />
             <Note>
-              A visit is one browser tab session on this site: the same person coming back later
-              counts again. Orders and sales are paid orders placed through this site&apos;s
-              checkout (cancelled orders left out), credited to where the visitor first came from.
-              The grey line under each name is the tracking tag on the link, for whoever made the
-              link. &quot;Direct or unknown&quot; means no tag and no referring site: typed in, a
-              bookmark or most apps (before 22 Nov the referring site wasn&apos;t saved at all). The
-              team&apos;s own visits (preview link, or signed in to /admin on that browser) are left
-              out. Tip: tag every link you share, for example{" "}
-              <code>?utm_source=instagram&amp;utm_medium=story</code>, so it gets its own row here.
+              A visit is one browser tab session, so someone coming back counts again. Orders are
+              paid orders through this site&apos;s checkout, credited to where the visitor first
+              came from. &quot;Direct or unknown&quot; means no tag on the link. Hold the pointer on
+              a name to see the link tags behind it. Team visits and test links are left out.
             </Note>
           </Section>
         </>
@@ -288,12 +283,6 @@ function Fig({ label, value }: { label: string; value: string }) {
 }
 
 /** Extra grey text under a source: campaign, or why the referring site is missing. */
-function sourceExtra(r: SourceRow): string {
-  if (r.utm_source === null && r.utm_medium === null)
-    return "referring site not saved (before 22 Nov)";
-  return describeCampaign(r.utm_campaign);
-}
-
 /** What goes out: clicks to myfyxx.com / the app, and website orders after a visit. */
 function LeavingSection({ range }: { range: Range }) {
   const { data, isLoading, error } = useLeaving(range);
@@ -898,7 +887,99 @@ function TopAddedSection() {
 }
 
 /** Phone and tablet: one card per source. Desktop: one table. */
+type SourceGroup = {
+  name: string;
+  kind: SourceKind;
+  tags: string[];
+  sessions: number;
+  product_views: number;
+  cart_sessions: number;
+  checkout_sessions: number;
+  orders: number;
+  revenue: number;
+  new_customers: number;
+};
+
+/**
+ * One row per friendly name (e.g. both "Direct or unknown" rows become one).
+ * Free or unknown sources that never got a cart or an order are folded into a
+ * single "Other" row that opens to list them. Paid ads always get their own row.
+ */
+function groupSources(rows: SourceRow[]): { main: SourceGroup[]; other: SourceGroup[] } {
+  const groups = new Map<string, SourceGroup>();
+  for (const r of rows) {
+    const l = describeSource(r.utm_source, r.utm_medium);
+    const k = `${l.name}|${l.kind}`;
+    let g = groups.get(k);
+    if (!g) {
+      g = {
+        name: l.name,
+        kind: l.kind,
+        tags: [],
+        sessions: 0,
+        product_views: 0,
+        cart_sessions: 0,
+        checkout_sessions: 0,
+        orders: 0,
+        revenue: 0,
+        new_customers: 0,
+      };
+      groups.set(k, g);
+    }
+    if (l.raw && !g.tags.includes(l.raw)) g.tags.push(l.raw);
+    g.sessions += r.sessions;
+    g.product_views += r.product_views;
+    g.cart_sessions += r.cart_sessions;
+    g.checkout_sessions += r.checkout_sessions;
+    g.orders += r.orders;
+    g.revenue += r.revenue;
+    g.new_customers += r.new_customers;
+  }
+  const all = [...groups.values()].sort((a, b) => b.revenue - a.revenue || b.sessions - a.sessions);
+  const small = (g: SourceGroup) => g.kind !== "paid" && g.cart_sessions === 0 && g.orders === 0;
+  return { main: all.filter((g) => !small(g)), other: all.filter(small) };
+}
+
+function sumGroups(name: string, list: SourceGroup[]): SourceGroup {
+  return list.reduce<SourceGroup>(
+    (t, g) => ({
+      ...t,
+      sessions: t.sessions + g.sessions,
+      product_views: t.product_views + g.product_views,
+      cart_sessions: t.cart_sessions + g.cart_sessions,
+      checkout_sessions: t.checkout_sessions + g.checkout_sessions,
+      orders: t.orders + g.orders,
+      revenue: t.revenue + g.revenue,
+      new_customers: t.new_customers + g.new_customers,
+    }),
+    {
+      name,
+      kind: "unknown",
+      tags: [],
+      sessions: 0,
+      product_views: 0,
+      cart_sessions: 0,
+      checkout_sessions: 0,
+      orders: 0,
+      revenue: 0,
+      new_customers: 0,
+    },
+  );
+}
+
+function GroupName({ g, isOther }: { g: SourceGroup; isOther?: boolean | undefined }) {
+  return (
+    <span className="inline-block min-w-0 align-top">
+      <span className="font-medium" title={g.tags.join(", ") || undefined}>
+        {g.name}
+      </span>{" "}
+      {!isOther && <KindTag kind={g.kind} />}
+    </span>
+  );
+}
+
 function SourcesList({ rows, currency }: { rows: SourceRow[]; currency: string }) {
+  const [showOther, setShowOther] = useState(false);
   if (rows.length === 0) {
     return (
       <Panel>
@@ -906,30 +987,41 @@ function SourcesList({ rows, currency }: { rows: SourceRow[]; currency: string }
       </Panel>
     );
   }
-  const key = (r: SourceRow) => `${r.utm_source}|${r.utm_medium}|${r.utm_campaign}`;
+  const { main, other } = groupSources(rows);
+  const otherRow =
+    other.length > 0
+      ? sumGroups(
+          `Other (${other.length} small source${other.length === 1 ? "" : "s"}, no carts yet)`,
+          other,
+        )
+      : null;
+  const toggle = otherRow ? (
+    <button
+      type="button"
+      onClick={() => setShowOther((v) => !v)}
+      className="ml-1 text-xs text-muted-foreground underline hover:text-foreground"
+    >
+      {showOther ? "Hide" : "Show"}
+    </button>
+  ) : null;
+  const visible: Array<{ g: SourceGroup; isOther?: boolean; sub?: boolean }> = [
+    ...main.map((g) => ({ g })),
+    ...(otherRow ? [{ g: otherRow, isOther: true }] : []),
+    ...(showOther ? other.map((g) => ({ g, sub: true })) : []),
+  ];
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2 lg:hidden">
-        {rows.map((r) => (
-          <Panel key={key(r)}>
-            <SourceName
-              source={r.utm_source}
-              medium={r.utm_medium}
-              showRaw
-              extra={sourceExtra(r)}
-            />
+        {visible.map(({ g, isOther, sub }) => (
+          <Panel key={`${g.name}|${g.kind}|${sub ? "s" : ""}`} className={sub ? "opacity-80" : ""}>
+            <GroupName g={g} isOther={isOther} />
+            {isOther && toggle}
             <dl className="mt-3 grid grid-cols-3 gap-x-3 gap-y-2 text-sm">
-              <Fig label="Visits" value={fmtNum(r.sessions)} />
-              <Fig label="Viewed a product" value={fmtNum(r.product_views)} />
-              <Fig label="Added to cart" value={fmtNum(r.cart_sessions)} />
-              <Fig label="Went to checkout" value={fmtNum(r.checkout_sessions)} />
-              <Fig label="Orders" value={fmtNum(r.orders)} />
-              <Fig label="Sales" value={fmtMoney(r.revenue, currency)} />
+              <Fig label="Visits" value={fmtNum(g.sessions)} />
+              <Fig label="Added to cart" value={fmtNum(g.cart_sessions)} />
+              <Fig label="Orders" value={fmtNum(g.orders)} />
+              {g.orders > 0 && <Fig label="Sales" value={fmtMoney(g.revenue, currency)} />}
             </dl>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {fmtPct(r.orders, r.sessions)} of visits ordered · {fmtNum(r.new_customers)} new
-              customer{r.new_customers === 1 ? "" : "s"}
-            </p>
           </Panel>
         ))}
       </div>
@@ -943,30 +1035,27 @@ function SourcesList({ rows, currency }: { rows: SourceRow[]; currency: string }
               <th className={THR}>Added to cart</th>
               <th className={THR}>Went to checkout</th>
               <th className={THR}>Orders</th>
-              <th className={THR}>Visits that ordered</th>
               <th className={THR}>Sales</th>
               <th className={THR}>New customers</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
-              <tr key={key(r)} className={TR}>
-                <td className={TD}>
-                  <SourceName
-                    source={r.utm_source}
-                    medium={r.utm_medium}
-                    showRaw
-                    extra={sourceExtra(r)}
-                  />
+            {visible.map(({ g, isOther, sub }) => (
+              <tr
+                key={`${g.name}|${g.kind}|${sub ? "s" : ""}`}
+                className={`${TR} ${sub ? "text-muted-foreground" : ""}`}
+              >
+                <td className={`${TD} ${sub ? "pl-8 sm:pl-10" : ""}`}>
+                  <GroupName g={g} isOther={isOther} />
+                  {isOther && toggle}
                 </td>
-                <td className={TDR}>{fmtNum(r.sessions)}</td>
-                <td className={TDR}>{fmtNum(r.product_views)}</td>
-                <td className={TDR}>{fmtNum(r.cart_sessions)}</td>
-                <td className={TDR}>{fmtNum(r.checkout_sessions)}</td>
-                <td className={TDR}>{fmtNum(r.orders)}</td>
-                <td className={TDR}>{fmtPct(r.orders, r.sessions)}</td>
-                <td className={TDR}>{fmtMoney(r.revenue, currency)}</td>
-                <td className={TDR}>{fmtNum(r.new_customers)}</td>
+                <td className={TDR}>{fmtNum(g.sessions)}</td>
+                <td className={TDR}>{fmtNum(g.product_views)}</td>
+                <td className={TDR}>{fmtNum(g.cart_sessions)}</td>
+                <td className={TDR}>{fmtNum(g.checkout_sessions)}</td>
+                <td className={TDR}>{fmtNum(g.orders)}</td>
+                <td className={TDR}>{g.orders > 0 ? fmtMoney(g.revenue, currency) : "–"}</td>
+                <td className={TDR}>{g.orders > 0 ? fmtNum(g.new_customers) : "–"}</td>
               </tr>
             ))}
           </tbody>

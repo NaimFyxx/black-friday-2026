@@ -796,3 +796,9 @@ Owner approved the bf_events change.
 - Migration `bf_visits_before` (`docs/sql/2026-11-23-bf-visits-before.sql`): for [{visitor_id, at}] returns the visits (tab sessions) that browser made up to the order. Service role only. Tested with rolled-back rows.
 - /admin Overview, "Visitors who came back": "Orders: first visit or came back" (ordered on the first visit / came back then ordered, with average visits before ordering / not known) and an "Ordered" column per visitor. Paid, not cancelled, through this site's checkout only.
 - Orders from carts made before this change have no `_bf_visitor` and show under "Not known".
+
+## 2026-11-23: "Where visitors came from" tidied
+- One row per friendly name (the two "Direct or unknown" rows and the two facebook.com rows merge).
+- Free or unknown sources with no cart and no order fold into one "Other (N small sources, no carts yet)" row with Show/Hide. Paid ads always keep their own row.
+- Grey tag line and "Fyxx Friday" suffix removed; the tags show on hover. "Visits that ordered" column dropped. Footnote shortened.
+- Test links: bf_settings.test_utm_sources now ["claude-qa","test","snippet_test"], and getSources leaves those out.

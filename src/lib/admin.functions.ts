@@ -195,9 +195,20 @@ export const getSources = createServerFn({ method: "GET" })
       }
     }
 
-    const list = [...rows.values()].sort(
-      (a, b) => b.revenue - a.revenue || b.sessions - a.sessions,
+    // Test links (bf_settings.test_utm_sources) are left out.
+    const tests = await client
+      .from("bf_settings")
+      .select("value")
+      .eq("key", "test_utm_sources")
+      .maybeSingle();
+    const testSources = new Set(
+      (Array.isArray(tests.data?.value) ? (tests.data.value as unknown[]) : []).map((v) =>
+        String(v).toLowerCase(),
+      ),
     );
+    const list = [...rows.values()]
+      .filter((r) => !testSources.has((r.utm_source ?? "").toLowerCase()))
+      .sort((a, b) => b.revenue - a.revenue || b.sessions - a.sessions);
     const totals = list.reduce(
       (t, r) => {
         t.sessions += r.sessions;
