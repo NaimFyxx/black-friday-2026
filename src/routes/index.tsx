@@ -346,19 +346,13 @@ function Storefront() {
                 <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 md:gap-y-12 lg:grid-cols-4">
                   {items.map((item, i) => {
                     const prev = items[i - 1];
+                    // Default order only: a heading where a new category starts.
                     const heading =
                       item.block !== undefined &&
-                      (!prev ||
-                        prev.block !== item.block ||
-                        prev.main_category !== item.main_category);
+                      (!prev || prev.main_category !== item.main_category);
                     return (
                       <Fragment key={item.product_id}>
-                        {heading && (
-                          <GridHeading
-                            eyebrow={item.main_category}
-                            label={item.block === 0 ? "Fyxx selection" : "More to choose from"}
-                          />
-                        )}
+                        {heading && <GridHeading label={item.main_category} />}
                         <CatalogCard
                           item={item}
                           threshold={threshold}
@@ -459,18 +453,15 @@ function CatalogSearch({
   );
 }
 
-/** Full-width heading in the product grid (default order): "Red Wine  Fyxx selection".
- *  Sticks under the filter bar while its part of the list is on screen. */
-function GridHeading({ eyebrow, label }: { eyebrow: string; label: string }) {
+/** Full-width category heading in the product grid (default order, e.g. "Red Wine").
+ *  Sticks under the filter bar while that category is on screen. */
+function GridHeading({ label }: { label: string }) {
   return (
     <div
       className="sticky z-20 col-span-full -mx-5 -mb-4 border-b border-ff-black/10 bg-ff-cream/95 px-5 py-2 backdrop-blur-sm md:-mx-10 md:-mb-6 md:px-10"
       style={{ top: "var(--ff-filter-bottom, 140px)" }}
     >
-      <p className="flex items-baseline gap-2">
-        <span className="ff-headline text-sm text-ff-red md:text-base">{eyebrow}</span>
-        {label && <span className="ff-subline text-sm text-ff-black md:text-base">{label}</span>}
-      </p>
+      <p className="ff-headline text-sm text-ff-red md:text-base">{label}</p>
     </div>
   );
 }

@@ -246,7 +246,7 @@ export function toCartProduct(item: CatalogItem): ShopifyProduct {
 }
 
 export const SORT_LABELS: Record<SortKey, string> = {
-  featured: "Fyxx picks first",
+  featured: "Recommended",
   discount: "Biggest markdown first",
   price_asc: "Price low to high",
   price_desc: "Price high to low",
