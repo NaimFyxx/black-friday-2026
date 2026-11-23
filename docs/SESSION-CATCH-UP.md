@@ -757,3 +757,4 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 - Gift bar slides with the cart (starts at the last gift unlocked: at 165 it shows 150/200/250/300) and fades out past the last marker, so it never ends on a fixed number.
 - Gift tracker simplified (owner): no markers or JOD labels; one bar filling toward the next gift (resets every 50 JOD) and one line: "JOD X away from your first mystery gift from The Green Room" / "JOD X away from upgrading your mystery gift from The Green Room". Floating bar uses a short line.
 - Gift tracker compacted (owner): smaller padding/text, "Add more items" is a small link beside the bar (~82px tall instead of ~190px).
+- Members strip made compact (owner): "Exclusive rewards from [Fyxx Rewards logo]", one bar blending the tier colours with a bubble per tier (1.25x / 1.5x / 1.75x / 2x) and the tier name + points under it, small warm-black login button. ~220px tall on phones (was ~600).
