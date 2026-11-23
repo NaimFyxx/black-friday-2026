@@ -7,3 +7,5 @@
 -- Later (migration bf_gift_card_discount_switch): gift_card_discount_enabled (false)
 -- and gift_card_discount_pct (10); bf_teaser(p) returns "gift_card_discount" (percent, 0 = off).
 -- Both switches are on /admin (Overview, "Offers on the site").
+-- Later (migration bf_rewards_strip_switch): rewards_strip_enabled (false) for the
+-- Fyxx Rewards line; bf_teaser(p) returns "rewards_strip". Third switch in /admin Offers.

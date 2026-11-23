@@ -812,7 +812,11 @@ export const getCarts = createServerFn({ method: "GET" }).handler(async () => {
 
 // ── Offers on the site: on/off switches (bf_settings) ──────────────────
 
-const OFFER_KEYS = ["gift_card_discount_enabled", "mystery_gift_enabled"] as const;
+const OFFER_KEYS = [
+  "gift_card_discount_enabled",
+  "mystery_gift_enabled",
+  "rewards_strip_enabled",
+] as const;
 export type OfferKey = (typeof OFFER_KEYS)[number];
 
 /** The /admin Offers switches and the gift card percent. */
@@ -832,6 +836,7 @@ export const getOfferSwitches = createServerFn({ method: "GET" }).handler(async 
     gift_card_discount_enabled: m.get("gift_card_discount_enabled") === true,
     gift_card_discount_pct: n(m.get("gift_card_discount_pct")) || 10,
     mystery_gift_enabled: m.get("mystery_gift_enabled") === true,
+    rewards_strip_enabled: m.get("rewards_strip_enabled") === true,
   };
 });
 

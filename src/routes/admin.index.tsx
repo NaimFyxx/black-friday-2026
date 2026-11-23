@@ -619,6 +619,13 @@ function OffersSection() {
             "The progress bar in the cart and the floating cart bar, and the Congratulations message every 50 JOD. Display only: no gift is added to orders.",
           on: data.mystery_gift_enabled,
         },
+        {
+          key: "rewards_strip_enabled",
+          title: "Fyxx Rewards line",
+          description:
+            'The thin "Members earn up to 2x points" line with See tiers, under the hero on the home page and under Add to cart on product pages.',
+          on: data.rewards_strip_enabled,
+        },
       ]
     : [];
   return (

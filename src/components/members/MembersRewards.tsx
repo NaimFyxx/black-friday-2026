@@ -1,5 +1,9 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
+
+import { usePreview } from "@/lib/preview";
+import { teaserQueryOptions } from "@/lib/teaser";
 
 /**
  * Thin "Members earn up to 2x points" line under the hero; tap to open the
@@ -26,10 +30,17 @@ const TIERS = [
   { name: "Platinum", points: "2x", from: "#D2B6EE", to: "#B387CF" },
 ];
 
-export function MembersRewards() {
+export function MembersRewards({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
+  // Switched on/off in /admin (Offers): bf_settings.rewards_strip_enabled.
+  const on = !!useQuery(teaserQueryOptions(usePreview())).data?.rewards_strip;
+  if (!on) return null;
   return (
-    <section aria-labelledby="members-rewards" style={{ background: CREAM, color: INK }}>
+    <section
+      aria-labelledby="members-rewards"
+      className={className}
+      style={{ background: CREAM, color: INK }}
+    >
       {/* One thin line; tap to see the tiers. */}
       <button
         type="button"
