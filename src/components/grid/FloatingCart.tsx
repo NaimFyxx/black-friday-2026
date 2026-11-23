@@ -74,9 +74,7 @@ export function FloatingCart({ sale, ended = false }: { sale: boolean; ended?: b
             />
           </span>
           <span className="mt-1 block text-[11px] leading-tight text-ff-warm-cream">
-            {gift.next === undefined
-              ? "Top mystery gift from The Green Room unlocked"
-              : `${formatJod(gift.left)} to your ${gift.unlocked === 0 ? "first" : "next"} mystery gift`}
+            {`${formatJod(gift.left)} to your ${gift.unlocked === 0 ? "first" : "next"} mystery gift`}
           </span>
         </span>
       )}

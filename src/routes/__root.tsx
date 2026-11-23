@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { SiteFooter } from "../components/SiteFooter";
 import { SiteHeader } from "../components/SiteHeader";
 import { Toaster } from "../components/ui/sonner";
+import { GiftUnlockNotifier } from "../components/cart/GiftUnlockNotifier";
 import { useCartSync } from "../hooks/useCartSync";
 import { useKlaviyoFormsOff } from "../hooks/useKlaviyoFormsOff";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -483,6 +484,7 @@ function RootComponent() {
       <Outlet />
       {!isAdminPage && <SiteFooter />}
       <Toaster position="top-center" />
+      <GiftUnlockNotifier />
     </QueryClientProvider>
   );
 }
