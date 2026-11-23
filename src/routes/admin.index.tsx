@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import {
   ErrorBox,
+  fmtDate,
   fmtMoney,
   fmtNum,
   fmtPct,
@@ -30,6 +31,7 @@ import {
   type RangeKey,
 } from "@/components/admin/AdminUi";
 import {
+  getCarts,
   getLeaving,
   getSalesForecast,
   getSources,
@@ -144,6 +146,8 @@ function OverviewPage() {
       )}
 
       <SalesForecastSection />
+
+      <CartsSection />
 
       <TopAddedSection />
 
@@ -559,6 +563,122 @@ function ChannelCompare({
         In-store sales from Odoo come later.
       </p>
     </Panel>
+  );
+}
+
+/** "Carts": every shopper's cart, biggest first, with what's in it. */
+function CartsSection() {
+  const fn = useServerFn(getCarts);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-carts"],
+    queryFn: () => fn(),
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    retry: 1,
+  });
+  const rows = data?.rows ?? [];
+  const total = rows.reduce((a, r) => a + r.value_full, 0);
+  const totalFriday = rows.reduce((a, r) => a + r.value_friday, 0);
+  return (
+    <Section
+      title="Carts"
+      intro="Every shopper's cart right now, biggest first: what's in it and what it's worth. One row per browser; the team's own visits and tests are left out."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : isLoading ? (
+        <Loading />
+      ) : rows.length === 0 ? (
+        <Panel>
+          <p className="text-sm text-muted-foreground">No carts yet.</p>
+        </Panel>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatCard label="Carts" value={String(rows.length)} />
+            <StatCard
+              label="Went to checkout"
+              value={String(rows.filter((r) => r.checkout).length)}
+            />
+            <StatCard label="Total, full price" value={formatJod(total)} />
+            <StatCard label="Total, Friday prices" value={formatJod(totalFriday)} />
+          </div>
+          <Panel className="overflow-x-auto p-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className={TH}>Shopper</th>
+                  <th className={TH}>What's in the cart</th>
+                  <th className={THR}>Value</th>
+                  <th className={THR}>At Friday prices</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => (
+                  <tr key={r.session} className={TR}>
+                    <td className={`${TD} min-w-[150px]`}>
+                      <p className="font-medium">Shopper {i + 1}</p>
+                      <SourceName
+                        source={r.utm_source}
+                        medium={r.utm_source ? r.utm_medium : r.referrer}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Last active {fmtDate(r.last_at, true)}
+                        {r.checkout ? ", went to checkout" : ""}
+                      </p>
+                    </td>
+                    <td className={`${TD} min-w-[220px]`}>
+                      <CartItems items={r.items} units={r.units} />
+                    </td>
+                    <td className={TDR}>{formatJod(r.value_full)}</td>
+                    <td className={TDR}>{formatJod(r.value_friday)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Panel>
+          <Note>
+            Value is quantity x the regular price; &quot;At Friday prices&quot; uses the planned
+            sale prices. Items taken out of a cart are still counted. A cart that went to checkout
+            shows what was in it at checkout, plus anything added after.
+          </Note>
+        </>
+      )}
+    </Section>
+  );
+}
+
+/** First three products, the rest behind "and N more". */
+function CartItems({
+  items,
+  units,
+}: {
+  items: Array<{ title: string; qty: number }>;
+  units: number;
+}) {
+  const line = (it: { title: string; qty: number }, k: number) => (
+    <li key={k}>
+      {it.qty > 1 ? `${it.qty} x ` : ""}
+      {it.title}
+    </li>
+  );
+  const head = items.slice(0, 3);
+  const rest = items.slice(3);
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">
+        {units} {units === 1 ? "item" : "items"}
+      </p>
+      <ul className="mt-0.5 space-y-0.5">{head.map(line)}</ul>
+      {rest.length > 0 && (
+        <details className="mt-0.5">
+          <summary className="cursor-pointer text-xs text-muted-foreground">
+            and {rest.length} more
+          </summary>
+          <ul className="mt-0.5 space-y-0.5">{rest.map((it, k) => line(it, k + 3))}</ul>
+        </details>
+      )}
+    </div>
   );
 }
 

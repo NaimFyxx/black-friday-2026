@@ -776,3 +776,36 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
     };
   },
 );
+
+// ── Carts: one row per shopper's cart ─────────────────────────────────
+
+export type CartRow = {
+  session: string;
+  units: number;
+  value_full: number;
+  value_friday: number;
+  items: Array<{ title: string; qty: number }>;
+  first_at: string;
+  last_at: string;
+  checkout: boolean;
+  utm_source: string | null;
+  utm_medium: string | null;
+  referrer: string | null;
+};
+
+/** Every shopper's cart (browser session), biggest first (bf_carts_list). */
+export const getCarts = createServerFn({ method: "GET" }).handler(async () => {
+  const { assertAdmin } = await import("./admin-session.server");
+  await assertAdmin();
+  const client = await db();
+  const { data, error } = await client.rpc("bf_carts_list", { p_limit: 500 });
+  if (error) throw new Error(error.message);
+  const rows = ((data as CartRow[] | null) ?? []).map((r) => ({
+    ...r,
+    units: n(r.units),
+    value_full: n(r.value_full),
+    value_friday: n(r.value_friday),
+    items: (r.items ?? []).map((i) => ({ title: String(i.title ?? ""), qty: n(i.qty) })),
+  }));
+  return { rows };
+});

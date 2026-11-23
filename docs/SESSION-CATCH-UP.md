@@ -740,3 +740,4 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 - Default order changed (owner, 22 Nov late): by category (circle order), Fyxx selection first inside each category, then the rest, each cheapest first. Grid headings: "<Category> Fyxx selection" / "<Category> More to choose from".
 - Category order (category_mapping, so circles + grid): wines, spirits, then Cigars, then Accessories (owner, 23 Nov).
 - Grid headings: category name only (no Fyxx / "more" split shown); the order still puts Fyxx first inside each category. Default sort label "Recommended" (owner, 23 Nov).
+- /admin "Carts" section (above Most added to cart): one row per shopper's cart (browser session), biggest first: source, last active, went to checkout, items (first 3 + "and N more"), value at full price and at Friday prices; tiles with totals. RPC bf_carts_list (service role only, same cart rules as bf_cart_forecast).
