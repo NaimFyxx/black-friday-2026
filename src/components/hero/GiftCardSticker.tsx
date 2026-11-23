@@ -1,18 +1,22 @@
 import { useState, type ReactNode } from "react";
-import { Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { formatJod } from "@/lib/shopify";
+import { trackAddToCart } from "@/lib/analytics";
+import { formatJod, getProductByHandle, type ShopifyProductNode } from "@/lib/shopify";
+import { useCartStore } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
 
 /**
  * "10% OFF GIFT CARDS" sticker in the hero, styled like the Fyxx gift card
  * (black card, cream serif type, italic fyxx).
- * Front end only for now: prices and the discount are set here, and the
- * "Add to cart" buttons are placeholders (not connected to Shopify yet).
+ * Prices shown and the discount are set here. "Add to cart" adds the real
+ * Shopify gift card ("fyxx-gift-card", the variant with that face value) at its
+ * Shopify price; the 10% comes off at checkout through a Shopify discount.
  */
 
 /** Where the sticker sits inside the hero. Change these to move it. */
@@ -23,6 +27,7 @@ const GIFT_STICKER_POSITION = {
 
 const DISCOUNT = 0.1; // 10% off
 const FACE_VALUES = [25, 50, 100, 200]; // JOD
+const GIFT_CARD_HANDLE = "fyxx-gift-card";
 
 const SERIF = { fontFamily: '"Times New Roman", Georgia, "Iowan Old Style", serif' };
 
@@ -118,42 +123,89 @@ function GiftCardFace() {
 }
 
 function GiftCardList({ onAdded }: { onAdded: () => void }) {
+  const addItem = useCartStore((st) => st.addItem);
+  const [pending, setPending] = useState<number | null>(null);
+  const { data: product } = useQuery({
+    queryKey: ["gift-card-product"],
+    queryFn: () => getProductByHandle(GIFT_CARD_HANDLE),
+    staleTime: 10 * 60_000,
+  });
+
+  const add = async (face: number, node: ShopifyProductNode | null | undefined) => {
+    const v = node?.variants.edges
+      .map((e) => e.node)
+      .find((x) => Math.abs(Number(x.price.amount) - face) < 0.001 && x.availableForSale);
+    if (!node || !v) {
+      toast.error("This gift card isn't available right now");
+      return;
+    }
+    setPending(face);
+    try {
+      await addItem({
+        product: { node },
+        variantId: v.id,
+        variantTitle: `${face} JOD`,
+        price: v.price,
+        compareAtPrice: null,
+        quantity: 1,
+        selectedOptions: v.selectedOptions.filter((o) => o.name !== "Title"),
+      });
+      trackAddToCart({
+        id: v.id,
+        name: node.title,
+        handle: node.handle,
+        variant: v.title,
+        price: Number(v.price.amount),
+        currency: v.price.currencyCode,
+        quantity: 1,
+      });
+      toast.success("Added to cart", { description: `Fyxx Gift Card ${face} JOD` });
+      onAdded();
+    } finally {
+      setPending(null);
+    }
+  };
+
   return (
-    <ul className="space-y-2.5">
-      {FACE_VALUES.map((face) => {
-        const now = Math.round(face * (1 - DISCOUNT) * 1000) / 1000;
-        return (
-          <Row key={face}>
-            <MiniCard face={face} />
-            <div className="min-w-0 flex-1">
-              <p className="ff-subline text-sm leading-tight text-ff-black">
-                Fyxx Gift Card {face} JOD
-              </p>
-              <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
-                <s className="ff-small text-xs text-ff-black/55 tabular-nums">{formatJod(face)}</s>
-                <span className="ff-num text-sm font-bold text-ff-red tabular-nums">
-                  {formatJod(now)}
-                </span>
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                // Placeholder until gift cards are connected to the cart.
-                toast("Gift cards are coming soon", {
-                  description: `Fyxx Gift Card ${face} JOD`,
-                });
-                onAdded();
-              }}
-              className="ff-subline inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-ff-red px-3 text-xs text-ff-cream hover:bg-ff-burgundy"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              Add to cart
-            </button>
-          </Row>
-        );
-      })}
-    </ul>
+    <>
+      <ul className="space-y-2.5">
+        {FACE_VALUES.map((face) => {
+          const now = Math.round(face * (1 - DISCOUNT) * 1000) / 1000;
+          return (
+            <Row key={face}>
+              <MiniCard face={face} />
+              <div className="min-w-0 flex-1">
+                <p className="ff-subline text-sm leading-tight text-ff-black">
+                  Fyxx Gift Card {face} JOD
+                </p>
+                <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
+                  <s className="ff-small text-xs text-ff-black/55 tabular-nums">
+                    {formatJod(face)}
+                  </s>
+                  <span className="ff-num text-sm font-bold text-ff-red tabular-nums">
+                    {formatJod(now)}
+                  </span>
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={pending !== null}
+                onClick={() => void add(face, product)}
+                className="ff-subline inline-flex h-9 shrink-0 items-center gap-1 rounded-full bg-ff-red px-3 text-xs text-ff-cream hover:bg-ff-burgundy disabled:opacity-60"
+              >
+                {pending === face ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Plus className="h-3.5 w-3.5" />
+                )}
+                Add to cart
+              </button>
+            </Row>
+          );
+        })}
+      </ul>
+      <p className="ff-small mt-3 text-xs text-ff-black/60">The 10% comes off at checkout.</p>
+    </>
   );
 }
 
