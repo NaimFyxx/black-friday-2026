@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -16,7 +18,7 @@ import {
   TH,
   TR,
 } from "@/components/admin/AdminUi";
-import { getErrorLog } from "@/lib/admin.functions";
+import { clearErrorLog, getErrorLog } from "@/lib/admin.functions";
 
 export const Route = createFileRoute("/admin/errors")({
   component: ErrorsPage,
@@ -30,9 +32,41 @@ function ErrorsPage() {
     staleTime: 10_000,
     retry: 1,
   });
+  const clearFn = useServerFn(clearErrorLog);
+  const [clearing, setClearing] = useState(false);
+  const clear = async () => {
+    if (
+      !window.confirm(
+        "Clear all errors shown here? They're kept in an archive, and new errors will show as they come in.",
+      )
+    )
+      return;
+    setClearing(true);
+    try {
+      const r = await clearFn();
+      toast.success(`Cleared ${r.moved} error${r.moved === 1 ? "" : "s"}`, {
+        description: "Kept in the archive. Only new errors show from now on.",
+      });
+      await refetch();
+    } catch (e) {
+      toast.error("Couldn't clear", { description: (e as Error).message });
+    } finally {
+      setClearing(false);
+    }
+  };
 
   return (
     <>
+      <div className="mb-3 flex justify-end">
+        <button
+          type="button"
+          onClick={() => void clear()}
+          disabled={clearing || !data || data.rows.length === 0}
+          className="rounded-full border border-border px-4 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"
+        >
+          {clearing ? "Clearing..." : "Clear reviewed errors"}
+        </button>
+      </div>
       <PageHeader title="Errors">
         Problems real visitors ran into on the site: a page that broke, a script that failed or a
         request that didn&apos;t go through. A sudden jump means something needs fixing. (They also

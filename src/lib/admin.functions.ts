@@ -853,3 +853,35 @@ export const setOfferSwitch = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * "Clear reviewed errors" on /admin/errors: copies every logged error into
+ * bf_error_log_archive (kept, out of sight) and then removes it from
+ * bf_error_log, so the page shows only what comes in afterwards.
+ */
+export const clearErrorLog = createServerFn({ method: "POST" }).handler(async () => {
+  const { assertAdmin } = await import("./admin-session.server");
+  await assertAdmin();
+  const client = await db();
+  let moved = 0;
+  for (let round = 0; round < 20; round++) {
+    const { data, error } = await client
+      .from("bf_error_log")
+      .select("*")
+      .order("id", { ascending: true })
+      .limit(500);
+    if (error) throw new Error(error.message);
+    const rows = (data as Array<{ id: number }> | null) ?? [];
+    if (rows.length === 0) break;
+    const saved = await client
+      .from("bf_error_log_archive")
+      .upsert(rows, { onConflict: "id", ignoreDuplicates: true });
+    if (saved.error) throw new Error(`Archive failed: ${saved.error.message}`);
+    const ids = rows.map((r) => r.id);
+    const del = await client.from("bf_error_log").delete().in("id", ids);
+    if (del.error) throw new Error(del.error.message);
+    moved += ids.length;
+    if (rows.length < 500) break;
+  }
+  return { moved };
+});

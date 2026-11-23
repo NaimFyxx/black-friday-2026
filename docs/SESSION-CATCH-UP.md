@@ -768,3 +768,8 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 ## 2026-11-23: /admin/errors review
 - Last 30h: ~73 React #418 (hydration mismatch) from ~15 browsers out of ~1,000 visits, all on "/", not reproducible locally (top: one iPhone Safari 22x, one Yandex browser 13x). Everything else (chunk load failures 15:31 UTC, "Failed to fetch", "operation is insecure", "reading 'sequence'") came from Klaviyo / Clarity scripts, not our code. One hydration report came from a dev build (Lovable preview).
 - Fixes: (1) GA4 / Klaviyo / Clarity now arm only after React has hydrated (window.__bfArmTrackers called from RootComponent; 8s safety net), so on slow phones they can't change the page mid-hydration. Meta Pixel still loads at once. Verified Klaviyo still loads (with and without interaction). (2) meta format-detection (iPhone Safari no longer turns numbers/dates into links before hydration). (3) reportClientError drops errors whose stack is only third-party scripts, and anything from non-production hosts.
+
+## 2026-11-23: "Clear reviewed errors" button on /admin/errors
+- New server function `clearErrorLog` (src/lib/admin.functions.ts): copies every row of bf_error_log into bf_error_log_archive, then removes it from bf_error_log. Nothing is lost.
+- Button at the top of /admin/errors with a confirm step. After clicking, only errors that come in afterwards show.
+- All 102 old errors were already copied to bf_error_log_archive by hand on 2026-11-23.
