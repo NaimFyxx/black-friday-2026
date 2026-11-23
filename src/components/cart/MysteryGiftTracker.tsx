@@ -22,28 +22,26 @@ export function MysteryGiftTracker({ subtotal }: { subtotal: number }) {
         <Gift className="mt-0.5 h-3.5 w-3.5 shrink-0 text-ff-red" />
         <span>{giftLine(subtotal)}</span>
       </p>
-      <div className="mt-2 flex items-center gap-3">
+      <div
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-ff-black/10"
+        role="progressbar"
+        aria-label="Progress to your next mystery gift"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(pct)}
+      >
         <div
-          className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-ff-black/10"
-          role="progressbar"
-          aria-label="Progress to your next mystery gift"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(pct)}
-        >
-          <div
-            className="h-full rounded-full bg-ff-red transition-[width] duration-500 ease-out"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        <button
-          type="button"
-          onClick={() => shopMore(setOpen)}
-          className="ff-subline shrink-0 text-xs text-ff-red underline underline-offset-2 hover:text-ff-burgundy"
-        >
-          Add more items
-        </button>
+          className="h-full rounded-full bg-ff-red transition-[width] duration-500 ease-out"
+          style={{ width: `${pct}%` }}
+        />
       </div>
+      <button
+        type="button"
+        onClick={() => shopMore(setOpen)}
+        className="ff-subline mt-2.5 inline-flex h-9 w-full items-center justify-center rounded-full border border-ff-red text-sm text-ff-red transition-colors hover:bg-ff-red hover:text-ff-cream"
+      >
+        Add more items
+      </button>
     </div>
   );
 }
