@@ -2,7 +2,11 @@ import { useEffect, useRef } from "react";
 import { Gift } from "lucide-react";
 import { toast } from "sonner";
 
+import { useQuery } from "@tanstack/react-query";
+
 import { giftProgress } from "@/lib/mystery-gift";
+import { usePreview } from "@/lib/preview";
+import { teaserQueryOptions } from "@/lib/teaser";
 import { useCartStore } from "@/stores/cartStore";
 
 const SEEN_KEY = "fyxx:gift-unlocked";
@@ -15,9 +19,11 @@ const SEEN_KEY = "fyxx:gift-unlocked";
 export function GiftUnlockNotifier() {
   const items = useCartStore((s) => s.items);
   const best = useRef<number | null>(null);
+  // Switched on/off in bf_settings.mystery_gift_enabled.
+  const on = !!useQuery(teaserQueryOptions(usePreview())).data?.mystery_gift;
 
   useEffect(() => {
-    if (window.location.pathname.startsWith("/admin")) return;
+    if (!on || window.location.pathname.startsWith("/admin")) return;
     const total = items.reduce((sum, i) => sum + Number(i.price.amount) * i.quantity, 0);
     const { unlocked } = giftProgress(total);
     if (best.current === null) {
@@ -45,7 +51,7 @@ export function GiftUnlockNotifier() {
         showGiftToast();
       }, 700);
     }
-  }, [items]);
+  }, [items, on]);
 
   return null;
 }

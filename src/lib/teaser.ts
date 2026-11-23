@@ -48,6 +48,8 @@ export interface TeaserInfo {
   quick_links?: QuickLink[];
   /** Set while the hidden preview is on. */
   preview?: Preview;
+  /** Green Room mystery gift on/off (bf_settings.mystery_gift_enabled). */
+  mystery_gift?: boolean;
   /** Header navigation sections (bf_settings.nav_groups). */
   nav_groups?: string[];
   copy: {

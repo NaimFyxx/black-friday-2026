@@ -1,0 +1,6 @@
+-- Applied 2026-11-23 (migration bf_mystery_gift_switch).
+-- bf_settings.mystery_gift_enabled (true/false) turns the Green Room mystery
+-- gift on or off: cart tracker, the line in the floating cart bar and the
+-- "Congratulations" message. bf_teaser(p) returns it as "mystery_gift".
+-- OFF since 23 Nov (owner). Switch ON on Fyxx Friday:
+--   update bf_settings set value = 'true'::jsonb, updated_at = now() where key = 'mystery_gift_enabled';

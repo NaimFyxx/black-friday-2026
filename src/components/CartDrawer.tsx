@@ -32,7 +32,10 @@ export function CartDrawer() {
   const setIsOpen = useCartUi((s) => s.setOpen);
   const [mounted, setMounted] = useState(false);
   // After the sale: no crossed-out prices or savings.
-  const ended = useQuery(teaserQueryOptions(usePreview())).data?.state === "ended";
+  const teaserData = useQuery(teaserQueryOptions(usePreview())).data;
+  const ended = teaserData?.state === "ended";
+  // Green Room mystery gift: switched on/off in bf_settings.mystery_gift_enabled.
+  const giftOn = !!teaserData?.mystery_gift && !ended;
   // Checkout clicked: keep the spinner until the browser leaves for Shopify.
   const [goingToCheckout, setGoingToCheckout] = useState(false);
   useEffect(() => {
@@ -143,7 +146,7 @@ export function CartDrawer() {
               {/* Items and suggestions scroll together. Right padding keeps the
                   remove buttons clear of the scrollbar. */}
               <div className="min-h-0 flex-1 overflow-y-auto pr-3">
-                {!ended && (
+                {giftOn && (
                   <div className="pt-3">
                     <MysteryGiftTracker subtotal={totalPrice} />
                   </div>

@@ -12,7 +12,16 @@ import { useCartUi } from "@/stores/cartUiStore";
  * sync). Opens the existing cart drawer.
  */
 
-export function FloatingCart({ sale, ended = false }: { sale: boolean; ended?: boolean }) {
+export function FloatingCart({
+  sale,
+  ended = false,
+  showGift = false,
+}: {
+  sale: boolean;
+  ended?: boolean;
+  /** Show the Green Room mystery gift progress (bf_settings.mystery_gift_enabled). */
+  showGift?: boolean;
+}) {
   const [mounted, setMounted] = useState(false);
   const items = useCartStore((s) => s.items);
   const count = useCartStore(selectCartCount);
@@ -64,7 +73,7 @@ export function FloatingCart({ sale, ended = false }: { sale: boolean; ended?: b
           View cart
         </span>
       </span>
-      {!ended && (
+      {showGift && !ended && (
         // Mystery gift progress, the same bar and line as in the cart.
         <span className="block w-full">
           <span className="block h-1.5 overflow-hidden rounded-full bg-ff-cream/20">
