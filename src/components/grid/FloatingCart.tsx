@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 
+import { giftProgress } from "@/lib/mystery-gift";
 import { formatJod } from "@/lib/shopify";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 import { useCartUi } from "@/stores/cartUiStore";
@@ -38,27 +39,47 @@ export function FloatingCart({ sale, ended = false }: { sale: boolean; ended?: b
     return sum + (cmp > price ? (cmp - price) * i.quantity : 0);
   }, 0);
 
+  const gift = giftProgress(total);
+
   return (
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="fixed inset-x-4 bottom-4 z-40 flex items-center gap-3 rounded-full bg-ff-burgundy px-5 py-3 text-left text-ff-cream shadow-lg md:right-6 md:left-auto md:w-96"
+      className="fixed inset-x-4 bottom-4 z-40 flex flex-col gap-2 rounded-3xl bg-ff-burgundy px-5 pt-3 pb-2.5 text-left text-ff-cream shadow-lg md:right-6 md:left-auto md:w-96"
       style={{ marginBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ShoppingBag className="h-5 w-5 shrink-0" />
-      <span className="min-w-0 flex-1">
-        <span className="ff-num block text-sm">
-          {count} item{count === 1 ? "" : "s"} · {formatJod(total)}
-        </span>
-        {saved > 0 && !ended && (
-          <span className="ff-num block text-xs text-ff-warm-cream">
-            You're saving {formatJod(saved)}
+      <span className="flex w-full items-center gap-3">
+        <ShoppingBag className="h-5 w-5 shrink-0" />
+        <span className="min-w-0 flex-1">
+          <span className="ff-num block text-sm">
+            {count} item{count === 1 ? "" : "s"} · {formatJod(total)}
           </span>
-        )}
+          {saved > 0 && !ended && (
+            <span className="ff-num block text-xs text-ff-warm-cream">
+              You're saving {formatJod(saved)}
+            </span>
+          )}
+        </span>
+        <span className="ff-subline shrink-0 rounded-full bg-ff-red px-3 py-1 text-xs">
+          View cart
+        </span>
       </span>
-      <span className="ff-subline shrink-0 rounded-full bg-ff-red px-3 py-1 text-xs">
-        View cart
-      </span>
+      {!ended && (
+        // Mystery gift progress, the same markers as in the cart.
+        <span className="block w-full">
+          <span className="block h-1.5 overflow-hidden rounded-full bg-ff-cream/20">
+            <span
+              className="block h-full rounded-full bg-ff-red transition-[width] duration-500 ease-out"
+              style={{ width: `${gift.pct}%` }}
+            />
+          </span>
+          <span className="mt-1 block text-[11px] leading-tight text-ff-warm-cream">
+            {gift.next === undefined
+              ? "Top mystery gift from The Green Room unlocked"
+              : `${formatJod(gift.left)} to your ${gift.unlocked === 0 ? "first" : "next"} mystery gift`}
+          </span>
+        </span>
+      )}
     </button>
   );
 }

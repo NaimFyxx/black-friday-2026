@@ -2,20 +2,17 @@ import { Gift } from "lucide-react";
 
 import { formatJod } from "@/lib/shopify";
 import { cn } from "@/lib/utils";
+import { giftProgress, GIFT_THRESHOLDS as THRESHOLDS, shopMore } from "@/lib/mystery-gift";
+import { useCartUi } from "@/stores/cartUiStore";
 
 /**
  * Spend tracker in the cart: mystery gifts from The Green Room at 50, 100, 150
  * and 200 JOD. Updates with the cart total on every add or remove. Visual only
  * for now: thresholds are set here, no coupon is made or applied.
  */
-const THRESHOLDS = [50, 100, 150, 200]; // JOD
-
 export function MysteryGiftTracker({ subtotal }: { subtotal: number }) {
-  const max = THRESHOLDS[THRESHOLDS.length - 1] ?? 200;
-  const next = THRESHOLDS.find((t) => subtotal < t);
-  const unlocked = THRESHOLDS.filter((t) => subtotal >= t).length;
-  const left = next !== undefined ? Math.round((next - subtotal) * 1000) / 1000 : 0;
-  const pct = Math.min(100, (subtotal / max) * 100);
+  const setOpen = useCartUi((s) => s.setOpen);
+  const { max, next, unlocked, left, pct } = giftProgress(subtotal);
 
   const line =
     next === undefined
@@ -64,6 +61,15 @@ export function MysteryGiftTracker({ subtotal }: { subtotal: number }) {
           );
         })}
       </div>
+      {next !== undefined && (
+        <button
+          type="button"
+          onClick={() => shopMore(setOpen)}
+          className="ff-subline mt-1 inline-flex h-9 w-full items-center justify-center rounded-full border border-ff-red text-sm text-ff-red transition-colors hover:bg-ff-red hover:text-ff-cream"
+        >
+          Add more items
+        </button>
+      )}
     </div>
   );
 }
