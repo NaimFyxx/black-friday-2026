@@ -19,6 +19,8 @@ export type SiteOrder = {
   utm_medium: string | null;
   utm_campaign: string | null;
   utm_content: string | null;
+  /** Anonymous visitor ID (_bf_visitor), on orders from 23 Nov 2026. */
+  visitorId?: string | null;
   isFirstOrder: boolean | null;
 };
 
@@ -34,6 +36,7 @@ export type AfterVisitOrder = {
   medium: string | null;
   campaign: string | null;
   firstVisit: string | null;
+  visitorId?: string | null;
   isFirstOrder: boolean | null;
 };
 

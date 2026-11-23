@@ -910,13 +910,57 @@ export const getVisitors = createServerFn({ method: "GET" })
   .handler(async ({ data: range }) => {
     const { assertAdmin } = await import("./admin-session.server");
     await assertAdmin();
+    const { fetchSiteOrders } = await import("./shopify-admin.server");
     const client = await db();
-    const { data, error } = await client.rpc("bf_visitors", {
-      p_since: range.since,
-      p_until: range.until,
-      p_limit: 100,
-    });
+    const [{ data, error }, shop] = await Promise.all([
+      client.rpc("bf_visitors", { p_since: range.since, p_until: range.until, p_limit: 100 }),
+      fetchSiteOrders(range.since, range.until),
+    ]);
     if (error) throw new Error(error.message);
+
+    // Orders through this site's checkout, split by how many visits the
+    // browser had made by the time it ordered (cart attribute _bf_visitor).
+    const paid = shop.status === "ok" ? shop.orders.filter((o) => !o.cancelled) : [];
+    const withId = paid.filter((o) => o.visitorId);
+    const visitsBefore = new Map<string, number>();
+    if (withId.length) {
+      const { data: vb, error: vbErr } = await client.rpc("bf_visits_before", {
+        p_items: withId.map((o) => ({ visitor_id: o.visitorId, at: o.createdAt })),
+      });
+      if (vbErr) throw new Error(vbErr.message);
+      for (const r of (vb as Array<{ visitor_id: string; at: string; visits: unknown }> | null) ??
+        []) {
+        visitsBefore.set(`${r.visitor_id}|${new Date(r.at).getTime()}`, n(r.visits));
+      }
+    }
+    const split = {
+      first: { orders: 0, sales: 0 },
+      returning: { orders: 0, sales: 0, visits: 0 },
+      unknown: { orders: 0, sales: 0 },
+    };
+    const byVisitor = new Map<string, { orders: number; sales: number }>();
+    for (const o of paid) {
+      const v = o.visitorId
+        ? (visitsBefore.get(`${o.visitorId}|${new Date(o.createdAt).getTime()}`) ?? 0)
+        : 0;
+      if (!o.visitorId || v === 0) {
+        split.unknown.orders += 1;
+        split.unknown.sales += o.total;
+      } else if (v === 1) {
+        split.first.orders += 1;
+        split.first.sales += o.total;
+      } else {
+        split.returning.orders += 1;
+        split.returning.sales += o.total;
+        split.returning.visits += v;
+      }
+      if (o.visitorId) {
+        const b = byVisitor.get(o.visitorId) ?? { orders: 0, sales: 0 };
+        b.orders += 1;
+        b.sales += o.total;
+        byVisitor.set(o.visitorId, b);
+      }
+    }
     const r = (data ?? {}) as {
       totals?: Record<string, unknown>;
       by_visits?: Record<string, unknown>;
@@ -940,8 +984,20 @@ export const getVisitors = createServerFn({ method: "GET" })
         { label: "3 visits", count: n(b["3"]) },
         { label: "4 or more", count: n(b["4+"]) },
       ],
+      orders: {
+        shopify: shop.status,
+        first: split.first,
+        returning: {
+          orders: split.returning.orders,
+          sales: split.returning.sales,
+          avgVisits: split.returning.orders ? split.returning.visits / split.returning.orders : 0,
+        },
+        unknown: split.unknown,
+      },
       rows: (r.rows ?? []).map((x) => ({
         ...x,
+        orders: byVisitor.get(x.visitor_id)?.orders ?? 0,
+        sales: byVisitor.get(x.visitor_id)?.sales ?? 0,
         visits: n(x.visits),
         visits_viewed: n(x.visits_viewed),
         adds: n(x.adds),

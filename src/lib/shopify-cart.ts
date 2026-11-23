@@ -6,7 +6,7 @@
  * does not hit the storefront password wall.
  */
 
-import { getSessionId, trackingOff } from "@/lib/analytics";
+import { getSessionId, getVisitorId, trackingOff } from "@/lib/analytics";
 import { CART_ATTR } from "@/lib/campaign-config";
 import { storefrontApiRequest, type ShopifyProduct } from "@/lib/shopify";
 import { getFirstReferrer, getStoredUtm } from "@/lib/utm-attribution";
@@ -18,6 +18,7 @@ function campaignCartAttributes(): Array<{ key: string; value: string }> {
   const utm = getStoredUtm() ?? {};
   const pairs: Array<[string, string | undefined]> = [
     [CART_ATTR.session, getSessionId() || "unknown"],
+    [CART_ATTR.visitor, getVisitorId()],
     [CART_ATTR.source, utm.utm_source],
     [CART_ATTR.medium, utm.utm_medium],
     [CART_ATTR.campaign, utm.utm_campaign],

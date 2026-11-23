@@ -1032,6 +1032,7 @@ function VisitorsSection({ range }: { range: Range }) {
               ))}
             </div>
           </Panel>
+          <OrdersByVisits orders={data.orders} />
           <Panel className="overflow-x-auto p-0">
             {data.rows.length === 0 ? (
               <p className="p-8 text-center text-sm text-muted-foreground">
@@ -1046,8 +1047,9 @@ function VisitorsSection({ range }: { range: Range }) {
                     <th className={`${TH} hidden sm:table-cell`}>First came from</th>
                     <th className={`${TH} hidden sm:table-cell`}>First visit</th>
                     <th className={`${TH} hidden sm:table-cell`}>Last visit</th>
-                    <th className={THR}>Added to cart</th>
+                    <th className={`${THR} hidden sm:table-cell`}>Added to cart</th>
                     <th className={`${TH} hidden sm:table-cell`}>Went to checkout</th>
+                    <th className={THR}>Ordered</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1057,10 +1059,11 @@ function VisitorsSection({ range }: { range: Range }) {
                         <span className="font-mono text-xs" title={r.visitor_id}>
                           #{r.visitor_id.slice(0, 6)}
                         </span>
-                        <span className="mt-0.5 block text-xs sm:hidden">
+                        <span className="mt-0.5 block text-xs whitespace-normal sm:hidden">
                           <SourceName source={r.utm_source} medium={r.utm_medium} />
                           <span className="block text-muted-foreground">
                             Last visit {fmtDate(r.last_seen, true)}
+                            {r.adds ? ` · added to cart ${fmtNum(r.adds)}x` : ""}
                           </span>
                         </span>
                       </td>
@@ -1074,9 +1077,16 @@ function VisitorsSection({ range }: { range: Range }) {
                       <td className={`${TD} hidden whitespace-nowrap sm:table-cell`}>
                         {fmtDate(r.last_seen, true)}
                       </td>
-                      <td className={TDR}>{r.adds ? `${fmtNum(r.adds)}x` : "–"}</td>
+                      <td className={`${TDR} hidden sm:table-cell`}>
+                        {r.adds ? `${fmtNum(r.adds)}x` : "–"}
+                      </td>
                       <td className={`${TD} hidden sm:table-cell`}>
                         {r.checked_out ? "Yes" : "–"}
+                      </td>
+                      <td className={TDR}>
+                        {r.orders
+                          ? `${r.orders > 1 ? `${fmtNum(r.orders)}, ` : ""}${fmtMoney(r.sales)}`
+                          : "–"}
                       </td>
                     </tr>
                   ))}
@@ -1089,11 +1099,64 @@ function VisitorsSection({ range }: { range: Range }) {
             kept in their browser for 400 days. It is per browser: a phone and a laptop are two
             visitors, and so are the Fyxx app and Safari on the same phone; clearing cookies or a
             private window starts a new one. Counting started on 23 Nov 2026, so earlier visits
-            aren&apos;t included. The table lists the 100 visitors with the most visits. Team visits
-            and test tags are left out.
+            aren&apos;t included. Orders are paid orders through this site&apos;s checkout
+            (cancelled ones left out), matched to the visitor by the same ID on the cart. The table
+            lists the 100 visitors with the most visits. Team visits and test tags are left out.
           </Note>
         </>
       )}
     </Section>
+  );
+}
+
+type VisitorOrders = Awaited<ReturnType<typeof getVisitors>>["orders"];
+
+/** Orders from visitors on their first visit vs visitors who came back first. */
+function OrdersByVisits({ orders: o }: { orders: VisitorOrders }) {
+  const cols = [
+    {
+      label: "Ordered on their first visit",
+      orders: o.first.orders,
+      sales: o.first.sales,
+      sub: "",
+    },
+    {
+      label: "Came back, then ordered",
+      orders: o.returning.orders,
+      sales: o.returning.sales,
+      sub: o.returning.orders
+        ? `${o.returning.avgVisits.toFixed(1)} visits on average before ordering`
+        : "",
+    },
+    {
+      label: "Not known",
+      orders: o.unknown.orders,
+      sales: o.unknown.sales,
+      sub: "cart made before 23 Nov, or tracking was off",
+    },
+  ];
+  return (
+    <Panel>
+      <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+        Orders: first visit or came back
+      </p>
+      {o.shopify !== "ok" ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Orders from Shopify can&apos;t be read right now.
+        </p>
+      ) : (
+        <div className="mt-2 grid gap-3 sm:grid-cols-3">
+          {cols.map((c) => (
+            <div key={c.label}>
+              <p className="text-xs text-muted-foreground">{c.label}</p>
+              <p className="font-display text-lg tabular-nums">
+                {fmtNum(c.orders)} order{c.orders === 1 ? "" : "s"} · {fmtMoney(c.sales)}
+              </p>
+              {c.sub && <p className="text-xs text-muted-foreground">{c.sub}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </Panel>
   );
 }

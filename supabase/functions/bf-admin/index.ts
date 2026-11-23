@@ -128,6 +128,8 @@ async function siteOrders(since: string, until: string) {
             medium: attr.get("_bf_visit_medium") || null,
             campaign: attr.get("_bf_visit_campaign") || null,
             firstVisit: attr.get("_bf_visit_first") || null,
+            // Only once the myfyxx.com theme snippet also copies the fyxx_vid cookie.
+            visitorId: attr.get("_bf_visit_visitor") || null,
             isFirstOrder: Number.isFinite(n) ? n <= 1 : null,
           });
         }
@@ -148,6 +150,8 @@ async function siteOrders(since: string, until: string) {
           : attr.get("_bf_referrer") || null,
         utm_campaign: attr.get("_utm_campaign") || null,
         utm_content: attr.get("_utm_content") || null,
+        // Anonymous visitor ID (from 23 Nov 2026), to tell new from returning visitors.
+        visitorId: attr.get("_bf_visitor") || null,
         isFirstOrder: Number.isFinite(n) ? n <= 1 : null,
       });
     }

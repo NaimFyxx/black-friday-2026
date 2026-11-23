@@ -789,3 +789,10 @@ Owner approved the bf_events change.
 - Visit = tab session (`session_id`, unchanged); visitor = browser (`visitor_id`). Counting starts at Publish; older rows have no visitor_id.
 - Tested in a browser on a local copy opened as friday.myfyxx.com: same ID after reload, in a new tab, and after clearing localStorage (restored from the cookie); every event carried it. The first test run loaded the real GA, Meta, Clarity and Klaviyo tags, so those tools received two or three test page views from host friday.myfyxx.com:5174 on 23 Nov.
 - Not done (possible next step): put the visitor ID on the Shopify cart as a hidden attribute, so orders can be split by new vs returning visitors.
+
+## 2026-11-23: visitor ID on the cart, orders by first visit vs came back
+- Every cart now carries the hidden attribute `_bf_visitor` (CART_ATTR.visitor, the same ID as bf_events.visitor_id), also re-sent by refreshCartAttributes before checkout. Not added when tracking is off for the device or host, like the other attributes. Checkout handoff otherwise unchanged. Tested locally: the Storefront cartCreate carried `_bf_visitor` with this browser's ID.
+- bf-admin `orders` returns `visitorId` per Friday-site order (and `visitorId` from `_bf_visit_visitor` on after-visit website orders, empty until the myfyxx.com theme snippet copies the fyxx_vid cookie; the theme session owns that snippet).
+- Migration `bf_visits_before` (`docs/sql/2026-11-23-bf-visits-before.sql`): for [{visitor_id, at}] returns the visits (tab sessions) that browser made up to the order. Service role only. Tested with rolled-back rows.
+- /admin Overview, "Visitors who came back": "Orders: first visit or came back" (ordered on the first visit / came back then ordered, with average visits before ordering / not known) and an "Ordered" column per visitor. Paid, not cancelled, through this site's checkout only.
+- Orders from carts made before this change have no `_bf_visitor` and show under "Not known".

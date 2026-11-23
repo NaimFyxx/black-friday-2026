@@ -35,6 +35,8 @@ export const CART_ATTR = {
   fbclid: "_fbclid",
   /** Only when there are no UTM tags: the referring site or "direct". */
   referrer: "_bf_referrer",
+  /** Anonymous visitor ID (one per browser), to tell new from returning visitors. */
+  visitor: "_bf_visitor",
 } as const;
 
 /** Klaviyo public site key (company id), as in the klaviyo.js tag. Not secret. */
