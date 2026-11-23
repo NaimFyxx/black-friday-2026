@@ -575,18 +575,52 @@ export type Database = {
         }
         Relationships: []
       }
+      bf_error_log_archive: {
+        Row: {
+          area: string
+          created_at: string
+          detail: Json | null
+          id: string
+          message: string
+          path: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          area: string
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          message: string
+          path?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          area?: string
+          created_at?: string
+          detail?: Json | null
+          id?: string
+          message?: string
+          path?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       bf_events: {
         Row: {
           created_at: string
           currency: string | null
+          destination: string | null
           event: string
           from_app: boolean
+          host: string | null
           id: number
+          internal: boolean
           item_count: number | null
           items: Json | null
           path: string | null
           product_handle: string | null
           product_title: string | null
+          referrer: string | null
           session_id: string
           utm_campaign: string | null
           utm_content: string | null
@@ -599,14 +633,18 @@ export type Database = {
         Insert: {
           created_at?: string
           currency?: string | null
+          destination?: string | null
           event: string
           from_app?: boolean
+          host?: string | null
           id?: never
+          internal?: boolean
           item_count?: number | null
           items?: Json | null
           path?: string | null
           product_handle?: string | null
           product_title?: string | null
+          referrer?: string | null
           session_id: string
           utm_campaign?: string | null
           utm_content?: string | null
@@ -619,14 +657,18 @@ export type Database = {
         Update: {
           created_at?: string
           currency?: string | null
+          destination?: string | null
           event?: string
           from_app?: boolean
+          host?: string | null
           id?: never
+          internal?: boolean
           item_count?: number | null
           items?: Json | null
           path?: string | null
           product_handle?: string | null
           product_title?: string | null
+          referrer?: string | null
           session_id?: string
           utm_campaign?: string | null
           utm_content?: string | null
@@ -699,12 +741,15 @@ export type Database = {
           discount_percent: number
           handle: string
           image_url: string | null
+          in_sale: boolean
+          last_in_stock_at: string | null
           main_category: string
           price: number
           product_id: string
           product_type: string | null
           saved_amount: number
           shopify_created_at: string | null
+          stock: number | null
           sub_category: string | null
           title: string
           updated_at: string
@@ -718,12 +763,15 @@ export type Database = {
           discount_percent?: number
           handle: string
           image_url?: string | null
+          in_sale?: boolean
+          last_in_stock_at?: string | null
           main_category: string
           price: number
           product_id: string
           product_type?: string | null
           saved_amount?: number
           shopify_created_at?: string | null
+          stock?: number | null
           sub_category?: string | null
           title: string
           updated_at?: string
@@ -737,12 +785,15 @@ export type Database = {
           discount_percent?: number
           handle?: string
           image_url?: string | null
+          in_sale?: boolean
+          last_in_stock_at?: string | null
           main_category?: string
           price?: number
           product_id?: string
           product_type?: string | null
           saved_amount?: number
           shopify_created_at?: string | null
+          stock?: number | null
           sub_category?: string | null
           title?: string
           updated_at?: string
@@ -932,6 +983,66 @@ export type Database = {
         }
         Update: {
           product_id?: number
+        }
+        Relationships: []
+      }
+      bf_sale_list: {
+        Row: {
+          built_at: string | null
+          compare_at_now: number | null
+          cost: number | null
+          discount: number | null
+          in_sale: boolean | null
+          margin_now: number | null
+          on_sale: boolean | null
+          price_now: number | null
+          product_id: number | null
+          product_type: string | null
+          rule_group: string | null
+          sale_price: number | null
+          sku: string | null
+          source: string | null
+          title: string | null
+          variant_id: number
+          variant_title: string | null
+        }
+        Insert: {
+          built_at?: string | null
+          compare_at_now?: number | null
+          cost?: number | null
+          discount?: number | null
+          in_sale?: boolean | null
+          margin_now?: number | null
+          on_sale?: boolean | null
+          price_now?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          rule_group?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          source?: string | null
+          title?: string | null
+          variant_id: number
+          variant_title?: string | null
+        }
+        Update: {
+          built_at?: string | null
+          compare_at_now?: number | null
+          cost?: number | null
+          discount?: number | null
+          in_sale?: boolean | null
+          margin_now?: number | null
+          on_sale?: boolean | null
+          price_now?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          rule_group?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          source?: string | null
+          title?: string | null
+          variant_id?: number
+          variant_title?: string | null
         }
         Relationships: []
       }
@@ -5528,6 +5639,33 @@ export type Database = {
         }
         Relationships: []
       }
+      bf_sale_flags: {
+        Row: {
+          in_sale: boolean | null
+          product_gid: string | null
+          product_id: number | null
+          sku: string | null
+          variant_gid: string | null
+          variant_id: number | null
+        }
+        Insert: {
+          in_sale?: boolean | null
+          product_gid?: never
+          product_id?: number | null
+          sku?: string | null
+          variant_gid?: never
+          variant_id?: number | null
+        }
+        Update: {
+          in_sale?: boolean | null
+          product_gid?: never
+          product_id?: number | null
+          sku?: string | null
+          variant_gid?: never
+          variant_id?: number | null
+        }
+        Relationships: []
+      }
       cust_odoo_k: {
         Row: {
           active: boolean | null
@@ -5918,8 +6056,20 @@ export type Database = {
         }[]
       }
       bf_card: { Args: { b: Json; p_state: string }; Returns: Json }
+      bf_cart_forecast: { Args: never; Returns: Json }
+      bf_cart_value_totals: {
+        Args: { p_since: string; p_until: string }
+        Returns: Json
+      }
+      bf_carts_list: { Args: { p_limit?: number }; Returns: Json }
       bf_catalog: { Args: { p: Json }; Returns: Json }
       bf_catalog_facets: { Args: { p: Json }; Returns: Json }
+      bf_catalog_facets_sim: { Args: { p: Json }; Returns: Json }
+      bf_catalog_sim: { Args: { p: Json }; Returns: Json }
+      bf_event_full_value: {
+        Args: { e: Database["public"]["Tables"]["bf_events"]["Row"] }
+        Returns: number
+      }
       bf_first_order_dates: {
         Args: { p_customer_ids: string[] }
         Returns: {
@@ -5932,7 +6082,13 @@ export type Database = {
         Args: { p_handle: string; p_main: string }
         Returns: string
       }
-      bf_sale_state: { Args: never; Returns: Json }
+      bf_outbound: { Args: { p_since: string; p_until: string }; Returns: Json }
+      bf_pairings: { Args: { p: Json }; Returns: Json }
+      bf_sale_state:
+        | { Args: never; Returns: Json }
+        | { Args: { p_preview: string }; Returns: Json }
+      bf_sim_variant_prices: { Args: { p_product_gid: string }; Returns: Json }
+      bf_sort_group: { Args: { p_main: string }; Returns: number }
       bf_source_funnel: {
         Args: { p_since: string; p_until: string }
         Returns: {
@@ -5947,11 +6103,18 @@ export type Database = {
       }
       bf_spin: { Args: { p_device: string; p_email: string }; Returns: Json }
       bf_spin_config: { Args: never; Returns: Json }
-      bf_teaser: { Args: never; Returns: Json }
+      bf_teaser:
+        | { Args: never; Returns: Json }
+        | { Args: { p: Json }; Returns: Json }
+      bf_top_added: {
+        Args: { p_since: string; p_until: string }
+        Returns: Json
+      }
       bf_upto: {
         Args: { p_min: number; p_percents: number[] }
         Returns: number
       }
+      bf_usual_items: { Args: { p: Json }; Returns: Json }
       bf_visible:
         | {
             Args: {
@@ -5968,12 +6131,15 @@ export type Database = {
               discount_percent: number
               handle: string
               image_url: string | null
+              in_sale: boolean
+              last_in_stock_at: string | null
               main_category: string
               price: number
               product_id: string
               product_type: string | null
               saved_amount: number
               shopify_created_at: string | null
+              stock: number | null
               sub_category: string | null
               title: string
               updated_at: string
@@ -6004,12 +6170,55 @@ export type Database = {
               discount_percent: number
               handle: string
               image_url: string | null
+              in_sale: boolean
+              last_in_stock_at: string | null
               main_category: string
               price: number
               product_id: string
               product_type: string | null
               saved_amount: number
               shopify_created_at: string | null
+              stock: number | null
+              sub_category: string | null
+              title: string
+              updated_at: string
+              variant_id: string
+              variant_title: string | null
+              vendor: string | null
+            }[]
+            SetofOptions: {
+              from: "*"
+              to: "bf_products"
+              isOneToOne: false
+              isSetofReturn: true
+            }
+          }
+        | {
+            Args: {
+              p_band: number
+              p_disc: number
+              p_main: string
+              p_mains: string[]
+              p_q: string
+              p_sold_out: boolean
+              p_state: string
+              p_sub: string
+            }
+            Returns: {
+              available: boolean
+              compare_at_price: number | null
+              discount_percent: number
+              handle: string
+              image_url: string | null
+              in_sale: boolean
+              last_in_stock_at: string | null
+              main_category: string
+              price: number
+              product_id: string
+              product_type: string | null
+              saved_amount: number
+              shopify_created_at: string | null
+              stock: number | null
               sub_category: string | null
               title: string
               updated_at: string
