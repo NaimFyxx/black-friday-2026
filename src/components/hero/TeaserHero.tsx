@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { HeroReminder } from "@/components/reminder/HeroReminder";
+import { GiftCardSticker } from "@/components/hero/GiftCardSticker";
 import { formatCountdown, type TeaserInfo } from "@/lib/teaser";
 
 /**
@@ -20,7 +21,8 @@ export function TeaserHero({
 }) {
   const { copy } = info;
   return (
-    <section aria-labelledby="teaser-headline" className="bg-ff-burgundy text-ff-cream">
+    <section aria-labelledby="teaser-headline" className="relative bg-ff-burgundy text-ff-cream">
+      <GiftCardSticker />
       <div className="mx-auto grid max-w-[1320px] items-center gap-5 px-5 pt-6 pb-8 md:px-10 md:py-12 lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:py-16">
         <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
           {/* Logo and bottles side by side on phones, so the button stays on the first
