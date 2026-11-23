@@ -3,6 +3,7 @@ import { createFileRoute, Link, notFound, useCanGoBack, useRouter } from "@tanst
 import {
   ArrowLeft,
   Award,
+  ChevronDown,
   Loader2,
   Lock,
   Minus,
@@ -29,6 +30,7 @@ import { onlySaleVariants } from "@/lib/sale-variants.functions";
 import { simVariantPrices } from "@/lib/preview-sim.functions";
 import { usePreview, useSim } from "@/lib/preview";
 import { GoesWellWith } from "@/components/grid/GoesWellWith";
+import { MembersRewards } from "@/components/members/MembersRewards";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { useQuery } from "@tanstack/react-query";
 import { useCartStore } from "@/stores/cartStore";
@@ -417,7 +419,27 @@ function ProductPage() {
               </button>
             </div>
 
-            <ul className="ff-small mt-7 space-y-2.5 border-t border-ff-black/15 pt-6 text-sm text-ff-black/80">
+            {/* Fyxx Rewards: one thin line, "See tiers" opens the tiers. */}
+            <div className="mt-6 overflow-hidden rounded-xl border border-ff-black/10">
+              <MembersRewards />
+            </div>
+          </div>
+        </div>
+
+        {/* Delivery promises and the full description in one dropdown, closed at
+            first, so "What goes well" is right below. */}
+        <details className="group mx-auto mt-10 max-w-3xl border-y border-ff-black/15 md:mt-14">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 [&::-webkit-details-marker]:hidden">
+            <span>
+              <span className="ff-headline block text-xl md:text-2xl">{aboutTitle}</span>
+              <span className="ff-small block text-sm text-ff-black/60">
+                Delivery, returns and product details
+              </span>
+            </span>
+            <ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="pb-8">
+            <ul className="ff-small space-y-2.5 text-sm text-ff-black/80">
               {PERKS.map(({ icon: Icon, text }) => (
                 <li key={text} className="flex items-center gap-3">
                   <Icon className="h-4 w-4 shrink-0 text-ff-red" />
@@ -425,84 +447,83 @@ function ProductPage() {
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
-
-        {/* Description, laid out like myfyxx.com */}
-        {(description.intro.length > 0 || description.sections.length > 0) && (
-          <article className="mx-auto mt-12 max-w-3xl md:mt-16">
-            {description.intro.length > 0 && (
-              <section>
-                <h2 className="ff-headline text-2xl md:text-3xl">{aboutTitle}</h2>
-                <div className="mt-4 space-y-3">
-                  {description.intro.map((p, i) => (
-                    <p
-                      key={i}
-                      className={
-                        i === 0
-                          ? "ff-subline text-lg leading-relaxed text-ff-burgundy md:text-xl"
-                          : "ff-small text-base leading-relaxed text-ff-black/80"
-                      }
-                    >
-                      {p}
-                    </p>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {description.sections.map((s, i) => (
-              <section
-                key={`${s.title}-${i}`}
-                className={cn(
-                  "mt-8 pt-7",
-                  s.kind === "producer"
-                    ? "border-t-2 border-ff-black"
-                    : "border-t border-ff-black/15",
-                )}
-              >
-                <h2
-                  className={
-                    s.kind === "producer"
-                      ? "ff-headline text-sm tracking-[0.18em] uppercase"
-                      : "ff-headline text-xl md:text-2xl"
-                  }
-                >
-                  {s.title}
-                </h2>
-                {s.lines.length > 0 && (
-                  <div className="ff-small mt-3 space-y-2 text-base leading-relaxed text-ff-black/85">
-                    {s.lines.map((l, k) => (
-                      <p key={k}>{l}</p>
-                    ))}
-                  </div>
-                )}
-                {s.bullets.length > 0 && (
-                  <ul className="ff-small mt-3 list-disc space-y-1.5 pl-5 text-base leading-relaxed text-ff-black/85 marker:text-ff-red">
-                    {s.bullets.map((b, k) => (
-                      <li key={k}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-                {s.facts.length > 0 && (
-                  <dl className="mt-3 divide-y divide-ff-black/10">
-                    {s.facts.map((f, k) => (
-                      <div
-                        key={k}
-                        className="grid grid-cols-[7.5rem_1fr] gap-4 py-3 md:grid-cols-[10rem_1fr]"
-                      >
-                        <dt className="ff-headline pt-0.5 text-xs tracking-[0.12em] text-ff-black/55 uppercase">
-                          {f.label}
-                        </dt>
-                        <dd className="ff-small text-base text-ff-black">{f.value}</dd>
+            {(description.intro.length > 0 || description.sections.length > 0) && (
+              <div className="mt-7 border-t border-ff-black/15 pt-6">
+                <article>
+                  {description.intro.length > 0 && (
+                    <section>
+                      <div className="mt-2 space-y-3">
+                        {description.intro.map((p, i) => (
+                          <p
+                            key={i}
+                            className={
+                              i === 0
+                                ? "ff-subline text-lg leading-relaxed text-ff-burgundy md:text-xl"
+                                : "ff-small text-base leading-relaxed text-ff-black/80"
+                            }
+                          >
+                            {p}
+                          </p>
+                        ))}
                       </div>
-                    ))}
-                  </dl>
-                )}
-              </section>
-            ))}
-          </article>
-        )}
+                    </section>
+                  )}
+
+                  {description.sections.map((s, i) => (
+                    <section
+                      key={`${s.title}-${i}`}
+                      className={cn(
+                        "mt-8 pt-7",
+                        s.kind === "producer"
+                          ? "border-t-2 border-ff-black"
+                          : "border-t border-ff-black/15",
+                      )}
+                    >
+                      <h2
+                        className={
+                          s.kind === "producer"
+                            ? "ff-headline text-sm tracking-[0.18em] uppercase"
+                            : "ff-headline text-xl md:text-2xl"
+                        }
+                      >
+                        {s.title}
+                      </h2>
+                      {s.lines.length > 0 && (
+                        <div className="ff-small mt-3 space-y-2 text-base leading-relaxed text-ff-black/85">
+                          {s.lines.map((l, k) => (
+                            <p key={k}>{l}</p>
+                          ))}
+                        </div>
+                      )}
+                      {s.bullets.length > 0 && (
+                        <ul className="ff-small mt-3 list-disc space-y-1.5 pl-5 text-base leading-relaxed text-ff-black/85 marker:text-ff-red">
+                          {s.bullets.map((b, k) => (
+                            <li key={k}>{b}</li>
+                          ))}
+                        </ul>
+                      )}
+                      {s.facts.length > 0 && (
+                        <dl className="mt-3 divide-y divide-ff-black/10">
+                          {s.facts.map((f, k) => (
+                            <div
+                              key={k}
+                              className="grid grid-cols-[7.5rem_1fr] gap-4 py-3 md:grid-cols-[10rem_1fr]"
+                            >
+                              <dt className="ff-headline pt-0.5 text-xs tracking-[0.12em] text-ff-black/55 uppercase">
+                                {f.label}
+                              </dt>
+                              <dd className="ff-small text-base text-ff-black">{f.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                    </section>
+                  ))}
+                </article>
+              </div>
+            )}
+          </div>
+        </details>
 
         <GoesWellWith
           productType={product.productType}
