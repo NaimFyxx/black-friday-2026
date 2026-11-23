@@ -123,7 +123,17 @@ export const reportClientError = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     // Outlook / Defender link scanners, not visitors (also filtered in the browser).
     if (/Object Not Found Matching Id:\d+, MethodName:update/.test(data.message)) return;
+    // Errors inside other companies' scripts (Klaviyo, Clarity, Meta, Google)
+    // that never touch our code: nothing for us to fix, keep them out of the log.
+    const stack = data.stack ?? "";
+    const thirdParty =
+      /static\.klaviyo\.com|clarity\.ms|connect\.facebook\.net|googletagmanager\.com|google-analytics\.com/;
+    if (stack && thirdParty.test(stack) && !/\/assets\//.test(stack)) return;
     try {
+      // Only the real site: Lovable previews and the editor are not logged.
+      const { getTrackingHosts, requestHost } = await import("./tracking-settings.server");
+      const host = await requestHost();
+      if (host && !(await getTrackingHosts()).includes(host)) return;
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { getRequestHeader } = await import("@tanstack/react-start/server");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -225,14 +225,24 @@ const trackingSnippet = (hosts: string[]) =>
     }, { passive: true });
   })();
 
-  // Defer all SDK loads until first interaction (or 3s) to keep the page fast.
+  // Defer all SDK loads until first interaction (or 3s) to keep the page fast,
+  // counted from when the app has finished starting (React calls
+  // __bfArmTrackers after hydration), so on slow phones Klaviyo / GA / Clarity
+  // never change the page while React is still reading it (React error #418).
   var events = ['scroll','click','touchstart','mousemove','keydown'];
+  var armed = false;
   function go(){
     loadGA(); loadKV(); loadClarity();
     events.forEach(function(e){ document.removeEventListener(e, go); });
   }
-  events.forEach(function(e){ document.addEventListener(e, go, { passive: true, once: true }); });
-  setTimeout(go, 3000);
+  function arm(){
+    if (armed) return; armed = true;
+    events.forEach(function(e){ document.addEventListener(e, go, { passive: true, once: true }); });
+    setTimeout(go, 3000);
+  }
+  window.__bfArmTrackers = arm;
+  // Safety net: if the app never reports in, start anyway.
+  setTimeout(arm, 8000);
 })();
 `.trim();
 
@@ -329,6 +339,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      // iPhone Safari turns numbers, dates and addresses into links before the
+      // app starts, which makes React redraw the page (error #418). Off.
+      { name: "format-detection", content: "telephone=no, date=no, address=no, email=no" },
       { title: "Fyxx: Wine, Spirits & Cigars in Amman" },
       {
         name: "description",
@@ -432,6 +445,10 @@ function RootComponent() {
   // Meta Pixel: PageView on every client-side page change (the first one fires
   // from the base code). Counts real navigations only: a new history entry or
   // back/forward. The search box's live "replace" URL updates don't count.
+  // The app has started: now the analytics scripts may load (see the snippet).
+  useEffect(() => {
+    (window as Window & { __bfArmTrackers?: () => void }).__bfArmTrackers?.();
+  }, []);
   useEffect(() => {
     const index = (state: unknown) => (state as { __TSR_index?: number } | undefined)?.__TSR_index;
     return router.subscribe("onLoad", (event) => {
