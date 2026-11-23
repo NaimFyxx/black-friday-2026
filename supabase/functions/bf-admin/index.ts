@@ -432,6 +432,8 @@ Deno.serve(async (req) => {
       shopify: !!Deno.env.get("SHOPIFY_CLIENT_ID") && !!Deno.env.get("SHOPIFY_CLIENT_SECRET"),
       klaviyo_private: !!Deno.env.get("KLAVIYO_PRIVATE_KEY"),
       klaviyo_api: !!Deno.env.get("KLAVIYO_API_KEY"),
+      // Names only (never values) of any Klaviyo secret in this project.
+      klaviyo_names: Object.keys(Deno.env.toObject()).filter((n) => /KLAVIYO/i.test(n)),
     });
   }
 
