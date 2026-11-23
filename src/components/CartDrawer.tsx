@@ -14,6 +14,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { trackBeginCheckout } from "@/lib/analytics";
+import { CartRecommendations } from "@/components/cart/CartRecommendations";
+import { MysteryGiftTracker } from "@/components/cart/MysteryGiftTracker";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
@@ -138,83 +140,92 @@ export function CartDrawer() {
             </div>
           ) : (
             <>
-              {/* Right padding keeps the remove buttons clear of the scrollbar. */}
-              <ul className="min-h-0 flex-1 divide-y divide-border overflow-y-auto py-2 pr-3">
-                {items.map((item) => (
-                  <li key={item.variantId} className="flex gap-4 py-4">
-                    <div className="h-16 w-14 shrink-0 overflow-hidden rounded-sm bg-sand">
-                      {item.product.node.images.edges[0]?.node && (
-                        <img
-                          src={item.product.node.images.edges[0].node.url}
-                          alt={item.product.node.title}
-                          className="h-full w-full object-cover mix-blend-multiply"
-                        />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="line-clamp-2 font-display text-lg leading-tight">
-                        {item.product.node.title}
-                      </h4>
-                      {/* Size etc.; nothing for single-option products ("Default Title"). */}
-                      {variantLabel(item) && (
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                          {variantLabel(item)}
-                        </p>
-                      )}
-                      <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm tabular-nums">
-                        {!ended &&
-                        item.compareAtPrice &&
-                        Number(item.compareAtPrice.amount) > Number(item.price.amount) ? (
-                          <>
-                            <span className="text-ff-red">{formatPrice(item.price)}</span>
-                            <s className="text-xs text-ff-black/55">
-                              {formatPrice(item.compareAtPrice)}
-                            </s>
-                          </>
-                        ) : (
-                          formatPrice(item.price)
+              {/* Items and suggestions scroll together. Right padding keeps the
+                  remove buttons clear of the scrollbar. */}
+              <div className="min-h-0 flex-1 overflow-y-auto pr-3">
+                {!ended && (
+                  <div className="pt-3">
+                    <MysteryGiftTracker subtotal={totalPrice} />
+                  </div>
+                )}
+                <ul className="divide-y divide-border py-2">
+                  {items.map((item) => (
+                    <li key={item.variantId} className="flex gap-4 py-4">
+                      <div className="h-16 w-14 shrink-0 overflow-hidden rounded-sm bg-sand">
+                        {item.product.node.images.edges[0]?.node && (
+                          <img
+                            src={item.product.node.images.edges[0].node.url}
+                            alt={item.product.node.title}
+                            className="h-full w-full object-cover mix-blend-multiply"
+                          />
                         )}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-col items-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Remove ${item.product.node.title}`}
-                        className="h-8 w-8 text-muted-foreground hover:text-ff-red"
-                        onClick={() => removeItem(item.variantId)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                      <div className="flex items-center gap-1 rounded-full border border-border">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Decrease quantity"
-                          className="h-7 w-7 rounded-full"
-                          onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <span className="w-6 text-center text-sm tabular-nums">
-                          {item.quantity}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          aria-label="Increase quantity"
-                          className="h-7 w-7 rounded-full"
-                          onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
                       </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="line-clamp-2 font-display text-lg leading-tight">
+                          {item.product.node.title}
+                        </h4>
+                        {/* Size etc.; nothing for single-option products ("Default Title"). */}
+                        {variantLabel(item) && (
+                          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                            {variantLabel(item)}
+                          </p>
+                        )}
+                        <p className="mt-1 flex flex-wrap items-baseline gap-x-2 text-sm tabular-nums">
+                          {!ended &&
+                          item.compareAtPrice &&
+                          Number(item.compareAtPrice.amount) > Number(item.price.amount) ? (
+                            <>
+                              <span className="text-ff-red">{formatPrice(item.price)}</span>
+                              <s className="text-xs text-ff-black/55">
+                                {formatPrice(item.compareAtPrice)}
+                              </s>
+                            </>
+                          ) : (
+                            formatPrice(item.price)
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label={`Remove ${item.product.node.title}`}
+                          className="h-8 w-8 text-muted-foreground hover:text-ff-red"
+                          onClick={() => removeItem(item.variantId)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-1 rounded-full border border-border">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Decrease quantity"
+                            className="h-7 w-7 rounded-full"
+                            onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-6 text-center text-sm tabular-nums">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="Increase quantity"
+                            className="h-7 w-7 rounded-full"
+                            onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+                {!ended && <CartRecommendations items={items} />}
+                <CartReminder />
+              </div>
 
-              <CartReminder />
               <div className="shrink-0 border-t border-border py-5">
                 <div className="flex items-baseline justify-between">
                   <span className="text-xs tracking-[0.18em] text-muted-foreground uppercase">

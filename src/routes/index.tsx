@@ -10,6 +10,7 @@ import { FilterBar } from "@/components/grid/FilterBar";
 import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { YourUsual } from "@/components/grid/YourUsual";
+import { MembersRewards } from "@/components/members/MembersRewards";
 import { TeaserHero } from "@/components/hero/TeaserHero";
 import { QuickLinks } from "@/components/grid/QuickLinks";
 import { SaleEndCountdown } from "@/components/hero/SaleEndCountdown";
@@ -238,6 +239,8 @@ function Storefront() {
           onSaleStarted={() => queryClient.invalidateQueries()}
         />
       )}
+
+      {state !== "ended" && <MembersRewards />}
 
       <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">
         <div className="mx-auto max-w-[1320px] px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">
