@@ -10,6 +10,9 @@ import { useCartUi } from "@/stores/cartUiStore";
  * no upper limit (src/lib/mystery-gift.ts). Updates with the cart total on
  * every add or remove. Visual only: no coupon is made or applied.
  */
+/** Share of the bar used by the markers (the rest is the fading tail). */
+const TRACK = 0.86;
+
 export function MysteryGiftTracker({ subtotal }: { subtotal: number }) {
   const setOpen = useCartUi((s) => s.setOpen);
   const { unlocked, left, pct, markers, base, span } = giftProgress(subtotal);
@@ -25,11 +28,19 @@ export function MysteryGiftTracker({ subtotal }: { subtotal: number }) {
         <Gift className="mt-0.5 h-4 w-4 shrink-0 text-ff-red" />
         <span>{line}</span>
       </p>
-      <div className="relative mt-4 mb-5 mr-2">
-        <div className="h-2 overflow-hidden rounded-full bg-ff-black/10">
+      {/* Markers use the first 86% of the bar; the rest fades out, so the
+          bar reads as open-ended: there is always another gift after it. */}
+      <div className="relative mt-4 mb-5">
+        <div
+          className="h-2 overflow-hidden rounded-l-full"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(0,0,0,.1) 0%, rgba(0,0,0,.1) 86%, rgba(0,0,0,0) 100%)",
+          }}
+        >
           <div
             className="h-full rounded-full bg-ff-red transition-[width] duration-500 ease-out"
-            style={{ width: `${pct}%` }}
+            style={{ width: `${pct * TRACK}%` }}
           />
         </div>
         {markers.map((t) => {
@@ -38,7 +49,7 @@ export function MysteryGiftTracker({ subtotal }: { subtotal: number }) {
             <div
               key={t}
               className="absolute top-1 -translate-x-1/2"
-              style={{ left: `${((t - base) / span) * 100}%` }}
+              style={{ left: `${((t - base) / span) * 100 * TRACK}%` }}
             >
               <span
                 aria-hidden="true"
