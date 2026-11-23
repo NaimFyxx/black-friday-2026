@@ -4,6 +4,7 @@ import { Link, useLocation, useSearch } from "@tanstack/react-router";
 
 import { CartDrawer } from "@/components/CartDrawer";
 import { usePreview } from "@/lib/preview";
+import { PAIRINGS_LABEL } from "@/lib/pairings";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,18 @@ export function SiteHeader() {
       className={linkClass(onHome)}
     >
       Home
+    </Link>
+  );
+
+  const onPairings = useLocation({ select: (l) => l.pathname }) === "/pairings";
+  const pairings = groups.length > 0 && (
+    <Link
+      key="~pairings"
+      to="/pairings"
+      aria-current={onPairings ? "page" : undefined}
+      className={linkClass(onPairings)}
+    >
+      {PAIRINGS_LABEL}
     </Link>
   );
 
@@ -81,6 +94,7 @@ export function SiteHeader() {
         >
           {home}
           {links}
+          {pairings}
         </nav>
 
         <div className="flex items-center gap-3">
@@ -91,10 +105,11 @@ export function SiteHeader() {
       {/* Phones: the sections on their own row */}
       <nav
         aria-label="Shop sections"
-        className="ff-subline flex h-9 items-center justify-center gap-4 border-t px-3 min-[380px]:gap-6 border-ff-cream/15 text-xs tracking-wide uppercase md:hidden"
+        className="ff-subline flex h-9 items-center justify-start gap-4 overflow-x-auto border-t border-ff-cream/15 px-4 text-xs tracking-wide uppercase [scrollbar-width:none] min-[380px]:gap-5 sm:justify-center md:hidden"
       >
         {home}
         {links}
+        {pairings}
       </nav>
     </header>
   );

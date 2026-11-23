@@ -1,0 +1,7 @@
+-- Applied 2026-11-23 (migration bf_pairings).
+-- bf_settings.pairings = {nav_label, title, intro, sets:[{id, name, blurb, items:[product handles]}]}.
+-- 8 sets, mostly Fyxx imports (natural wine trio, Judith Beck, pet nats, rosé,
+-- host kit, whisky + cigars, sake, gin). Edit sets here, no Publish needed.
+-- bf_pairings(p) (anon): each set with its product cards (bf_card, sale price on
+-- Friday); a set is hidden unless every product is visible and in stock.
+-- Set price = sum of current prices; compare-at = sum of regular prices. No set discount.

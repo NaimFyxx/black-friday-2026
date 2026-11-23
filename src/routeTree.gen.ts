@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as PairingsRouteImport } from './routes/pairings'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as AdminCohortRouteImport } from './routes/admin.cohort'
@@ -29,6 +30,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PairingsRoute = PairingsRouteImport.update({
+  id: '/pairings',
+  path: '/pairings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -80,6 +86,7 @@ const ProductHandleRoute = ProductHandleRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/pairings': typeof PairingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/pairings': typeof PairingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
@@ -106,6 +114,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/pairings': typeof PairingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/pairings'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/pairings'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/pairings'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
@@ -160,6 +172,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  PairingsRoute: typeof PairingsRoute
   ProductHandleRoute: typeof ProductHandleRoute
 }
 
@@ -177,6 +190,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pairings': {
+      id: '/pairings'
+      path: '/pairings'
+      fullPath: '/pairings'
+      preLoaderRoute: typeof PairingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -272,6 +292,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  PairingsRoute: PairingsRoute,
   ProductHandleRoute: ProductHandleRoute,
 }
 export const routeTree = rootRouteImport
