@@ -795,7 +795,7 @@ export type CartRow = {
   referrer: string | null;
 };
 
-/** Every shopper's cart (browser session), biggest first (bf_carts_list). */
+/** Every shopper's cart (browser session), most recently active first (bf_carts_list). */
 export const getCarts = createServerFn({ method: "GET" }).handler(async () => {
   const { assertAdmin } = await import("./admin-session.server");
   await assertAdmin();
@@ -809,6 +809,7 @@ export const getCarts = createServerFn({ method: "GET" }).handler(async () => {
     value_friday: n(r.value_friday),
     items: (r.items ?? []).map((i) => ({ title: String(i.title ?? ""), qty: n(i.qty) })),
   }));
+  rows.sort((a, b) => Date.parse(b.last_at) - Date.parse(a.last_at));
   return { rows };
 });
 

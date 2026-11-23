@@ -777,3 +777,6 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 ## 2026-11-23: Unfilled Meta placeholder grouped under Meta
 - Visits with utm_source "{{site_source_name}}" (Meta did not fill it in: ad preview or a shared copy of the ad link) now show as "Facebook and Instagram ads" and merge with the meta / paid-social row on /admin and in the campaign report.
 - `normalizeSource()` in src/lib/source-labels.ts. Display and grouping only; stored tracking values and utm_campaign are untouched.
+
+## 2026-11-23: Carts on /admin sorted latest first
+- getCarts now sorts by last active time, newest at the top (was biggest value first). Shopper numbers follow the new order.

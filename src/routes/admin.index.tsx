@@ -671,7 +671,7 @@ function OffersSection() {
   );
 }
 
-/** "Carts": every shopper's cart, biggest first, with what's in it. */
+/** "Carts": every shopper's cart, latest first, with what's in it. */
 function CartsSection() {
   const fn = useServerFn(getCarts);
   const { data, isLoading, error } = useQuery({
@@ -687,7 +687,7 @@ function CartsSection() {
   return (
     <Section
       title="Carts"
-      intro="Every shopper's cart right now, biggest first: what's in it and what it's worth. One row per browser; the team's own visits and tests are left out."
+      intro="Every shopper's cart right now, most recently active first: what's in it and what it's worth. One row per browser; the team's own visits and tests are left out."
     >
       {error ? (
         <ErrorBox error={error} />
