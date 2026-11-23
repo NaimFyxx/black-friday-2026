@@ -1,5 +1,9 @@
+import { useState } from "react";
+import { ChevronDown } from "lucide-react";
+
 /**
- * Compact "Exclusive rewards from Fyxx Rewards" strip in the Fyxx Rewards look
+ * Thin "Members earn up to 2x points" line under the hero; tap to open the
+ * tiers. Compact Fyxx Rewards strip in the Fyxx Rewards look
  * (FYXX_Web-Rewards palette: warm black #231F20, cream #FBF5F2, muted #8A8175,
  * Baskervville serif, the membership-card tier colours). One bar blending the
  * four tier colours, a bubble per tier with its points multiplier, and a
@@ -23,28 +27,37 @@ const TIERS = [
 ];
 
 export function MembersRewards() {
+  const [open, setOpen] = useState(false);
   return (
     <section aria-labelledby="members-rewards" style={{ background: CREAM, color: INK }}>
-      <div className="mx-auto max-w-[640px] px-5 py-6 md:py-8">
-        <h2
-          id="members-rewards"
-          style={SERIF}
-          className="flex items-center justify-center gap-2 text-lg md:text-xl"
-        >
-          Exclusive rewards from
-          <img
-            src="/brand/fyxx-rewards-logo-black.svg"
-            alt="Fyxx Rewards"
-            width={746}
-            height={392}
-            loading="lazy"
-            className="h-7 w-auto md:h-8"
-          />
+      {/* One thin line; tap to see the tiers. */}
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls="members-rewards-tiers"
+        onClick={() => setOpen((o) => !o)}
+        className="mx-auto flex w-full max-w-[1320px] items-center justify-center gap-2 px-5 py-2 text-left md:px-10"
+      >
+        <img
+          src="/brand/fyxx-rewards-logo-black.svg"
+          alt="Fyxx Rewards"
+          width={746}
+          height={392}
+          loading="lazy"
+          className="h-6 w-auto shrink-0"
+        />
+        <h2 id="members-rewards" style={SERIF} className="min-w-0 text-sm md:text-base">
+          Members earn up to 2x points<span className="hidden sm:inline"> this Friday</span>
         </h2>
-
+        <span className="flex shrink-0 items-center gap-0.5 text-xs font-semibold underline underline-offset-2">
+          {open ? "Hide" : "See tiers"}
+          <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+      <div id="members-rewards-tiers" hidden={!open} className="mx-auto max-w-[640px] px-5 pb-5">
         {/* One bar in the four tier colours, a bubble per tier with its points.
             Each tier is a column; the bar runs between the first and last bubble. */}
-        <div className="relative mx-auto mt-4 max-w-[520px]">
+        <div className="relative mx-auto mt-2 max-w-[520px]">
           <div
             aria-hidden="true"
             className="absolute top-[22px] right-[12.5%] left-[12.5%] h-2 -translate-y-1/2 rounded-full md:top-6"
