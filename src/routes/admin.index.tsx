@@ -45,6 +45,7 @@ import {
   type Bucket,
   type DaySales,
   type SourceRow,
+  getVisitors,
 } from "@/lib/admin.functions";
 import { formatJod } from "@/lib/shopify";
 import { describeCampaign, describeSource, type SourceKind } from "@/lib/source-labels";
@@ -152,6 +153,8 @@ function OverviewPage() {
           </Section>
         </>
       )}
+
+      <VisitorsSection range={range} />
 
       <SalesForecastSection />
 
@@ -970,5 +973,127 @@ function SourcesList({ rows, currency }: { rows: SourceRow[]; currency: string }
         </table>
       </Panel>
     </>
+  );
+}
+
+/** Visitors (one per browser) and how many times each came, from the anonymous visitor ID. */
+function VisitorsSection({ range }: { range: Range }) {
+  const fn = useServerFn(getVisitors);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-visitors", range],
+    queryFn: () => fn({ data: range }),
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const t = data?.totals;
+  return (
+    <Section
+      title="Visitors who came back"
+      intro="One visitor = one browser, however many times it comes. Shows whether people return before they buy, and how often."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : isLoading || !data || !t ? (
+        <Loading />
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatCard
+              label="Visitors"
+              value={fmtNum(t.visitors)}
+              sub={`one browser each, ${fmtNum(t.visits)} visits between them`}
+            />
+            <StatCard
+              label="Came back"
+              value={fmtNum(t.returning)}
+              sub={`visited more than once (${fmtPct(t.returning, t.visitors)})`}
+            />
+            <StatCard
+              label="Added to cart"
+              value={fmtNum(t.carted)}
+              sub={`visitors. ${fmtNum(t.returningCarted)} of them came back`}
+            />
+            <StatCard
+              label="Went to checkout"
+              value={fmtNum(t.checkedOut)}
+              sub={`visitors. ${fmtNum(t.returningCheckedOut)} of them came back`}
+            />
+          </div>
+          <Panel>
+            <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+              How many times visitors came
+            </p>
+            <div className="mt-2 grid grid-cols-4 gap-2 text-sm">
+              {data.byVisits.map((b) => (
+                <div key={b.label}>
+                  <p className="font-display text-lg tabular-nums">{fmtNum(b.count)}</p>
+                  <p className="text-xs text-muted-foreground">{b.label}</p>
+                </div>
+              ))}
+            </div>
+          </Panel>
+          <Panel className="overflow-x-auto p-0">
+            {data.rows.length === 0 ? (
+              <p className="p-8 text-center text-sm text-muted-foreground">
+                No visitors with an ID yet. Counting starts once this update is published.
+              </p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className={TH}>Visitor</th>
+                    <th className={THR}>Visits</th>
+                    <th className={`${TH} hidden sm:table-cell`}>First came from</th>
+                    <th className={`${TH} hidden sm:table-cell`}>First visit</th>
+                    <th className={`${TH} hidden sm:table-cell`}>Last visit</th>
+                    <th className={THR}>Added to cart</th>
+                    <th className={`${TH} hidden sm:table-cell`}>Went to checkout</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.rows.map((r) => (
+                    <tr key={r.visitor_id} className={TR}>
+                      <td className={`${TD} whitespace-nowrap`}>
+                        <span className="font-mono text-xs" title={r.visitor_id}>
+                          #{r.visitor_id.slice(0, 6)}
+                        </span>
+                        <span className="mt-0.5 block text-xs sm:hidden">
+                          <SourceName source={r.utm_source} medium={r.utm_medium} />
+                          <span className="block text-muted-foreground">
+                            Last visit {fmtDate(r.last_seen, true)}
+                          </span>
+                        </span>
+                      </td>
+                      <td className={`${TDR} font-medium`}>{fmtNum(r.visits)}</td>
+                      <td className={`${TD} hidden sm:table-cell`}>
+                        <SourceName source={r.utm_source} medium={r.utm_medium} />
+                      </td>
+                      <td className={`${TD} hidden whitespace-nowrap sm:table-cell`}>
+                        {fmtDate(r.first_seen, true)}
+                      </td>
+                      <td className={`${TD} hidden whitespace-nowrap sm:table-cell`}>
+                        {fmtDate(r.last_seen, true)}
+                      </td>
+                      <td className={TDR}>{r.adds ? `${fmtNum(r.adds)}x` : "–"}</td>
+                      <td className={`${TD} hidden sm:table-cell`}>
+                        {r.checked_out ? "Yes" : "–"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Panel>
+          <Note>
+            Each visitor gets a random number the first time they open the site (no name or email),
+            kept in their browser for 400 days. It is per browser: a phone and a laptop are two
+            visitors, and so are the Fyxx app and Safari on the same phone; clearing cookies or a
+            private window starts a new one. Counting started on 23 Nov 2026, so earlier visits
+            aren&apos;t included. The table lists the 100 visitors with the most visits. Team visits
+            and test tags are left out.
+          </Note>
+        </>
+      )}
+    </Section>
   );
 }

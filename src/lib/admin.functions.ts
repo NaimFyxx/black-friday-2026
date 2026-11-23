@@ -888,3 +888,65 @@ export const clearErrorLog = createServerFn({ method: "POST" }).handler(async ()
   }
   return { moved };
 });
+
+// ── Visitors (anonymous visitor ID, from 23 Nov 2026) ──────────────────
+
+export type VisitorRow = {
+  visitor_id: string;
+  visits: number;
+  first_seen: string;
+  last_seen: string;
+  utm_source: string | null;
+  utm_medium: string | null;
+  visits_viewed: number;
+  adds: number;
+  visits_carted: number;
+  checked_out: boolean;
+};
+
+/** Visitors (one per browser), how often each came, and what they did (bf_visitors). */
+export const getVisitors = createServerFn({ method: "GET" })
+  .validator((d: unknown) => RangeInput.parse(d))
+  .handler(async ({ data: range }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const client = await db();
+    const { data, error } = await client.rpc("bf_visitors", {
+      p_since: range.since,
+      p_until: range.until,
+      p_limit: 100,
+    });
+    if (error) throw new Error(error.message);
+    const r = (data ?? {}) as {
+      totals?: Record<string, unknown>;
+      by_visits?: Record<string, unknown>;
+      rows?: VisitorRow[];
+    };
+    const t = r.totals ?? {};
+    const b = r.by_visits ?? {};
+    return {
+      totals: {
+        visitors: n(t["visitors"]),
+        returning: n(t["returning"]),
+        visits: n(t["visits"]),
+        carted: n(t["carted"]),
+        returningCarted: n(t["returning_carted"]),
+        checkedOut: n(t["checked_out"]),
+        returningCheckedOut: n(t["returning_checked_out"]),
+      },
+      byVisits: [
+        { label: "1 visit", count: n(b["1"]) },
+        { label: "2 visits", count: n(b["2"]) },
+        { label: "3 visits", count: n(b["3"]) },
+        { label: "4 or more", count: n(b["4+"]) },
+      ],
+      rows: (r.rows ?? []).map((x) => ({
+        ...x,
+        visits: n(x.visits),
+        visits_viewed: n(x.visits_viewed),
+        adds: n(x.adds),
+        visits_carted: n(x.visits_carted),
+        checked_out: !!x.checked_out,
+      })),
+    };
+  });

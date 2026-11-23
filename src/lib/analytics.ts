@@ -102,6 +102,49 @@ export function getSessionId(): string {
   }
 }
 
+const VISITOR_KEY = "fyxx:bf_visitor";
+const VISITOR_COOKIE = "fyxx_vid";
+const VISITOR_RE = /^[A-Za-z0-9-]{8,64}$/;
+
+function newId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+/**
+ * Anonymous visitor ID: one random number per browser, kept for 400 days, so
+ * /admin can tell visits from visitors and see who comes back. Nothing
+ * personal is in it. Kept in localStorage and in a first-party cookie
+ * (fyxx_vid, on .myfyxx.com) so clearing one of them doesn't lose it.
+ */
+export function getVisitorId(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const fromCookie = new RegExp(`(?:^|;\\s*)${VISITOR_COOKIE}=([^;]+)`).exec(
+      document.cookie,
+    )?.[1];
+    let id = fromCookie && VISITOR_RE.test(fromCookie) ? fromCookie : null;
+    if (!id) {
+      const stored = window.localStorage.getItem(VISITOR_KEY);
+      id = stored && VISITOR_RE.test(stored) ? stored : newId();
+    }
+    window.localStorage.setItem(VISITOR_KEY, id);
+    if (!fromCookie || fromCookie !== id || !window.sessionStorage.getItem(`${VISITOR_KEY}:c`)) {
+      // Refresh the cookie once per tab session (keeps the 400 days rolling).
+      const host = window.location.hostname;
+      const domain =
+        host === "myfyxx.com" || host.endsWith(".myfyxx.com") ? "; domain=.myfyxx.com" : "";
+      const secure = window.location.protocol === "https:" ? "; secure" : "";
+      document.cookie = `${VISITOR_COOKIE}=${id}${domain}; path=/; max-age=${400 * 86400}; samesite=lax${secure}`;
+      window.sessionStorage.setItem(`${VISITOR_KEY}:c`, "1");
+    }
+    return id;
+  } catch {
+    return "";
+  }
+}
+
 /** True when /admin switched tracking off for this visitor (set in __root). */
 export function trackingOff(): boolean {
   return (
@@ -133,6 +176,7 @@ function logEvent(
     data: {
       event,
       sessionId,
+      visitorId: getVisitorId() || undefined,
       path: window.location.pathname,
       ...utm,
       referrer: getFirstReferrer(),

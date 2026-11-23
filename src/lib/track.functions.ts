@@ -22,6 +22,10 @@ const short = (max: number) =>
 const EventInput = z.object({
   event: z.enum(TRACKED_EVENTS),
   sessionId: z.string().min(8).max(64),
+  visitorId: z
+    .string()
+    .regex(/^[A-Za-z0-9-]{8,64}$/)
+    .optional(),
   path: short(300),
   utm_source: short(200),
   utm_medium: short(200),
@@ -78,6 +82,7 @@ export const recordEvent = createServerFn({ method: "POST" })
       await loose.from("bf_events").insert({
         event: data.event,
         session_id: data.sessionId,
+        visitor_id: data.visitorId ?? null,
         path: data.path ?? null,
         utm_source: data.utm_source ?? null,
         utm_medium: data.utm_medium ?? null,

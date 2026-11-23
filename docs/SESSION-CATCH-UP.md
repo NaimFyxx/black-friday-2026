@@ -780,3 +780,12 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 
 ## 2026-11-23: Carts on /admin sorted latest first
 - getCarts now sorts by last active time, newest at the top (was biggest value first). Shopper numbers follow the new order.
+
+## 2026-11-23: anonymous visitor ID and "Visitors who came back"
+Owner approved the bf_events change.
+- Migration `bf_visitor_id` (`docs/sql/2026-11-23-bf-visitor-id.sql`): `bf_events.visitor_id` (text, nullable) + index; `bf_visitors(p_since, p_until, p_limit)` (service role only) returns totals (visitors, returning, visits, carted, checked out), how many came 1 / 2 / 3 / 4+ times, and the top visitors by visits (first source, first/last visit, adds, checkout). Same exclusions as the other dashboards (internal, test_utm_sources). Tested with rolled-back rows.
+- Site (`getVisitorId` in `src/lib/analytics.ts`): one random ID per browser, in localStorage `fyxx:bf_visitor` and a first-party cookie `fyxx_vid` (.myfyxx.com, 400 days, refreshed once per tab session); either one restores the other. Sent as `visitorId` with every bf_events row (`recordEvent` validates the format). Not created when tracking is off for the device or host. There was no cookie banner or consent gate to switch on; the site already sets cookies.
+- /admin Overview: "Visitors who came back" section (tiles, 1 / 2 / 3 / 4+ visits, table with a Visits column per visitor ID).
+- Visit = tab session (`session_id`, unchanged); visitor = browser (`visitor_id`). Counting starts at Publish; older rows have no visitor_id.
+- Tested in a browser on a local copy opened as friday.myfyxx.com: same ID after reload, in a new tab, and after clearing localStorage (restored from the cookie); every event carried it. The first test run loaded the real GA, Meta, Clarity and Klaviyo tags, so those tools received two or three test page views from host friday.myfyxx.com:5174 on 23 Nov.
+- Not done (possible next step): put the visitor ID on the Shopify cart as a hidden attribute, so orders can be split by new vs returning visitors.
