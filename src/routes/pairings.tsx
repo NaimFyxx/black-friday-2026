@@ -109,14 +109,14 @@ function SetCard({ set }: { set: PairingSet }) {
   return (
     <li className="flex flex-col overflow-hidden rounded-2xl border border-ff-black/10 bg-white">
       {/* The bottles side by side */}
-      <div className="flex h-52 items-end justify-center gap-0 bg-ff-warm-cream px-3 pt-3 md:h-64">
+      <div className="flex h-44 items-stretch justify-center gap-0 bg-ff-warm-cream px-2 pt-2 md:h-52">
         {set.items.map((i) => (
           <img
             key={i.variant_id}
             src={sizedImage(i.image_url, 300)}
             alt=""
             loading="lazy"
-            className="h-full min-w-0 flex-1 scale-110 object-contain object-bottom mix-blend-multiply"
+            className="h-full min-w-0 flex-1 object-cover object-center mix-blend-multiply"
           />
         ))}
       </div>
