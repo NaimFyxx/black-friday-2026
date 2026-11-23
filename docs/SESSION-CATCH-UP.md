@@ -773,3 +773,7 @@ Display only: nothing tracked, calculated, priced or tagged changed (utm_campaig
 - New server function `clearErrorLog` (src/lib/admin.functions.ts): copies every row of bf_error_log into bf_error_log_archive, then removes it from bf_error_log. Nothing is lost.
 - Button at the top of /admin/errors with a confirm step. After clicking, only errors that come in afterwards show.
 - All 102 old errors were already copied to bf_error_log_archive by hand on 2026-11-23.
+
+## 2026-11-23: Unfilled Meta placeholder grouped under Meta
+- Visits with utm_source "{{site_source_name}}" (Meta did not fill it in: ad preview or a shared copy of the ad link) now show as "Facebook and Instagram ads" and merge with the meta / paid-social row on /admin and in the campaign report.
+- `normalizeSource()` in src/lib/source-labels.ts. Display and grouping only; stored tracking values and utm_campaign are untouched.

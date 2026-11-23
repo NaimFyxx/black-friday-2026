@@ -18,6 +18,7 @@ import { callBfAdmin } from "./bf-edge.server";
 import { CAMPAIGN_END, CAMPAIGN_START } from "./campaign-config";
 import { ammanDate, computeCohort, ODOO_CONNECTOR_SOURCE, type Loose } from "./cohort.server";
 import { fetchSiteOrders } from "./shopify-admin.server";
+import { normalizeSource } from "./source-labels";
 
 /** 1 USD in JOD (the JOD is pegged to the dollar). */
 export const USD_TO_JOD = 0.709;
@@ -238,7 +239,8 @@ async function loadSite(client: Loose, r: Range) {
     newCustomers: number;
   };
   const rows = new Map<string, Row>();
-  const row = (s: string | null, m: string | null, c: string | null) => {
+  const row = (src: string | null, m: string | null, c: string | null) => {
+    const s = normalizeSource(src);
     const k = [s ?? "(direct / none)", m, c].filter(Boolean).join(" / ");
     const x = rows.get(k) ?? {
       source: k,

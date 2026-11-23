@@ -10,6 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 import { CAMPAIGN_END, CAMPAIGN_START } from "@/lib/campaign-config";
+import { normalizeSource } from "@/lib/source-labels";
 import type { CampaignReport } from "@/lib/report.server";
 
 // ── Auth ──────────────────────────────────────────────────────────────
@@ -142,7 +143,8 @@ export const getSources = createServerFn({ method: "GET" })
     ]);
 
     const rows = new Map<string, SourceRow>();
-    const row = (s: string | null, m: string | null, c: string | null) => {
+    const row = (src: string | null, m: string | null, c: string | null) => {
+      const s = normalizeSource(src);
       const k = key(s, m, c);
       let r = rows.get(k);
       if (!r) {

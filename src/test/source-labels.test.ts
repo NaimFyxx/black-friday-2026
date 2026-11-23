@@ -79,4 +79,10 @@ describe("describeCampaign", () => {
     expect(describeCampaign("fyxx-friday-2026-11-27")).toBe("Fyxx Friday");
     expect(describeCampaign(null)).toBe("");
   });
+  it("groups an unfilled Meta placeholder under Meta ads", () => {
+    expect(describeSource("{{site_source_name}}", "paid-social")).toMatchObject({
+      name: "Facebook and Instagram ads",
+      kind: "paid",
+    });
+  });
 });

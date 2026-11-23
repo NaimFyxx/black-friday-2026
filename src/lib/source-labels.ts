@@ -89,6 +89,17 @@ const FREE_MEDIUMS = new Set([
   "bio",
 ]);
 
+/**
+ * Meta ad links use utm_source={{site_source_name}}, which Meta fills in with
+ * fb / ig / msg / an. When the link is opened from an ad preview or a shared
+ * copy, the placeholder arrives unfilled. Group those under "meta" (display and
+ * dashboard grouping only; stored values are never changed).
+ */
+export function normalizeSource(source: string | null | undefined): string | null {
+  if (source == null) return null;
+  return /\{\{.*\}\}/.test(source) ? "meta" : source;
+}
+
 /** Values that mean "nothing recorded" (ours and Google Analytics'). */
 const EMPTY = new Set(["", "(none)", "(direct)", "(not set)", "none", "null"]);
 
@@ -116,7 +127,7 @@ export function describeSource(
   medium: string | null | undefined,
 ): SourceLabel {
   const raw = rawText(source, medium);
-  const s = clean(source);
+  const s = clean(normalizeSource(source));
   const m = clean(medium);
 
   if (!s) {
