@@ -1,26 +1,33 @@
-// Mystery gifts from The Green Room: a gift unlocks every GIFT_STEP JOD of cart
-// total, with no upper limit. Shared by the cart tracker, the floating cart bar
-// and the "unlocked" message. Visual only: no coupon is made or applied.
+// Mystery gifts from The Green Room: the gift upgrades every GIFT_STEP JOD of
+// cart total, with no upper limit. Shared by the cart tracker, the floating
+// cart bar and the "unlocked" message. Visual only: no coupon is made.
 
-/** A new mystery gift every this many JOD. */
+/** The mystery gift gets better every this many JOD. */
 export const GIFT_STEP = 50;
-/** Markers shown on the bar at a time (4 x 50 = a 200 JOD stretch). */
-export const GIFT_MARKERS = 4;
 
-/** Where the cart total stands: gifts unlocked, the next marker and the bar. */
+/** Gifts unlocked so far, JOD left to the next one, and how full the bar is. */
 export function giftProgress(subtotal: number) {
   const total = Math.max(0, subtotal);
   const unlocked = Math.floor(total / GIFT_STEP + 1e-9);
   const next = (unlocked + 1) * GIFT_STEP;
   const left = Math.round((next - total) * 1000) / 1000;
-  // The bar slides with the cart: it starts at the last gift unlocked and
-  // shows the next markers after it (at 167.5: 150, 200, 250, 300), so it
-  // never ends on a fixed number.
-  const span = GIFT_STEP * GIFT_MARKERS;
-  const base = Math.max(0, (unlocked - 1) * GIFT_STEP);
-  const markers = Array.from({ length: GIFT_MARKERS }, (_, i) => base + (i + 1) * GIFT_STEP);
-  const pct = Math.min(100, Math.max(0, ((total - base) / span) * 100));
-  return { unlocked, next, left, markers, base, span, pct };
+  // The bar fills toward the next gift and starts again after each one.
+  const pct = Math.min(100, Math.max(0, ((total - unlocked * GIFT_STEP) / GIFT_STEP) * 100));
+  return { unlocked, next, left, pct };
+}
+
+/** The one line shown with the bar (`short` for the floating cart bar). */
+export function giftLine(subtotal: number, short = false): string {
+  const { unlocked, left } = giftProgress(subtotal);
+  const amount = `JOD ${left.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`;
+  if (short) {
+    return unlocked === 0
+      ? `${amount} to your first mystery gift`
+      : `${amount} to upgrade your mystery gift`;
+  }
+  return unlocked === 0
+    ? `${amount} away from your first mystery gift from The Green Room`
+    : `${amount} away from upgrading your mystery gift from The Green Room`;
 }
 
 /** Close the cart and go back to the products. */

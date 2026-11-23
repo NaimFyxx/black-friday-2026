@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 
-import { giftProgress } from "@/lib/mystery-gift";
+import { giftLine, giftProgress } from "@/lib/mystery-gift";
 import { formatJod } from "@/lib/shopify";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 import { useCartUi } from "@/stores/cartUiStore";
@@ -65,7 +65,7 @@ export function FloatingCart({ sale, ended = false }: { sale: boolean; ended?: b
         </span>
       </span>
       {!ended && (
-        // Mystery gift progress, the same markers as in the cart.
+        // Mystery gift progress, the same bar and line as in the cart.
         <span className="block w-full">
           <span className="block h-1.5 overflow-hidden rounded-full bg-ff-cream/20">
             <span
@@ -74,7 +74,7 @@ export function FloatingCart({ sale, ended = false }: { sale: boolean; ended?: b
             />
           </span>
           <span className="mt-1 block text-[11px] leading-tight text-ff-warm-cream">
-            {`${formatJod(gift.left)} to your ${gift.unlocked === 0 ? "first" : "next"} mystery gift`}
+            {giftLine(total, true)}
           </span>
         </span>
       )}
