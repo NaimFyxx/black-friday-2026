@@ -525,6 +525,11 @@ function ChannelCompare({
       <>
         {formatJod(b.total)}
         <span className="block text-xs text-muted-foreground">{b.orders} orders</span>
+        {b.orders > 0 && (
+          <span className="block text-xs text-muted-foreground">
+            Average order {formatJod(b.total / b.orders)}
+          </span>
+        )}
       </>
     ) : (
       <span className="text-muted-foreground">–</span>
@@ -560,7 +565,7 @@ function ChannelCompare({
       <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground sm:px-4">
         Whole day, 00:00 to midnight Amman time: 28 Nov 2025 and Fri 27 Nov 2026
         {before ? " (fills in from Friday)" : " (so far)"}. Shopify orders, cancelled ones left out.
-        In-store sales from Odoo come later.
+        Average order = sales divided by orders. In-store sales from Odoo come later.
       </p>
     </Panel>
   );
