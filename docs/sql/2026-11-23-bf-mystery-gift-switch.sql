@@ -4,3 +4,6 @@
 -- "Congratulations" message. bf_teaser(p) returns it as "mystery_gift".
 -- OFF since 23 Nov (owner). Switch ON on Fyxx Friday:
 --   update bf_settings set value = 'true'::jsonb, updated_at = now() where key = 'mystery_gift_enabled';
+-- Later (migration bf_gift_card_discount_switch): gift_card_discount_enabled (false)
+-- and gift_card_discount_pct (10); bf_teaser(p) returns "gift_card_discount" (percent, 0 = off).
+-- Both switches are on /admin (Overview, "Offers on the site").

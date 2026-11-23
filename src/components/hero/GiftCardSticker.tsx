@@ -8,12 +8,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useIsMobile } from "@/hooks/use-mobile";
 import { trackAddToCart } from "@/lib/analytics";
 import { formatJod, getProductByHandle, type ShopifyProductNode } from "@/lib/shopify";
+import { usePreview } from "@/lib/preview";
+import { teaserQueryOptions } from "@/lib/teaser";
 import { useCartStore } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
 
 /**
  * Gift card sticker in the hero ("Gift Card", or "10% OFF GIFT CARDS" when
- * DISCOUNT is on), styled like the Fyxx gift card
+ * the /admin gift card discount is on), styled like the Fyxx gift card
  * (black card, cream serif type, italic fyxx).
  * Prices shown and the discount are set here. "Add to cart" adds the real
  * Shopify gift card ("fyxx-gift-card", the variant with that face value) at its
@@ -26,19 +28,25 @@ const GIFT_STICKER_POSITION = {
   desktop: "md:top-6 md:right-8 lg:top-8 lg:right-10",
 };
 
-/** Gift card discount. 0 = off: no "% off" text anywhere, normal prices.
- *  To switch it on (once the Shopify discount is set up): 0.1 = 10% off. */
-const DISCOUNT = 0;
-const PCT = Math.round(DISCOUNT * 100);
-const ON = DISCOUNT > 0;
-const TITLE = ON ? `${PCT}% off gift cards` : "Fyxx gift cards";
-const INTRO = ON ? "{INTRO}" : "Give the gift of Fyxx.";
+/** Gift card discount from /admin (Offers): bf_settings.gift_card_discount_enabled
+ *  and gift_card_discount_pct, read through bf_teaser. Off: no "% off" text
+ *  anywhere and normal prices. */
+function useOffer() {
+  const pct = Number(useQuery(teaserQueryOptions(usePreview())).data?.gift_card_discount) || 0;
+  const DISCOUNT = Math.min(Math.max(pct, 0), 90) / 100;
+  const PCT = Math.round(DISCOUNT * 100);
+  const ON = DISCOUNT > 0;
+  const TITLE = ON ? `${PCT}% off gift cards` : "Fyxx gift cards";
+  const INTRO = ON ? "Give the gift of Fyxx for less." : "Give the gift of Fyxx.";
+  return { DISCOUNT, PCT, ON, TITLE, INTRO };
+}
 const FACE_VALUES = [25, 50, 100, 200]; // JOD
 const GIFT_CARD_HANDLE = "fyxx-gift-card";
 
 const SERIF = { fontFamily: '"Times New Roman", Georgia, "Iowan Old Style", serif' };
 
 export function GiftCardSticker({ className }: { className?: string }) {
+  const { TITLE, INTRO } = useOffer();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
 
@@ -96,6 +104,7 @@ export function GiftCardSticker({ className }: { className?: string }) {
 
 /** The sticker face: a small black Fyxx gift card with the offer. */
 function GiftCardFace() {
+  const { ON, PCT } = useOffer();
   return (
     <span
       className={cn(
@@ -137,6 +146,7 @@ function GiftCardFace() {
 }
 
 function GiftCardList({ onAdded }: { onAdded: () => void }) {
+  const { DISCOUNT, PCT, ON } = useOffer();
   const addItem = useCartStore((st) => st.addItem);
   const [pending, setPending] = useState<number | null>(null);
   const { data: product } = useQuery({

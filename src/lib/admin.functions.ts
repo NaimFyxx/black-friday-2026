@@ -809,3 +809,42 @@ export const getCarts = createServerFn({ method: "GET" }).handler(async () => {
   }));
   return { rows };
 });
+
+// ── Offers on the site: on/off switches (bf_settings) ──────────────────
+
+const OFFER_KEYS = ["gift_card_discount_enabled", "mystery_gift_enabled"] as const;
+export type OfferKey = (typeof OFFER_KEYS)[number];
+
+/** The /admin Offers switches and the gift card percent. */
+export const getOfferSwitches = createServerFn({ method: "GET" }).handler(async () => {
+  const { assertAdmin } = await import("./admin-session.server");
+  await assertAdmin();
+  const client = await db();
+  const { data, error } = await client
+    .from("bf_settings")
+    .select("key, value")
+    .in("key", [...OFFER_KEYS, "gift_card_discount_pct"]);
+  if (error) throw new Error(error.message);
+  const m = new Map(
+    ((data ?? []) as Array<{ key: string; value: unknown }>).map((r) => [r.key, r.value]),
+  );
+  return {
+    gift_card_discount_enabled: m.get("gift_card_discount_enabled") === true,
+    gift_card_discount_pct: n(m.get("gift_card_discount_pct")) || 10,
+    mystery_gift_enabled: m.get("mystery_gift_enabled") === true,
+  };
+});
+
+/** Turn one offer on or off. Live on the site within a minute, no Publish. */
+export const setOfferSwitch = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({ key: z.enum(OFFER_KEYS), enabled: z.boolean() }).parse(d))
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const client = await db();
+    const { error } = await client
+      .from("bf_settings")
+      .upsert({ key: data.key, value: data.enabled, updated_at: new Date().toISOString() });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

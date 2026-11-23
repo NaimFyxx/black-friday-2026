@@ -1,4 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+
+import { Switch } from "@/components/ui/switch";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -32,6 +35,9 @@ import {
 } from "@/components/admin/AdminUi";
 import {
   getCarts,
+  getOfferSwitches,
+  setOfferSwitch,
+  type OfferKey,
   getLeaving,
   getSalesForecast,
   getSources,
@@ -92,7 +98,9 @@ function OverviewPage() {
         what they ordered. Main numbers first, details further down.
       </PageHeader>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <OffersSection />
+
+      <div className="mt-8 flex flex-wrap items-center gap-3">
         <RangePicker value={rangeKey} onChange={setRangeKey} />
         <span className="text-xs text-muted-foreground">{fmtRange(range)} (Amman time)</span>
       </div>
@@ -568,6 +576,91 @@ function ChannelCompare({
         Average order = sales divided by orders. In-store sales from Odoo come later.
       </p>
     </Panel>
+  );
+}
+
+/** "Offers on the site": on/off switches, live on the site without a Publish. */
+function OffersSection() {
+  const queryClient = useQueryClient();
+  const getFn = useServerFn(getOfferSwitches);
+  const setFn = useServerFn(setOfferSwitch);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-offers"],
+    queryFn: () => getFn(),
+    staleTime: 10_000,
+  });
+  const [saving, setSaving] = useState<OfferKey | null>(null);
+  const flip = async (key: OfferKey, enabled: boolean) => {
+    setSaving(key);
+    try {
+      await setFn({ data: { key, enabled } });
+      await queryClient.invalidateQueries({ queryKey: ["admin-offers"] });
+      toast.success(enabled ? "Switched on" : "Switched off", {
+        description: "Live on the site within a minute.",
+      });
+    } catch (e) {
+      toast.error("Couldn't save", { description: (e as Error).message });
+    } finally {
+      setSaving(null);
+    }
+  };
+  const rows: Array<{ key: OfferKey; title: string; description: string; on: boolean }> = data
+    ? [
+        {
+          key: "gift_card_discount_enabled",
+          title: `Gift cards ${data.gift_card_discount_pct}% off`,
+          description: `The gift card sticker in the hero shows "${data.gift_card_discount_pct}% OFF", crossed-out prices and the lower price. Set up the matching discount in Shopify first: the cart charges Shopify's price.`,
+          on: data.gift_card_discount_enabled,
+        },
+        {
+          key: "mystery_gift_enabled",
+          title: "Green Room mystery gift",
+          description:
+            "The progress bar in the cart and the floating cart bar, and the Congratulations message every 50 JOD. Display only: no gift is added to orders.",
+          on: data.mystery_gift_enabled,
+        },
+      ]
+    : [];
+  return (
+    <Section
+      title="Offers on the site"
+      intro="Switch these on or off. The site updates within a minute, no Publish needed."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : isLoading ? (
+        <Loading />
+      ) : (
+        <Panel className="divide-y divide-border p-0">
+          {rows.map((r) => (
+            <div key={r.key} className="flex items-start justify-between gap-4 p-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium">
+                  {r.title}{" "}
+                  <span
+                    className={
+                      r.on
+                        ? "ml-1 rounded-full bg-green-100 px-2 py-0.5 text-[10px] font-semibold text-green-800 uppercase"
+                        : "ml-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase"
+                    }
+                  >
+                    {r.on ? "On" : "Off"}
+                  </span>
+                </p>
+                <p className="mt-1 max-w-xl text-sm text-muted-foreground">{r.description}</p>
+              </div>
+              <Switch
+                checked={r.on}
+                disabled={saving !== null}
+                onCheckedChange={(v) => void flip(r.key, v)}
+                aria-label={r.title}
+                className="mt-1 shrink-0"
+              />
+            </div>
+          ))}
+        </Panel>
+      )}
+    </Section>
   );
 }
 
