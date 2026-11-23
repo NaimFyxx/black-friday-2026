@@ -329,23 +329,31 @@ function ProductPage() {
           {/* Buy box */}
           <div>
             {brand && (
-              <p className="ff-headline text-sm tracking-[0.18em] text-ff-red uppercase">{brand}</p>
+              <p className="ff-headline text-xs tracking-[0.16em] text-ff-red uppercase md:text-sm md:tracking-[0.18em]">
+                {brand}
+              </p>
             )}
-            <h1 className="ff-headline mt-2 text-4xl leading-[1.05] md:text-5xl">{name}</h1>
-            {meta && <p className="ff-small mt-3 text-sm text-ff-black/70">{meta}</p>}
+            <h1 className="ff-headline mt-1 text-2xl leading-tight md:mt-2 md:text-5xl md:leading-[1.05]">
+              {name}
+            </h1>
+            {meta && (
+              <p className="ff-small mt-1.5 text-xs text-ff-black/70 md:mt-3 md:text-sm">{meta}</p>
+            )}
 
-            <p className="mt-6 flex flex-wrap items-baseline gap-x-3">
-              <span className={cn("ff-num text-3xl", discounted && "text-ff-red")}>
+            <p className="mt-3 flex flex-wrap items-baseline gap-x-3 md:mt-6">
+              <span className={cn("ff-num text-2xl md:text-3xl", discounted && "text-ff-red")}>
                 {formatPrice(price)}
               </span>
               {discounted && (
-                <s className="ff-small text-lg text-ff-black/55 tabular-nums">
+                <s className="ff-small text-base text-ff-black/55 tabular-nums md:text-lg">
                   {formatPrice(was!)}
                 </s>
               )}
             </p>
             {teaser && teaser.state !== "ended" && teaser.copy.no_code_note && (
-              <p className="ff-small mt-1.5 text-sm text-ff-burgundy">{teaser.copy.no_code_note}</p>
+              <p className="ff-small mt-1 text-xs text-ff-burgundy md:mt-1.5 md:text-sm">
+                {teaser.copy.no_code_note}
+              </p>
             )}
 
             {variants.length > 1 && (
