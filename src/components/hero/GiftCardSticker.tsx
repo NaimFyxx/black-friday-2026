@@ -12,11 +12,12 @@ import { useCartStore } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
 
 /**
- * "10% OFF GIFT CARDS" sticker in the hero, styled like the Fyxx gift card
+ * Gift card sticker in the hero ("Gift Card", or "10% OFF GIFT CARDS" when
+ * DISCOUNT is on), styled like the Fyxx gift card
  * (black card, cream serif type, italic fyxx).
  * Prices shown and the discount are set here. "Add to cart" adds the real
  * Shopify gift card ("fyxx-gift-card", the variant with that face value) at its
- * Shopify price; the 10% comes off at checkout through a Shopify discount.
+ * Shopify price; any discount comes off at checkout through a Shopify discount.
  */
 
 /** Where the sticker sits inside the hero. Change these to move it. */
@@ -25,7 +26,13 @@ const GIFT_STICKER_POSITION = {
   desktop: "md:top-6 md:right-8 lg:top-8 lg:right-10",
 };
 
-const DISCOUNT = 0.1; // 10% off
+/** Gift card discount. 0 = off: no "% off" text anywhere, normal prices.
+ *  To switch it on (once the Shopify discount is set up): 0.1 = 10% off. */
+const DISCOUNT = 0;
+const PCT = Math.round(DISCOUNT * 100);
+const ON = DISCOUNT > 0;
+const TITLE = ON ? `${PCT}% off gift cards` : "Fyxx gift cards";
+const INTRO = ON ? "{INTRO}" : "Give the gift of Fyxx.";
 const FACE_VALUES = [25, 50, 100, 200]; // JOD
 const GIFT_CARD_HANDLE = "fyxx-gift-card";
 
@@ -39,7 +46,7 @@ export function GiftCardSticker({ className }: { className?: string }) {
     <button
       type="button"
       onClick={() => setOpen(true)}
-      aria-label="10% off gift cards: see the gift cards"
+      aria-label={`${TITLE}: see the gift cards`}
       className={cn(
         "group absolute z-10 block w-[92px] rotate-[6deg] transition-transform duration-200 ease-out",
         "hover:-translate-y-1 hover:rotate-0 focus-visible:-translate-y-1 focus-visible:rotate-0 focus-visible:outline-none",
@@ -61,11 +68,9 @@ export function GiftCardSticker({ className }: { className?: string }) {
         {sticker}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="w-[calc(100vw-2rem)] max-w-sm rounded-2xl border-ff-black/15 bg-ff-cream p-5">
-            <DialogTitle className="ff-headline text-lg text-ff-black">
-              10% off gift cards
-            </DialogTitle>
+            <DialogTitle className="ff-headline text-lg text-ff-black">{TITLE}</DialogTitle>
             <DialogDescription className="ff-small -mt-1 text-sm text-ff-black/70">
-              Give the gift of Fyxx for less.
+              {INTRO}
             </DialogDescription>
             {panel}
           </DialogContent>
@@ -81,8 +86,8 @@ export function GiftCardSticker({ className }: { className?: string }) {
         sideOffset={10}
         className="w-[340px] rounded-2xl border-ff-black/15 bg-ff-cream p-5 shadow-xl"
       >
-        <p className="ff-headline text-lg text-ff-black">10% off gift cards</p>
-        <p className="ff-small mb-3 text-sm text-ff-black/70">Give the gift of Fyxx for less.</p>
+        <p className="ff-headline text-lg text-ff-black">{TITLE}</p>
+        <p className="ff-small mb-3 text-sm text-ff-black/70">{INTRO}</p>
         {panel}
       </PopoverContent>
     </Popover>
@@ -105,15 +110,24 @@ function GiftCardFace() {
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.14)_0%,rgba(255,255,255,0)_40%,rgba(255,255,255,0)_70%,rgba(255,255,255,0.06)_100%)]"
       />
       <span className="relative flex h-full flex-col items-center justify-center px-2 text-center">
-        <span style={SERIF} className="text-[17px] leading-none md:text-[25px]">
-          10% OFF
-        </span>
-        <span
-          style={SERIF}
-          className="mt-0.5 text-[7.5px] tracking-[0.18em] md:mt-1 md:text-[10.5px]"
-        >
-          GIFT CARDS
-        </span>
+        {ON ? (
+          <>
+            <span style={SERIF} className="text-[17px] leading-none md:text-[25px]">
+              {PCT}% OFF
+            </span>
+            <span
+              style={SERIF}
+              className="mt-0.5 text-[7.5px] tracking-[0.18em] md:mt-1 md:text-[10.5px]"
+            >
+              GIFT CARDS
+            </span>
+          </>
+        ) : (
+          // Like the real card: "Gift Card" in cream serif.
+          <span style={SERIF} className="text-[17px] leading-none md:text-[24px]">
+            Gift Card
+          </span>
+        )}
         <span style={SERIF} className="mt-1 text-[11px] italic leading-none md:mt-1.5 md:text-sm">
           fyxx
         </span>
@@ -179,10 +193,17 @@ function GiftCardList({ onAdded }: { onAdded: () => void }) {
                   Fyxx Gift Card {face} JOD
                 </p>
                 <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
-                  <s className="ff-small text-xs text-ff-black/55 tabular-nums">
-                    {formatJod(face)}
-                  </s>
-                  <span className="ff-num text-sm font-bold text-ff-red tabular-nums">
+                  {ON && (
+                    <s className="ff-small text-xs text-ff-black/55 tabular-nums">
+                      {formatJod(face)}
+                    </s>
+                  )}
+                  <span
+                    className={cn(
+                      "ff-num text-sm font-bold tabular-nums",
+                      ON ? "text-ff-red" : "text-ff-black",
+                    )}
+                  >
                     {formatJod(now)}
                   </span>
                 </p>
@@ -204,7 +225,9 @@ function GiftCardList({ onAdded }: { onAdded: () => void }) {
           );
         })}
       </ul>
-      <p className="ff-small mt-3 text-xs text-ff-black/60">The 10% comes off at checkout.</p>
+      {ON && (
+        <p className="ff-small mt-3 text-xs text-ff-black/60">The {PCT}% comes off at checkout.</p>
+      )}
     </>
   );
 }
