@@ -191,7 +191,10 @@ export const CatalogCard = memo(function CatalogCard({
               {item.title}
             </h3>
             {item.product_type ? (
-              <p className="ff-small truncate text-xs/5 text-ff-black/60">{item.product_type}</p>
+              <p className="ff-small truncate text-xs/5 text-ff-black/60">
+                {/* Shopify's type is "Cigars"; one card is one cigar. Display only. */}
+                {item.product_type === "Cigars" ? "Cigar" : item.product_type}
+              </p>
             ) : null}
           </div>
           <p className="mt-1 flex min-h-6 flex-wrap items-baseline gap-x-2 leading-6">
