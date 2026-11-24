@@ -349,7 +349,7 @@ function Storefront() {
                 <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-3 md:gap-x-6 md:gap-y-12 lg:grid-cols-4">
                   {items.map((item, i) => {
                     const prev = items[i - 1];
-                    // Default order only: a heading where a new category starts.
+                    // Only when bf_catalog sends "block" (it stopped on 24 Nov: categories are mixed now).
                     const heading =
                       item.block !== undefined &&
                       (!prev || prev.main_category !== item.main_category);

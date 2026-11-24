@@ -13,7 +13,7 @@ import { simCatalog, simFacets } from "@/lib/preview-sim.functions";
 import { formatJod, type ShopifyProduct } from "@/lib/shopify";
 
 export type SaleState = "preview" | "sale" | "ended";
-/** "featured" = the default order: by category, Fyxx selection first, cheapest first (bf_catalog). */
+/** "featured" = the default order: Fyxx selection first, categories mixed (shuffled daily) (bf_catalog). */
 export type SortKey = "featured" | "discount" | "price_asc" | "price_desc" | "newest";
 
 export interface CatalogFilters {

@@ -806,3 +806,8 @@ Owner approved the bf_events change.
 ## 2026-11-24: customer names on visitors who ordered
 - Owner's choice: on /admin "Visitors who came back", a visitor who ordered shows the customer's first name and last initial ("Sara K.") and the order numbers, each linking to the order in Shopify admin (store drynksapp). No email or phone on /admin. Visitors who didn't order stay anonymous.
 - bf-admin `orders`: after reading the orders, a separate optional query (`nodes(ids)`, Order.customer firstName/lastName) adds `customerName` for orders that carry `_bf_visitor`; the short form is made in the edge function, so full surnames never leave it. If Pulse's Shopify app may not read customer names, the error is logged ("[bf-admin] names") and orders still load: the row then shows "Customer" with the order link.
+
+## 2026-11-24: Landing page order mixed
+- bf_catalog default order: Fyxx products first, then the rest. Inside each block the categories take turns (wine, whisky, cigar, gin...) and products are shuffled. The shuffle changes once a day (Amman date) so "load more" never repeats or skips.
+- The category headings in the grid are gone (bf_catalog no longer sends "block"). Live at once, no Publish needed.
+- SQL: docs/sql/2026-11-24-bf-catalog-mixed.sql. Previous order: 2026-11-22-bf-vendor-priority.sql.
