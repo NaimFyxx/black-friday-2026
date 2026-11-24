@@ -802,3 +802,7 @@ Owner approved the bf_events change.
 - Free or unknown sources with no cart and no order fold into one "Other (N small sources, no carts yet)" row with Show/Hide. Paid ads always keep their own row.
 - Grey tag line and "Fyxx Friday" suffix removed; the tags show on hover. "Visits that ordered" column dropped. Footnote shortened.
 - Test links: bf_settings.test_utm_sources now ["claude-qa","test","snippet_test"], and getSources leaves those out.
+
+## 2026-11-24: customer names on visitors who ordered
+- Owner's choice: on /admin "Visitors who came back", a visitor who ordered shows the customer's first name and last initial ("Sara K.") and the order numbers, each linking to the order in Shopify admin (store drynksapp). No email or phone on /admin. Visitors who didn't order stay anonymous.
+- bf-admin `orders`: after reading the orders, a separate optional query (`nodes(ids)`, Order.customer firstName/lastName) adds `customerName` for orders that carry `_bf_visitor`; the short form is made in the edge function, so full surnames never leave it. If Pulse's Shopify app may not read customer names, the error is logged ("[bf-admin] names") and orders still load: the row then shows "Customer" with the order link.

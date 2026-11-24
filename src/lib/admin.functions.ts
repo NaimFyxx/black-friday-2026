@@ -949,7 +949,13 @@ export const getVisitors = createServerFn({ method: "GET" })
       returning: { orders: 0, sales: 0, visits: 0 },
       unknown: { orders: 0, sales: 0 },
     };
-    const byVisitor = new Map<string, { orders: number; sales: number }>();
+    type VisitorOrders = {
+      orders: number;
+      sales: number;
+      customer: string | null;
+      orderList: Array<{ id: string; name: string }>;
+    };
+    const byVisitor = new Map<string, VisitorOrders>();
     for (const o of paid) {
       const v = o.visitorId
         ? (visitsBefore.get(`${o.visitorId}|${new Date(o.createdAt).getTime()}`) ?? 0)
@@ -966,9 +972,16 @@ export const getVisitors = createServerFn({ method: "GET" })
         split.returning.visits += v;
       }
       if (o.visitorId) {
-        const b = byVisitor.get(o.visitorId) ?? { orders: 0, sales: 0 };
+        const b = byVisitor.get(o.visitorId) ?? {
+          orders: 0,
+          sales: 0,
+          customer: null,
+          orderList: [],
+        };
         b.orders += 1;
         b.sales += o.total;
+        b.customer = b.customer ?? o.customerName ?? null;
+        b.orderList.push({ id: o.id.split("/").pop() ?? o.id, name: o.name });
         byVisitor.set(o.visitorId, b);
       }
     }
@@ -1009,6 +1022,8 @@ export const getVisitors = createServerFn({ method: "GET" })
         ...x,
         orders: byVisitor.get(x.visitor_id)?.orders ?? 0,
         sales: byVisitor.get(x.visitor_id)?.sales ?? 0,
+        customer: byVisitor.get(x.visitor_id)?.customer ?? null,
+        orderList: byVisitor.get(x.visitor_id)?.orderList ?? [],
         visits: n(x.visits),
         visits_viewed: n(x.visits_viewed),
         adds: n(x.adds),

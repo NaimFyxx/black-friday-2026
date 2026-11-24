@@ -98,6 +98,42 @@ const ORDERS_QUERY = `
   }
 `;
 
+// Short customer names ("Sara K.") for orders that carry a visitor ID, so
+// /admin can show who came back before buying. A separate, optional query:
+// if Pulse's app may not read customer names, orders still work without them.
+const NAMES_QUERY = `
+  query bfNames($ids: [ID!]!) {
+    nodes(ids: $ids) {
+      ... on Order { id customer { firstName lastName } }
+    }
+  }
+`;
+
+function shortName(first?: string | null, last?: string | null): string | null {
+  const f = (first ?? "").trim();
+  const l = (last ?? "").trim();
+  if (!f && !l) return null;
+  return f ? (l ? `${f} ${l[0].toUpperCase()}.` : f) : `${l[0].toUpperCase()}.`;
+}
+
+// deno-lint-ignore no-explicit-any
+async function addCustomerNames(orders: any[]) {
+  const ids = orders.filter((o) => o.visitorId).map((o) => o.id);
+  const names = new Map<string, string | null>();
+  try {
+    for (let i = 0; i < ids.length; i += 100) {
+      // deno-lint-ignore no-explicit-any
+      const d: any = await gql(NAMES_QUERY, { ids: ids.slice(i, i + 100) });
+      for (const n of d?.nodes ?? []) {
+        if (n?.id) names.set(n.id, shortName(n.customer?.firstName, n.customer?.lastName));
+      }
+    }
+  } catch (e) {
+    console.error("[bf-admin] names", String((e as Error).message).slice(0, 200));
+  }
+  for (const o of orders) o.customerName = names.get(o.id) ?? null;
+}
+
 async function siteOrders(since: string, until: string) {
   const q = `created_at:>='${since}' AND created_at:<'${until}'`;
   const orders: unknown[] = [];
@@ -158,6 +194,8 @@ async function siteOrders(since: string, until: string) {
     if (!d.orders.pageInfo.hasNextPage) break;
     after = d.orders.pageInfo.endCursor;
   }
+  // deno-lint-ignore no-explicit-any
+  await addCustomerNames(orders as any[]);
   return { orders, afterVisit };
 }
 

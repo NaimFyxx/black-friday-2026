@@ -1065,6 +1065,9 @@ function SourcesList({ rows, currency }: { rows: SourceRow[]; currency: string }
   );
 }
 
+/** Orders in Shopify admin (store drynksapp), for the order links on visitors. */
+const SHOPIFY_ADMIN_ORDERS = "https://admin.shopify.com/store/drynksapp/orders";
+
 /** Visitors (one per browser) and how many times each came, from the anonymous visitor ID. */
 function VisitorsSection({ range }: { range: Range }) {
   const fn = useServerFn(getVisitors);
@@ -1148,6 +1151,24 @@ function VisitorsSection({ range }: { range: Range }) {
                         <span className="font-mono text-xs" title={r.visitor_id}>
                           #{r.visitor_id.slice(0, 6)}
                         </span>
+                        {r.orderList.length > 0 && (
+                          <span className="block text-sm whitespace-normal">
+                            <span className="font-medium">{r.customer ?? "Customer"}</span>{" "}
+                            {r.orderList.map((o, i) => (
+                              <span key={o.id}>
+                                {i > 0 && ", "}
+                                <a
+                                  href={`${SHOPIFY_ADMIN_ORDERS}/${o.id}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-xs text-muted-foreground underline hover:text-foreground"
+                                >
+                                  {o.name}
+                                </a>
+                              </span>
+                            ))}
+                          </span>
+                        )}
                         <span className="mt-0.5 block text-xs whitespace-normal sm:hidden">
                           <SourceName source={r.utm_source} medium={r.utm_medium} />
                           <span className="block text-muted-foreground">
@@ -1189,8 +1210,10 @@ function VisitorsSection({ range }: { range: Range }) {
             visitors, and so are the Fyxx app and Safari on the same phone; clearing cookies or a
             private window starts a new one. Counting started on 23 Nov 2026, so earlier visits
             aren&apos;t included. Orders are paid orders through this site&apos;s checkout
-            (cancelled ones left out), matched to the visitor by the same ID on the cart. The table
-            lists the 100 visitors with the most visits. Team visits and test tags are left out.
+            (cancelled ones left out), matched to the visitor by the same ID on the cart. Visitors
+            who ordered show the customer&apos;s first name and last initial, with a link to the
+            order in Shopify. The table lists the 100 visitors with the most visits. Team visits and
+            test tags are left out.
           </Note>
         </>
       )}

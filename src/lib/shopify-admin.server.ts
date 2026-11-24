@@ -21,6 +21,8 @@ export type SiteOrder = {
   utm_content: string | null;
   /** Anonymous visitor ID (_bf_visitor), on orders from 23 Nov 2026. */
   visitorId?: string | null;
+  /** "Sara K." (first name + last initial), only on orders with a visitor ID. */
+  customerName?: string | null;
   isFirstOrder: boolean | null;
 };
 
