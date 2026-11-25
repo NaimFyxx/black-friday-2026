@@ -1,0 +1,7 @@
+-- 2026-11-25: /admin/links "Links & ads" (applied as migration bf_link_funnel).
+-- Same as bf_source_funnel but one row per full tracking link:
+-- (utm_source, utm_medium, utm_campaign, utm_content, utm_term), credited to the
+-- first event of each browser session; team visits (internal) left out.
+-- Service role only (revoked from public, anon, authenticated).
+-- Read only: nothing is written; tracking and link tags are unchanged.
+-- Full text: see the migration in Supabase.

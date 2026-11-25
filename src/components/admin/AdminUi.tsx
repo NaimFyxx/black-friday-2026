@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 export const AMMAN = "Asia/Amman";
 
-export type RangeKey = "campaign" | "7d" | "30d";
+export type RangeKey = "today" | "campaign" | "7d" | "30d";
 export type Range = { since: string; until: string };
 
 export function rangeFor(key: RangeKey): Range {
@@ -17,6 +17,20 @@ export function rangeFor(key: RangeKey): Range {
       since: new Date(CAMPAIGN_START).toISOString(),
       until: new Date(CAMPAIGN_END).toISOString(),
     };
+  }
+  if (key === "today") {
+    // From midnight today in Amman (UTC+3 all year) to the end of this hour.
+    const parts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: AMMAN,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+    const [y, m, d] = parts.split("-").map(Number);
+    const since = new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1) - 3 * 3_600_000);
+    const now = new Date();
+    now.setMinutes(0, 0, 0);
+    return { since: since.toISOString(), until: new Date(now.getTime() + 3_600_000).toISOString() };
   }
   const days = key === "7d" ? 7 : 30;
   // Round to the hour so the query key (and cache) is stable for a while.
@@ -30,6 +44,7 @@ export function rangeFor(key: RangeKey): Range {
 }
 
 const RANGE_LABELS: Record<RangeKey, string> = {
+  today: "Today",
   campaign: "Whole campaign",
   "7d": "Last 7 days",
   "30d": "Last 30 days",

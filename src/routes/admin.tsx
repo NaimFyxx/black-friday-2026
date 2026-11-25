@@ -31,6 +31,7 @@ const TABS = [
   { to: "/admin/activity", label: "Day by day" },
   { to: "/admin/cohort", label: "All Fyxx sales" },
   { to: "/admin/report", label: "Report" },
+  { to: "/admin/links", label: "Links & ads" },
   { to: "/admin/sale", label: "Sale & products" },
   { to: "/admin/spins", label: "Spin & win" },
   { to: "/admin/tracking", label: "Tracking" },

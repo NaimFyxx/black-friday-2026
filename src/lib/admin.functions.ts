@@ -1233,3 +1233,140 @@ export const setFreeBottlesSettings = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// ── Links & ads: one row per tracking link ────────────────────────────
+
+export type LinkRow = {
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  utm_content: string | null;
+  sessions: number;
+  product_views: number;
+  cart_sessions: number;
+  checkout_sessions: number;
+  orders: number;
+  revenue: number;
+  new_customers: number;
+};
+
+/**
+ * /admin/links: every tagged link (each ad, email, story, banner) with its
+ * funnel and the orders placed through this site's checkout, credited to the
+ * link the visitor first came from (bf_link_funnel + Shopify orders). Read
+ * only. Visits with no tag are summed into `untagged`. Test links and team
+ * visits are left out.
+ */
+export const getLinks = createServerFn({ method: "GET" })
+  .validator((d: unknown) => RangeInput.parse(d))
+  .handler(async ({ data: range }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const { fetchSiteOrders } = await import("./shopify-admin.server");
+    const client = await db();
+    const [funnel, shop, tests] = await Promise.all([
+      client.rpc(
+        "bf_link_funnel" as never,
+        { p_since: range.since, p_until: range.until } as never,
+      ),
+      fetchSiteOrders(range.since, range.until),
+      client.from("bf_settings").select("value").eq("key", "test_utm_sources").maybeSingle(),
+    ]);
+    if (funnel.error && !isMissing(funnel.error)) throw new Error(funnel.error.message);
+    const testSources = new Set(
+      (Array.isArray(tests.data?.value) ? (tests.data.value as unknown[]) : []).map((v) =>
+        String(v).toLowerCase(),
+      ),
+    );
+
+    const blank = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
+    const rows = new Map<string, LinkRow>();
+    const untagged = { sessions: 0, cart_sessions: 0, orders: 0, revenue: 0 };
+    const row = (
+      src: string | null,
+      med: string | null,
+      camp: string | null,
+      content: string | null,
+    ): LinkRow | null => {
+      const s = normalizeSource(blank(src));
+      if (!s) return null;
+      if (testSources.has(s.toLowerCase())) return null;
+      const m = blank(med);
+      const c = blank(camp);
+      const ct = blank(content);
+      const k = key(s, m, c, ct);
+      let r = rows.get(k);
+      if (!r) {
+        r = {
+          utm_source: s,
+          utm_medium: m,
+          utm_campaign: c,
+          utm_content: ct,
+          sessions: 0,
+          product_views: 0,
+          cart_sessions: 0,
+          checkout_sessions: 0,
+          orders: 0,
+          revenue: 0,
+          new_customers: 0,
+        };
+        rows.set(k, r);
+      }
+      return r;
+    };
+
+    type F = {
+      utm_source: string | null;
+      utm_medium: string | null;
+      utm_campaign: string | null;
+      utm_content: string | null;
+      sessions: number | string;
+      product_views: number | string;
+      cart_sessions: number | string;
+      checkout_sessions: number | string;
+    };
+    for (const f of (funnel.data as F[] | null) ?? []) {
+      const r = row(f.utm_source, f.utm_medium, f.utm_campaign, f.utm_content);
+      if (!r) {
+        if (!blank(f.utm_source)) {
+          untagged.sessions += n(f.sessions);
+          untagged.cart_sessions += n(f.cart_sessions);
+        }
+        continue;
+      }
+      r.sessions += n(f.sessions);
+      r.product_views += n(f.product_views);
+      r.cart_sessions += n(f.cart_sessions);
+      r.checkout_sessions += n(f.checkout_sessions);
+    }
+
+    let currency = "JOD";
+    if (shop.status === "ok") {
+      for (const o of shop.orders) {
+        if (o.cancelled) continue;
+        currency = o.currency;
+        const r = row(o.utm_source, o.utm_medium, o.utm_campaign, o.utm_content);
+        if (!r) {
+          if (!blank(o.utm_source)) {
+            untagged.orders += 1;
+            untagged.revenue += o.total;
+          }
+          continue;
+        }
+        r.orders += 1;
+        r.revenue += o.total;
+        if (o.isFirstOrder) r.new_customers += 1;
+      }
+    }
+
+    return {
+      range,
+      currency,
+      rows: [...rows.values()].sort((a, b) => b.revenue - a.revenue || b.sessions - a.sessions),
+      untagged,
+      setup: {
+        events: isMissing(funnel.error) ? ("missing" as const) : ("ok" as const),
+        orders: shop.status,
+      },
+    };
+  });
