@@ -8,7 +8,7 @@ function RewardImage({ r, className }: { r: RewardLevel; className?: string }) {
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ff-cream",
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ff-warm-cream",
         className,
       )}
     >
@@ -17,7 +17,7 @@ function RewardImage({ r, className }: { r: RewardLevel; className?: string }) {
           src={r.slot.image}
           alt=""
           loading="lazy"
-          className="h-full w-full object-contain p-2"
+          className="h-full w-full object-contain p-2 mix-blend-multiply"
         />
       ) : (
         <RewardStar filled={r.reached} className="h-1/2 w-1/2 opacity-80" />
@@ -32,7 +32,7 @@ function Status({ r }: { r: RewardLevel }) {
       Unlocked
     </span>
   ) : (
-    <span className="ff-num inline-flex rounded-full border border-ff-burgundy/30 px-3 py-1 text-[11px] text-ff-burgundy">
+    <span className="ff-num inline-flex rounded-full border border-ff-black/30 px-3 py-1 text-[11px] text-ff-black">
       Unlock at {formatJod(r.amount)}
     </span>
   );
@@ -52,14 +52,14 @@ export function RewardCard({
   return (
     <div
       className={cn(
-        "snap-start rounded-2xl border bg-ff-warm-cream p-3",
-        r.reached ? "border-ff-red" : "border-ff-burgundy/15",
+        "snap-start rounded-2xl bg-ff-cream p-3 text-ff-black",
+        r.reached && "ring-2 ring-ff-burgundy",
         row ? "flex w-60 shrink-0 gap-3" : "w-36 shrink-0 md:w-48",
       )}
     >
       <RewardImage r={r} className={row ? "h-16 w-14" : "aspect-[4/3] w-full"} />
       <div className={cn("min-w-0", !row && "mt-2")}>
-        <p className="text-[10px] tracking-[0.15em] text-ff-burgundy uppercase">{r.label}</p>
+        <p className="ff-subline text-[10px] tracking-[0.15em] text-ff-red uppercase">{r.label}</p>
         <p
           className={cn(
             "ff-subline mt-0.5 line-clamp-2 text-sm leading-snug",

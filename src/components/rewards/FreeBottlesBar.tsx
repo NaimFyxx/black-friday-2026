@@ -38,9 +38,9 @@ export function FreeBottlesBar({
 
   return (
     <div className={cn("relative px-3", compact ? "pt-1 pb-1" : "pt-6 pb-5")}>
-      <div className="relative h-1.5 rounded-full bg-ff-burgundy/15">
+      <div className="relative h-1.5 rounded-full bg-ff-black/20">
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-ff-red transition-[width] duration-500 ease-out"
+          className="absolute inset-y-0 left-0 rounded-full bg-ff-cream transition-[width] duration-500 ease-out"
           style={{ width: `${p.fill}%` }}
         />
         {p.milestones.map((m) => (
@@ -80,13 +80,14 @@ function Marker({
       className={cn(
         "flex items-center justify-center rounded-full border",
         compact ? "h-2.5 w-2.5" : "h-3.5 w-3.5",
-        m.reached ? "border-ff-red bg-ff-red text-ff-cream" : "border-ff-burgundy/40 bg-ff-cream",
+        m.reached ? "border-ff-cream bg-ff-cream text-ff-red" : "border-ff-cream/70 bg-ff-red",
       )}
     >
       {m.reached && !compact && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
     </span>
   ) : (
     <RewardStar
+      light
       filled={m.reached}
       className={cn(compact ? "h-4 w-4" : "h-6 w-6", pop && "ff-star-pop")}
     />
@@ -122,7 +123,7 @@ function Marker({
       </Popover>
       {/* Small label: free delivery above its dot, amounts under the stars. */}
       {delivery ? (
-        <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 text-[9px] leading-none whitespace-nowrap text-ff-black/60">
+        <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 text-[9px] leading-none whitespace-nowrap text-ff-black">
           {m.label}
         </span>
       ) : (
@@ -130,7 +131,7 @@ function Marker({
           className={cn(
             "ff-num pointer-events-none absolute top-full text-[9px] leading-none whitespace-nowrap",
             // The next goal stands out; the rest stay quiet.
-            next ? "font-semibold text-ff-red" : "text-ff-black/60",
+            next ? "font-semibold text-ff-cream" : "text-ff-black/70",
             // The last star sits at the right edge: keep its amount inside the box.
             m.pos >= 99 ? "right-1" : "left-1/2 -translate-x-1/2",
           )}

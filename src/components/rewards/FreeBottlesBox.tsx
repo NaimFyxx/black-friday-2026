@@ -15,15 +15,15 @@ export function FreeBottlesBox({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   if (!cfg) return null;
   return (
-    <div className={cn("rounded-2xl bg-ff-warm-cream px-4 pt-3 pb-2", className)}>
+    <div className={cn("rounded-2xl bg-ff-red px-4 pt-3 pb-2 text-ff-black", className)}>
       <AwayLine cfg={cfg} total={total} className="text-sm" />
       <FreeBottlesBar cfg={cfg} total={total} />
-      <UnlockedReward cfg={cfg} total={total} className="mt-1 mb-2" />
+      <UnlockedReward cfg={cfg} total={total} className="mt-1 mb-2 w-fit" />
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="ff-subline flex w-full items-center justify-center gap-1 border-t border-ff-burgundy/10 pt-2 pb-1 text-xs tracking-wide text-ff-red uppercase"
+        className="ff-subline flex w-full items-center justify-center gap-1 border-t border-ff-black/15 pt-2 pb-1 text-xs tracking-wide text-ff-cream uppercase"
       >
         See the free bottles
         <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />

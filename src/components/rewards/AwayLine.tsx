@@ -15,7 +15,7 @@ export function AwayLine({
     <p className={cn("text-ff-black", className)}>
       {awayParts(total, cfg).map((p, i) =>
         p.strong ? (
-          <span key={i} className="ff-num font-semibold text-ff-red">
+          <span key={i} className="ff-num font-semibold text-ff-cream">
             {p.text}
           </span>
         ) : (

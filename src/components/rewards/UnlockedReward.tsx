@@ -21,18 +21,18 @@ export function UnlockedReward({
     <div
       key={r.level}
       className={cn(
-        "flex items-center gap-2.5 rounded-xl bg-ff-cream px-3 py-2 text-left",
+        "flex items-center gap-2.5 rounded-full bg-ff-burgundy px-3 py-1.5 text-left text-ff-cream",
         className,
       )}
     >
       {r.slot.image ? (
         <img src={r.slot.image} alt="" className="h-10 w-8 shrink-0 object-contain" />
       ) : (
-        <RewardStar filled className="ff-star-pop h-5 w-5 shrink-0" />
+        <RewardStar light filled className="ff-star-pop h-4 w-4 shrink-0" />
       )}
       <p className="min-w-0 text-xs leading-snug">
-        <span className="ff-subline text-ff-red">Unlocked: {r.label}</span>
-        {r.slot.name && <span className="block text-ff-black">{r.slot.name}</span>}
+        <span className="ff-subline tracking-wide uppercase">Unlocked: {r.label}</span>
+        {r.slot.name && <span className="block text-ff-warm-cream">{r.slot.name}</span>}
       </p>
     </div>
   );

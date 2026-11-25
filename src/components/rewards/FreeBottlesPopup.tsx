@@ -49,13 +49,13 @@ function PopupCard({ cfg, total, from }: { cfg: FreeBottlesConfig; total: number
   const upgraded =
     progress(total, cfg).bottles > progress(from, cfg).bottles ? currentReward(total, cfg) : null;
   return (
-    <div className="w-[min(92vw,380px)] rounded-2xl border border-ff-burgundy/15 bg-ff-warm-cream px-4 pt-3 pb-2 text-ff-black shadow-xl">
-      <p className="ff-headline text-xs tracking-wide text-ff-red uppercase">
+    <div className="w-[min(92vw,380px)] rounded-2xl bg-ff-red px-4 pt-3 pb-2 text-ff-black shadow-xl">
+      <p className="ff-headline text-xs tracking-wide text-ff-cream uppercase">
         {cfg.text.headline || DEFAULT_TEXT.headline}
       </p>
       {upgraded && (
         // Reached a new star with this add: say what they upgraded to.
-        <p className="ff-subline mt-1 text-sm leading-snug text-ff-burgundy">
+        <p className="ff-subline mt-1 text-sm leading-snug text-ff-cream">
           Upgraded to {upgraded.label}
           {upgraded.slot.name ? `: ${upgraded.slot.name}` : ""}
         </p>
