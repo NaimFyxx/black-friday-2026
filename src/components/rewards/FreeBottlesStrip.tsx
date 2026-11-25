@@ -42,28 +42,40 @@ export function FreeBottlesStrip({
   return (
     <section className={cn("relative overflow-hidden bg-ff-red text-ff-black", className)}>
       {/* A few of Andrea's starbursts around the headline. */}
-      <RewardStar light filled className="absolute top-6 left-[6%] h-5 w-5 rotate-12 opacity-80" />
       <RewardStar
         light
         filled
-        className="absolute top-16 right-[8%] h-4 w-4 -rotate-12 opacity-70"
+        className="absolute top-3 left-[4%] h-4 w-4 rotate-12 opacity-80 md:top-6 md:left-[6%] md:h-5 md:w-5"
       />
-      <div className="mx-auto max-w-[1100px] px-5 pt-9 pb-9 md:px-10 md:pt-12">
-        <p className="ff-subline text-center text-xs tracking-[0.25em] text-ff-cream uppercase md:text-sm">
+      <RewardStar
+        light
+        filled
+        className="absolute top-4 right-[4%] h-3 w-3 -rotate-12 opacity-70 md:top-16 md:right-[8%] md:h-4 md:w-4"
+      />
+      <div className="mx-auto max-w-[1100px] px-5 pt-5 pb-5 md:px-10 md:pt-12 md:pb-9">
+        <p className="ff-subline hidden text-center text-xs tracking-[0.25em] text-ff-cream uppercase md:block md:text-sm">
           Fyxx Friday
         </p>
-        <h2 className="ff-headline mt-2 text-center text-[34px] leading-[0.95] text-ff-cream uppercase md:text-6xl">
+        <h2 className="ff-headline text-center text-[22px] leading-none text-ff-cream uppercase md:mt-2 md:text-6xl md:leading-[0.95]">
           {cfg.text.headline || DEFAULT_TEXT.headline}
         </h2>
-        <AwayLine cfg={cfg} total={total} className="mt-4 text-center text-sm md:text-lg" />
-        <div className="mx-auto mt-2 max-w-xl">
+        <AwayLine
+          cfg={cfg}
+          total={total}
+          className="mt-1.5 text-center text-xs md:mt-4 md:text-lg"
+        />
+        <div className="mx-auto mt-0 max-w-xl md:mt-2">
           <FreeBottlesBar cfg={cfg} total={total} />
-          <UnlockedReward cfg={cfg} total={total} className="mx-auto mt-1 w-fit" />
+          <UnlockedReward
+            cfg={cfg}
+            total={total}
+            className="mx-auto mt-0 w-fit scale-90 md:mt-1 md:scale-100"
+          />
         </div>
         <RewardCarousel
           levels={levels}
           cfg={cfg}
-          className="-mx-5 mt-6 px-5 md:mx-0 md:justify-center md:px-0"
+          className="-mx-5 mt-3 px-5 md:mx-0 md:mt-6 md:justify-center md:px-0"
         />
       </div>
     </section>
