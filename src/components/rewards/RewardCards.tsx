@@ -54,10 +54,10 @@ export function RewardCard({
       className={cn(
         "snap-start rounded-2xl border bg-ff-warm-cream p-3",
         r.reached ? "border-ff-red" : "border-ff-burgundy/15",
-        row ? "flex w-64 shrink-0 gap-3" : "w-40 shrink-0 md:w-48",
+        row ? "flex w-60 shrink-0 gap-3" : "w-36 shrink-0 md:w-48",
       )}
     >
-      <RewardImage r={r} className={row ? "h-20 w-16" : "aspect-square w-full"} />
+      <RewardImage r={r} className={row ? "h-16 w-14" : "aspect-[4/3] w-full"} />
       <div className={cn("min-w-0", !row && "mt-2")}>
         <p className="text-[10px] tracking-[0.15em] text-ff-burgundy uppercase">{r.label}</p>
         <p

@@ -18,7 +18,7 @@ export function FreeBottlesBox({ className }: { className?: string }) {
     <div className={cn("rounded-2xl bg-ff-warm-cream px-4 pt-3 pb-2", className)}>
       <AwayLine cfg={cfg} total={total} className="text-sm" />
       <FreeBottlesBar cfg={cfg} total={total} />
-      <UnlockedReward cfg={cfg} total={total} className="mb-2" />
+      <UnlockedReward cfg={cfg} total={total} className="mt-1 mb-2" />
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

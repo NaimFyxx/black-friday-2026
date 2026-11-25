@@ -37,7 +37,7 @@ export function FreeBottlesStrip({
           className="ff-headline text-center text-[13px] leading-snug uppercase"
         />
         <FreeBottlesBar cfg={cfg} total={total} />
-        <UnlockedReward cfg={cfg} total={total} className="mb-2" />
+        <UnlockedReward cfg={cfg} total={total} className="mt-1 mb-2" />
         <RewardCarousel levels={levels} cfg={cfg} row />
       </div>
     );
@@ -55,7 +55,7 @@ export function FreeBottlesStrip({
         <AwayLine cfg={cfg} total={total} className="mt-3 text-center text-sm md:text-lg" />
         <div className="mx-auto mt-2 max-w-xl">
           <FreeBottlesBar cfg={cfg} total={total} />
-          <UnlockedReward cfg={cfg} total={total} className="mx-auto w-fit" />
+          <UnlockedReward cfg={cfg} total={total} className="mx-auto mt-1 w-fit" />
         </div>
         <RewardCarousel
           levels={levels}
