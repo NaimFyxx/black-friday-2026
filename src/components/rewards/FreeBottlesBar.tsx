@@ -37,7 +37,7 @@ export function FreeBottlesBar({
   }, [p.bottles]);
 
   return (
-    <div className={cn("relative px-3", compact ? "pt-1 pb-1" : "pt-4 pb-5")}>
+    <div className={cn("relative px-3", compact ? "pt-1 pb-1" : "pt-6 pb-5")}>
       <div className="relative h-1.5 rounded-full bg-ff-burgundy/15">
         <div
           className="absolute inset-y-0 left-0 rounded-full bg-ff-red transition-[width] duration-500 ease-out"
@@ -123,8 +123,15 @@ function Marker({
           {m.label}
         </span>
       ) : (
-        <span className="ff-num pointer-events-none absolute top-full left-1/2 -translate-x-1/2 text-[9px] leading-none whitespace-nowrap text-ff-black/60">
-          {formatJod(m.amount)}
+        <span
+          className={cn(
+            "ff-num pointer-events-none absolute top-full text-[9px] leading-none whitespace-nowrap text-ff-black/60",
+            // The last star sits at the right edge: keep its amount inside the box.
+            m.pos >= 99 ? "right-1" : "left-1/2 -translate-x-1/2",
+          )}
+        >
+          {/* Number only ("50.000"); the headline says it is JOD. */}
+          {m.amount.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
         </span>
       )}
     </span>

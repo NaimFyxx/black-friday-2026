@@ -136,7 +136,8 @@ export function awayLine(total: number, cfg: FreeBottlesConfig): string {
 
 /** "Add JOD 12.000 more for 2 free bottles" (product cards and pages). */
 export function cardLine(total: number, cfg: FreeBottlesConfig): string {
-  const p = progress(total, cfg);
-  if (!p.next) return cfg.text.done || DEFAULT_TEXT.done;
-  return fill(cfg.text.card || DEFAULT_TEXT.card, p.left, p.next.label);
+  // Cards always point at the next free bottle (free delivery is minor).
+  const next = progress(total, cfg).milestones.find((m) => m.index > 0 && !m.reached);
+  if (!next) return cfg.text.done || DEFAULT_TEXT.done;
+  return fill(cfg.text.card || DEFAULT_TEXT.card, round3(next.amount - total), next.label);
 }

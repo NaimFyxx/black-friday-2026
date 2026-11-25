@@ -823,3 +823,11 @@ Owner approved the bf_events change.
 - bf-admin `orders`: now returns `financialStatus` (displayFinancialStatus) on both lists, and short customer names for all Friday-site and after-visit orders (still the optional names step).
 - `getOrdersList` in admin.functions.ts (uses bf_visits_before for visits before ordering).
 - Checked 25 Nov in Shopify: #171270 (a Friday-site order) is REFUNDED, not cancelled; none of the Friday-site orders since 23 Nov has cancelledAt.
+
+## 2026-11-25: "Up to 4 free bottles" bar (structure only, DISPLAY ONLY)
+- Never adds products, never creates discounts, never changes prices. The real free bottles must be given in Shopify (automatic discounts) by Naim. The bar only shows progress.
+- Settings (bf_settings, all on /admin > Overview > "Free bottles bar"): rewards_enabled (false), rewards_preview_only (true), rewards_count_discounted (true), free_delivery_threshold 25, reward_1..4 = 50/100/150/200 (placeholders), rewards_text {headline, away, card, done, soon, labels[5]}, rewards_slots [{name,image,text} x4] (empty = "Revealed soon"). bf_rewards_config() -> bf_teaser().free_bottles (null when off). SQL notes: docs/sql/2026-11-25-bf-free-bottles.sql.
+- Admin "Who sees it": Off / Preview only for me / On for everyone. Preview: open ?preview=rewards once (kept in that browser's localStorage, bf_rewards_preview); ?preview=off clears it.
+- Front end: src/lib/free-bottles.ts (config, total, lines), src/components/rewards/ (RewardStar placeholder, FreeBottlesBar, FreeBottlesStrip home + cart, FreeBottlesLine cards + product page, FreeBottlesPopup after each add, in __root). Star pop animation: .ff-star-pop in styles.css.
+- Total = cart lines at the prices in the cart (sale prices), before delivery; discounted lines skipped if rewards_count_discounted is off.
+- Star is a PLACEHOLDER (RewardStar.tsx): Andrea's starburst is not in the repo; swap the path when the SVG arrives.
