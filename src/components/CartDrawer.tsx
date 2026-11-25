@@ -16,6 +16,7 @@ import {
 import { trackBeginCheckout } from "@/lib/analytics";
 import { CartRecommendations } from "@/components/cart/CartRecommendations";
 import { MysteryGiftTracker } from "@/components/cart/MysteryGiftTracker";
+import { FreeBottlesStrip } from "@/components/rewards/FreeBottlesStrip";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
@@ -137,6 +138,8 @@ export function CartDrawer() {
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col px-6">
+          {/* Free bottles bar (display only), always at the top of the cart. */}
+          {!ended && <FreeBottlesStrip inCart className="mt-3 shrink-0" />}
           {items.length === 0 ? (
             <div className="flex flex-1 items-center justify-center">
               <p className="text-sm text-muted-foreground">Your cart is empty.</p>

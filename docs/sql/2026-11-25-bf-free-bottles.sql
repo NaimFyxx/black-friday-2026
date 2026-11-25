@@ -1,0 +1,18 @@
+-- 2026-11-25: "Up to 4 free bottles" progress bar (applied as migration
+-- bf_free_bottles_rewards). DISPLAY ONLY: nothing here adds products, creates
+-- discounts or changes prices. The free bottles are given in Shopify later.
+--
+-- New bf_settings keys (all editable on /admin > Free bottles bar):
+--   rewards_enabled          false   main switch; off = nothing shows anywhere
+--   rewards_preview_only     true    with the switch on: only browsers that opened ?preview=rewards
+--   rewards_count_discounted true    discounted (sale) items count toward the total
+--   free_delivery_threshold  25      small milestone 0 (dot, not a star)
+--   reward_1 .. reward_4     50/100/150/200  the four free bottle stars (placeholders)
+--   rewards_text             {headline, away, card, done, soon, labels[5]}
+--                            {amount} and {reward} are filled in by the site
+--   rewards_slots            [{name, image, text} x4]  what each star gives; empty = "Revealed soon"
+--
+-- bf_rewards_config() returns these as one object, or null when the switch is off.
+-- bf_teaser(p) gains 'free_bottles' = bf_rewards_config().
+-- (Full function text: see the migration in Supabase; same pattern as
+-- 2026-11-25-bf-last-piece.sql.)

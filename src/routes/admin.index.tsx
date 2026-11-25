@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { Switch } from "@/components/ui/switch";
+import { FreeBottlesAdmin } from "@/components/admin/FreeBottlesAdmin";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
@@ -101,6 +102,7 @@ function OverviewPage() {
       </PageHeader>
 
       <OffersSection />
+      <FreeBottlesAdmin />
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <RangePicker value={rangeKey} onChange={setRangeKey} />

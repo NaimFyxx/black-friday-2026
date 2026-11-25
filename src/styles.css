@@ -248,3 +248,16 @@ div[aria-label="FULLSCREEN Form"] {
 @media (prefers-reduced-motion: reduce) {
   .ff-lever-nudge { animation: none; }
 }
+
+/* Free bottles bar: a star pops once when the shopper unlocks it. */
+@keyframes ff-star-pop {
+  0% { transform: scale(0.6); }
+  55% { transform: scale(1.35) rotate(12deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.ff-star-pop {
+  animation: ff-star-pop 0.6s ease-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ff-star-pop { animation: none; }
+}

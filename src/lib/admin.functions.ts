@@ -1130,3 +1130,108 @@ export const getOrdersList = createServerFn({ method: "GET" })
       rows: rows.map(({ visitorId: _v, ...r }) => ({ ...r, id: r.id.split("/").pop() ?? r.id })),
     };
   });
+
+// ── Free bottles bar (display only) ───────────────────────────────────
+
+const FB_KEYS = [
+  "rewards_enabled",
+  "rewards_preview_only",
+  "rewards_count_discounted",
+  "free_delivery_threshold",
+  "reward_1",
+  "reward_2",
+  "reward_3",
+  "reward_4",
+  "rewards_text",
+  "rewards_slots",
+] as const;
+
+const FbSlot = z.object({
+  name: z.string().max(120),
+  image: z.string().max(500),
+  text: z.string().max(240),
+});
+const FbSettings = z.object({
+  mode: z.enum(["off", "preview", "on"]),
+  count_discounted: z.boolean(),
+  delivery: z.number().min(0).max(100000),
+  thresholds: z.array(z.number().min(0).max(100000)).length(4),
+  text: z.object({
+    headline: z.string().max(80),
+    away: z.string().max(160),
+    card: z.string().max(160),
+    done: z.string().max(160),
+    soon: z.string().max(80),
+    labels: z.array(z.string().max(60)).length(5),
+  }),
+  slots: z.array(FbSlot).length(4),
+});
+export type FreeBottlesSettings = z.infer<typeof FbSettings>;
+
+/** Everything the /admin "Free bottles bar" section edits. */
+export const getFreeBottlesSettings = createServerFn({ method: "GET" }).handler(
+  async (): Promise<FreeBottlesSettings> => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const client = await db();
+    const { data, error } = await client
+      .from("bf_settings")
+      .select("key, value")
+      .in("key", [...FB_KEYS]);
+    if (error) throw new Error(error.message);
+    const m = new Map(
+      ((data ?? []) as Array<{ key: string; value: unknown }>).map((r) => [r.key, r.value]),
+    );
+    const text = (m.get("rewards_text") ?? {}) as Record<string, unknown>;
+    const labels = Array.isArray(text["labels"]) ? (text["labels"] as unknown[]).map(String) : [];
+    const slots = Array.isArray(m.get("rewards_slots"))
+      ? (m.get("rewards_slots") as unknown[])
+      : [];
+    const str = (v: unknown) => (typeof v === "string" ? v : "");
+    return {
+      mode:
+        m.get("rewards_enabled") !== true
+          ? "off"
+          : m.get("rewards_preview_only") === false
+            ? "on"
+            : "preview",
+      count_discounted: m.get("rewards_count_discounted") !== false,
+      delivery: n(m.get("free_delivery_threshold")),
+      thresholds: [1, 2, 3, 4].map((i) => n(m.get(`reward_${i}`))),
+      text: {
+        headline: str(text["headline"]),
+        away: str(text["away"]),
+        card: str(text["card"]),
+        done: str(text["done"]),
+        soon: str(text["soon"]),
+        labels: [0, 1, 2, 3, 4].map((i) => labels[i] ?? ""),
+      },
+      slots: [0, 1, 2, 3].map((i) => {
+        const s = (slots[i] ?? {}) as Record<string, unknown>;
+        return { name: str(s["name"]), image: str(s["image"]), text: str(s["text"]) };
+      }),
+    };
+  },
+);
+
+/** Save the whole "Free bottles bar" section. Live on the site within a minute. */
+export const setFreeBottlesSettings = createServerFn({ method: "POST" })
+  .validator((d: unknown) => FbSettings.parse(d))
+  .handler(async ({ data }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const client = await db();
+    const now = new Date().toISOString();
+    const rows: Array<{ key: string; value: unknown; updated_at: string }> = [
+      { key: "rewards_enabled", value: data.mode !== "off", updated_at: now },
+      { key: "rewards_preview_only", value: data.mode !== "on", updated_at: now },
+      { key: "rewards_count_discounted", value: data.count_discounted, updated_at: now },
+      { key: "free_delivery_threshold", value: data.delivery, updated_at: now },
+      ...data.thresholds.map((v, i) => ({ key: `reward_${i + 1}`, value: v, updated_at: now })),
+      { key: "rewards_text", value: data.text, updated_at: now },
+      { key: "rewards_slots", value: data.slots, updated_at: now },
+    ];
+    const { error } = await client.from("bf_settings").upsert(rows as never);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

@@ -20,6 +20,7 @@ import { onlySaleVariants } from "@/lib/sale-variants.functions";
 
 import { VariantPicker } from "./VariantPicker";
 import { useCartStore } from "@/stores/cartStore";
+import { FreeBottlesLine } from "@/components/rewards/FreeBottlesLine";
 
 /**
  * One product in the Fyxx Friday grid (or the Top deals strip when `compact`).
@@ -218,6 +219,7 @@ export const CatalogCard = memo(function CatalogCard({
               </s>
             )}
           </p>
+          {!compact && !soldOut && <FreeBottlesLine className="mt-1" />}
           {lastPiece ? (
             <p className="ff-subline mt-0.5 text-xs text-ff-red">Last piece</p>
           ) : (
