@@ -51,6 +51,7 @@ export function FreeBottlesBar({
             total={total}
             compact={compact}
             pop={popFrom !== null && m.index > popFrom && m.index <= p.bottles}
+            next={p.next?.index === m.index}
           />
         ))}
       </div>
@@ -64,12 +65,14 @@ function Marker({
   total,
   compact,
   pop,
+  next = false,
 }: {
   m: Milestone;
   cfg: FreeBottlesConfig;
   total: number;
   compact: boolean;
   pop: boolean;
+  next?: boolean;
 }) {
   const delivery = m.index === 0;
   const icon = delivery ? (
@@ -125,7 +128,9 @@ function Marker({
       ) : (
         <span
           className={cn(
-            "ff-num pointer-events-none absolute top-full text-[9px] leading-none whitespace-nowrap text-ff-black/60",
+            "ff-num pointer-events-none absolute top-full text-[9px] leading-none whitespace-nowrap",
+            // The next goal stands out; the rest stay quiet.
+            next ? "font-semibold text-ff-red" : "text-ff-black/60",
             // The last star sits at the right edge: keep its amount inside the box.
             m.pos >= 99 ? "right-1" : "left-1/2 -translate-x-1/2",
           )}

@@ -135,17 +135,21 @@ export function CartDrawer() {
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col px-6">
-          {/* Free bottles bar (display only), always at the top of the cart. */}
-          {!ended && <FreeBottlesStrip inCart className="mt-3 shrink-0" />}
+          {/* Free bottles bar (display only), always at the top of the cart.
+              With items it scrolls with them, so the checkout button stays put. */}
           {items.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center">
-              <p className="text-sm text-muted-foreground">Your cart is empty.</p>
+            <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+              {!ended && <FreeBottlesStrip inCart className="mt-3 shrink-0" />}
+              <div className="flex flex-1 items-center justify-center py-8">
+                <p className="text-sm text-muted-foreground">Your cart is empty.</p>
+              </div>
             </div>
           ) : (
             <>
               {/* Items and suggestions scroll together. Right padding keeps the
                   remove buttons clear of the scrollbar. */}
               <div className="min-h-0 flex-1 overflow-y-auto pr-3">
+                {!ended && <FreeBottlesStrip inCart className="mt-3" />}
                 <ul className="divide-y divide-border py-2">
                   {items.map((item) => (
                     <li key={item.variantId} className="flex gap-4 py-4">

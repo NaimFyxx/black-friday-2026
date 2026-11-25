@@ -159,3 +159,51 @@ export function cardLine(total: number, cfg: FreeBottlesConfig): string {
   if (!next) return cfg.text.done || DEFAULT_TEXT.done;
   return fill(cfg.text.card || DEFAULT_TEXT.card, round3(next.amount - total), next.label);
 }
+
+/** One reward level (star) with what it gives, for the reward cards. */
+export type RewardLevel = {
+  level: number;
+  amount: number;
+  label: string;
+  slot: RewardSlot;
+  reached: boolean;
+};
+
+export function rewardLevels(total: number, cfg: FreeBottlesConfig): RewardLevel[] {
+  return progress(total, cfg)
+    .milestones.filter((m) => m.index > 0)
+    .map((m) => ({
+      level: m.index,
+      amount: m.amount,
+      label: m.label,
+      slot: cfg.slots[m.index - 1] ?? {},
+      reached: m.reached,
+    }));
+}
+
+/** The best level unlocked so far (null before the first one). */
+export function currentReward(total: number, cfg: FreeBottlesConfig): RewardLevel | null {
+  const got = rewardLevels(total, cfg).filter((r) => r.reached);
+  return got[got.length - 1] ?? null;
+}
+
+/**
+ * The "away" line split into pieces, so the amount and the reward can be
+ * highlighted: [{text}, {text, strong: true}, ...]. All unlocked: the "done" line.
+ */
+export function awayParts(
+  total: number,
+  cfg: FreeBottlesConfig,
+): Array<{ text: string; strong?: boolean }> {
+  const p = progress(total, cfg);
+  if (!p.next) return [{ text: cfg.text.done || DEFAULT_TEXT.done, strong: true }];
+  const template = cfg.text.away || DEFAULT_TEXT.away;
+  const values: Record<string, string> = {
+    "{amount}": formatJod(p.left),
+    "{reward}": mid(p.next.label),
+  };
+  return template
+    .split(/(\{amount\}|\{reward\})/)
+    .filter(Boolean)
+    .map((t) => (t in values ? { text: values[t] ?? "", strong: true } : { text: t }));
+}

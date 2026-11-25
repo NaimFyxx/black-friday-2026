@@ -31,7 +31,7 @@ import { simVariantPrices } from "@/lib/preview-sim.functions";
 import { usePreview, useSim } from "@/lib/preview";
 import { GoesWellWith } from "@/components/grid/GoesWellWith";
 import { MembersRewards } from "@/components/members/MembersRewards";
-import { FreeBottlesLine } from "@/components/rewards/FreeBottlesLine";
+import { FreeBottlesBox } from "@/components/rewards/FreeBottlesBox";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -454,7 +454,7 @@ function ProductPage() {
                 <p className="ff-subline mt-3 text-sm text-ff-red">Last piece</p>
               )}
 
-            <FreeBottlesLine className="mt-3 text-xs" />
+            <FreeBottlesBox className="mt-4" />
 
             {/* Fyxx Rewards: one thin line, "See tiers" opens the tiers. */}
             <MembersRewards className="mt-6 overflow-hidden rounded-xl border border-ff-black/10" />

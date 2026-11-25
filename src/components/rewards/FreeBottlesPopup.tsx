@@ -3,7 +3,9 @@ import { toast } from "sonner";
 
 import {
   awayLine,
+  currentReward,
   DEFAULT_TEXT,
+  progress,
   useFreeBottles,
   useRewardTotal,
   type FreeBottlesConfig,
@@ -44,11 +46,20 @@ export function FreeBottlesPopup() {
 }
 
 function PopupCard({ cfg, total, from }: { cfg: FreeBottlesConfig; total: number; from: number }) {
+  const upgraded =
+    progress(total, cfg).bottles > progress(from, cfg).bottles ? currentReward(total, cfg) : null;
   return (
     <div className="w-[min(92vw,380px)] rounded-2xl border border-ff-burgundy/15 bg-ff-warm-cream px-4 pt-3 pb-2 text-ff-black shadow-xl">
       <p className="ff-headline text-xs tracking-wide text-ff-red uppercase">
         {cfg.text.headline || DEFAULT_TEXT.headline}
       </p>
+      {upgraded && (
+        // Reached a new star with this add: say what they upgraded to.
+        <p className="ff-subline mt-1 text-sm leading-snug text-ff-burgundy">
+          Upgraded to {upgraded.label}
+          {upgraded.slot.name ? `: ${upgraded.slot.name}` : ""}
+        </p>
+      )}
       <p className="mt-0.5 text-sm leading-snug">{awayLine(total, cfg)}</p>
       <div className="mt-2">
         <FreeBottlesBar cfg={cfg} total={total} compact fromTotal={from} />
