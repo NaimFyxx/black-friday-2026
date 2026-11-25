@@ -55,7 +55,7 @@ export function FreeBottlesAdmin() {
   return (
     <Section
       title="Free bottles bar"
-      intro="The 'Up to 4 free bottles' progress bar: home page, product cards and pages, the cart and a short message after each add to cart. Display only: it never adds bottles or discounts. The free bottles themselves are given in Shopify (automatic discounts)."
+      intro="The free bottles progress bar (five stars, each one a better free bottle): home page, product cards and pages, the cart and a short message after each add to cart. Display only: it never adds bottles or discounts. The free bottles themselves are given in Shopify (automatic discounts)."
     >
       {error ? (
         <ErrorBox error={error} />
@@ -102,16 +102,16 @@ export function FreeBottlesAdmin() {
             <p className="mb-2 text-sm font-medium">
               Amounts (JOD, cart total after sale prices, before delivery)
             </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-6">
               <Num
-                label="Free delivery"
+                label="Free delivery (0 = hide)"
                 value={s.delivery}
                 onChange={(v) => set({ delivery: v })}
               />
               {s.thresholds.map((v, i) => (
                 <Num
                   key={i}
-                  label={`Reward ${i + 1}`}
+                  label={`Star ${i + 1} (0 = hide)`}
                   value={v}
                   onChange={(x) =>
                     set({ thresholds: s.thresholds.map((t, j) => (j === i ? x : t)) })
@@ -144,11 +144,11 @@ export function FreeBottlesAdmin() {
               value={s.text.soon}
               onChange={(v) => setText({ soon: v })}
             />
-            <div className="grid gap-2 sm:grid-cols-5">
+            <div className="grid gap-2 sm:grid-cols-3">
               {s.text.labels.map((l, i) => (
                 <Txt
                   key={i}
-                  label={i === 0 ? "Label: delivery" : `Label: reward ${i}`}
+                  label={i === 0 ? "Label: delivery" : `Label: star ${i}`}
                   value={l}
                   onChange={(v) =>
                     setText({ labels: s.text.labels.map((x, j) => (j === i ? v : x)) })
@@ -170,7 +170,7 @@ export function FreeBottlesAdmin() {
                   set({ slots: s.slots.map((x, j) => (j === i ? { ...x, ...patch } : x)) });
                 return (
                   <div key={i} className="space-y-1.5 rounded-lg border border-border p-3">
-                    <p className="text-xs font-medium">Reward {i + 1}</p>
+                    <p className="text-xs font-medium">Star {i + 1}</p>
                     <Txt label="Bottle name" value={slot.name} onChange={(v) => up({ name: v })} />
                     <Txt
                       label="Image address"

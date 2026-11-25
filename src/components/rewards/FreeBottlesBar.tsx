@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { RewardStar } from "./RewardStar";
 
 /**
- * The free bottles progress bar: free delivery as a small dot, then four stars
+ * The free bottles progress bar: free delivery as a small dot (when set), then the stars
  * (the free bottle rewards). Full size: tap a star to see what you get.
  * Compact (the after-add popup): no tapping, no labels. Display only.
  */

@@ -1,6 +1,6 @@
-// "Up to 4 free bottles": a spend-based progress bar (free delivery, then four
-// free bottle rewards). DISPLAY ONLY: it never adds products, makes discounts
-// or changes prices. The real free bottles are given in Shopify (automatic
+// Free bottles bar: a spend-based progress bar (optional free delivery dot, then
+// five stars, each one a better free bottle).
+// DISPLAY ONLY: it never adds products, makes discounts or changes prices. The real free bottles are given in Shopify (automatic
 // discounts), set up separately.
 //
 // Everything (switch, preview-only, thresholds, text, what each reward is)
@@ -35,13 +35,24 @@ export type FreeBottlesConfig = {
   slots: RewardSlot[];
 };
 
+/** Number of reward stars (reward_1 .. reward_5 in bf_settings). */
+export const REWARD_COUNT = 5;
+
 export const DEFAULT_TEXT = {
-  headline: "Up to 4 free bottles",
+  headline: "Spend more, upgrade your free bottle",
   away: "You're {amount} away from {reward}",
   card: "Add {amount} more for {reward}",
-  done: "You've unlocked all 4 free bottles",
+  done: "You've unlocked the best free bottle",
   soon: "Revealed soon",
-  labels: ["Free delivery", "1 free bottle", "2 free bottles", "3 free bottles", "4 free bottles"],
+  // [0] = free delivery (only shown when its amount is above 0), then one per star.
+  labels: [
+    "Free delivery",
+    "Your free bottle",
+    "Free bottle level 2",
+    "Free bottle level 3",
+    "Free bottle level 4",
+    "Free bottle level 5",
+  ],
 };
 
 const PREVIEW_KEY = "bf_rewards_preview";
@@ -87,7 +98,7 @@ export function useRewardTotal(cfg: FreeBottlesConfig | null): number {
 }
 
 export type Milestone = {
-  /** 0 = free delivery, 1 to 4 = free bottle rewards. */
+  /** 0 = free delivery, 1 to 5 = free bottle levels. */
   index: number;
   amount: number;
   label: string;
@@ -99,13 +110,20 @@ export type Milestone = {
 const round3 = (n: number) => Math.round(n * 1000) / 1000;
 
 export function progress(total: number, cfg: FreeBottlesConfig) {
-  const labels = cfg.text.labels?.length === 5 ? cfg.text.labels : DEFAULT_TEXT.labels;
-  const amounts = [cfg.delivery, ...cfg.thresholds.slice(0, 4)].map(Number);
-  const max = Math.max(...amounts, 1);
-  const milestones: Milestone[] = amounts.map((amount, index) => ({
+  const labels = cfg.text.labels ?? [];
+  // Free delivery only when its amount is set (0 = no delivery dot); stars
+  // with an amount of 0 are left out.
+  const list = [
+    { index: 0, amount: Number(cfg.delivery) || 0 },
+    ...cfg.thresholds
+      .slice(0, REWARD_COUNT)
+      .map((a, i) => ({ index: i + 1, amount: Number(a) || 0 })),
+  ].filter((m) => m.amount > 0);
+  const max = Math.max(...list.map((m) => m.amount), 1);
+  const milestones: Milestone[] = list.map(({ index, amount }) => ({
     index,
     amount,
-    label: labels[index] ?? "",
+    label: labels[index] || DEFAULT_TEXT.labels[index] || "",
     reached: total + 1e-9 >= amount,
     pos: Math.min(100, (amount / max) * 100),
   }));

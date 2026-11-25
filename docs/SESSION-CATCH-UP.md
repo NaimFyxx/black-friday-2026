@@ -831,3 +831,4 @@ Owner approved the bf_events change.
 - Front end: src/lib/free-bottles.ts (config, total, lines), src/components/rewards/ (RewardStar placeholder, FreeBottlesBar, FreeBottlesStrip home + cart, FreeBottlesLine cards + product page, FreeBottlesPopup after each add, in __root). Star pop animation: .ff-star-pop in styles.css.
 - Total = cart lines at the prices in the cart (sale prices), before delivery; discounted lines skipped if rewards_count_discounted is off.
 - Star is a PLACEHOLDER (RewardStar.tsx): Andrea's starburst is not in the repo; swap the path when the SVG arrives.
+- 2026-11-25 later: changed to five value levels. reward_1..reward_5 = 50/100/150/200/250, each star a better free bottle. free_delivery_threshold = 0 (0 hides the dot; set an amount to bring it back). Labels now 6 (delivery + 5 stars), slots 5. Text: "Spend more, upgrade your free bottle", "Your free bottle", "Free bottle level 2..5". Migration bf_free_bottles_five_levels.

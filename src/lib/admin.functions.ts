@@ -1142,6 +1142,7 @@ const FB_KEYS = [
   "reward_2",
   "reward_3",
   "reward_4",
+  "reward_5",
   "rewards_text",
   "rewards_slots",
 ] as const;
@@ -1155,16 +1156,16 @@ const FbSettings = z.object({
   mode: z.enum(["off", "preview", "on"]),
   count_discounted: z.boolean(),
   delivery: z.number().min(0).max(100000),
-  thresholds: z.array(z.number().min(0).max(100000)).length(4),
+  thresholds: z.array(z.number().min(0).max(100000)).length(5),
   text: z.object({
     headline: z.string().max(80),
     away: z.string().max(160),
     card: z.string().max(160),
     done: z.string().max(160),
     soon: z.string().max(80),
-    labels: z.array(z.string().max(60)).length(5),
+    labels: z.array(z.string().max(60)).length(6),
   }),
-  slots: z.array(FbSlot).length(4),
+  slots: z.array(FbSlot).length(5),
 });
 export type FreeBottlesSettings = z.infer<typeof FbSettings>;
 
@@ -1197,16 +1198,16 @@ export const getFreeBottlesSettings = createServerFn({ method: "GET" }).handler(
             : "preview",
       count_discounted: m.get("rewards_count_discounted") !== false,
       delivery: n(m.get("free_delivery_threshold")),
-      thresholds: [1, 2, 3, 4].map((i) => n(m.get(`reward_${i}`))),
+      thresholds: [1, 2, 3, 4, 5].map((i) => n(m.get(`reward_${i}`))),
       text: {
         headline: str(text["headline"]),
         away: str(text["away"]),
         card: str(text["card"]),
         done: str(text["done"]),
         soon: str(text["soon"]),
-        labels: [0, 1, 2, 3, 4].map((i) => labels[i] ?? ""),
+        labels: [0, 1, 2, 3, 4, 5].map((i) => labels[i] ?? ""),
       },
-      slots: [0, 1, 2, 3].map((i) => {
+      slots: [0, 1, 2, 3, 4].map((i) => {
         const s = (slots[i] ?? {}) as Record<string, unknown>;
         return { name: str(s["name"]), image: str(s["image"]), text: str(s["text"]) };
       }),
