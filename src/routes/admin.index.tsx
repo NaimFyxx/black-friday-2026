@@ -618,6 +618,13 @@ function OffersSection() {
             'The thin "Members earn up to 2x points" line with See tiers, under the hero on the home page and under Add to cart on product pages.',
           on: data.rewards_strip_enabled,
         },
+        {
+          key: "last_piece_enabled",
+          title: "Last piece label",
+          description:
+            'Red "Last piece" text on product cards and product pages when only one is left in stock.',
+          on: data.last_piece_enabled,
+        },
       ]
     : [];
   return (

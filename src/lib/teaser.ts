@@ -41,6 +41,8 @@ export interface TeaserInfo {
   reminder?: ReminderCopy | null;
   /** "Only X left" at this many or fewer (during the sale). */
   low_stock_max?: number;
+  /** "Last piece" label when only one is left (bf_settings.last_piece_enabled). */
+  last_piece?: boolean;
   /** After the sale: title, button text and link. */
   ended?: { title?: string; button?: string; url?: string } | null;
   /** Product pages: accessories to suggest, by Shopify product type. */

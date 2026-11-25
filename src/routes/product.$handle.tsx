@@ -33,6 +33,7 @@ import { GoesWellWith } from "@/components/grid/GoesWellWith";
 import { MembersRewards } from "@/components/members/MembersRewards";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useCartStore } from "@/stores/cartStore";
 import { cn } from "@/lib/utils";
 
@@ -177,6 +178,23 @@ function ProductPage() {
   const preview = usePreview();
   const sim = useSim();
   const { data: teaser } = useQuery(teaserQueryOptions(preview));
+  // Stock left (bf_stock, synced from Shopify every 15 min), for "Last piece".
+  const { data: stockLeft } = useQuery({
+    queryKey: ["bf-stock", product.handle],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "bf_stock" as never,
+        {
+          p_handle: product.handle,
+        } as never,
+      );
+      if (error) return null;
+      const n: unknown = data;
+      return typeof n === "number" ? n : null;
+    },
+    staleTime: 60_000,
+    enabled: teaser?.last_piece === true,
+  });
   // Sticky phone bar: shown once the main Add to cart button has scrolled up out of view.
   const mainAdd = useRef<HTMLButtonElement>(null);
   const [stickyBar, setStickyBar] = useState(false);
@@ -426,6 +444,14 @@ function ProductPage() {
                 )}
               </button>
             </div>
+
+            {/* Only one left (single-option products only: the count is per product). */}
+            {teaser?.last_piece === true &&
+              stockLeft === 1 &&
+              variants.length <= 1 &&
+              selected?.availableForSale && (
+                <p className="ff-subline mt-3 text-sm text-ff-red">Last piece</p>
+              )}
 
             {/* Fyxx Rewards: one thin line, "See tiers" opens the tiers. */}
             <MembersRewards className="mt-6 overflow-hidden rounded-xl border border-ff-black/10" />

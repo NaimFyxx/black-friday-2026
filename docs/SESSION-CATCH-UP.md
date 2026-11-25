@@ -811,3 +811,8 @@ Owner approved the bf_events change.
 - bf_catalog default order: Fyxx products first, then the rest. Inside each block the categories take turns (wine, whisky, cigar, gin...) and products are shuffled. The shuffle changes once a day (Amman date) so "load more" never repeats or skips.
 - The category headings in the grid are gone (bf_catalog no longer sends "block"). Live at once, no Publish needed.
 - SQL: docs/sql/2026-11-24-bf-catalog-mixed.sql. Previous order: 2026-11-22-bf-vendor-priority.sql.
+
+## 2026-11-25: "Last piece" label
+- Product cards (grid, Goes well with) and product pages show red "Last piece" when stock is exactly 1 (bf_products.stock, synced every 15 min). On cards it replaces "Only 1 left".
+- Product page reads bf_stock(handle); shown only for single-option products.
+- Switch: bf_settings.last_piece_enabled (on), /admin > Offers on the site > "Last piece label". SQL: docs/sql/2026-11-25-bf-last-piece.sql.

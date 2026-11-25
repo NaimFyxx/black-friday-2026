@@ -830,6 +830,7 @@ const OFFER_KEYS = [
   "gift_card_discount_enabled",
   "mystery_gift_enabled",
   "rewards_strip_enabled",
+  "last_piece_enabled",
 ] as const;
 export type OfferKey = (typeof OFFER_KEYS)[number];
 
@@ -851,6 +852,7 @@ export const getOfferSwitches = createServerFn({ method: "GET" }).handler(async 
     gift_card_discount_pct: n(m.get("gift_card_discount_pct")) || 10,
     mystery_gift_enabled: m.get("mystery_gift_enabled") === true,
     rewards_strip_enabled: m.get("rewards_strip_enabled") === true,
+    last_piece_enabled: m.get("last_piece_enabled") === true,
   };
 });
 

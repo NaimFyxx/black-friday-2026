@@ -1,4 +1,7 @@
 import { memo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { usePreview } from "@/lib/preview";
+import { teaserQueryOptions } from "@/lib/teaser";
 import { Link } from "@tanstack/react-router";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -42,6 +45,8 @@ export const CatalogCard = memo(function CatalogCard({
   lowStockMax?: number | null;
 }) {
   const soldOut = item.available === false;
+  const { data: teaser } = useQuery(teaserQueryOptions(usePreview()));
+  const lastPiece = !soldOut && teaser?.last_piece === true && item.stock === 1;
   const lowStock =
     !soldOut && lowStockMax && item.stock != null && item.stock > 0 && item.stock <= lowStockMax
       ? item.stock
@@ -213,8 +218,12 @@ export const CatalogCard = memo(function CatalogCard({
               </s>
             )}
           </p>
-          {lowStock !== null && (
-            <p className="ff-subline mt-0.5 text-xs text-ff-red">Only {lowStock} left</p>
+          {lastPiece ? (
+            <p className="ff-subline mt-0.5 text-xs text-ff-red">Last piece</p>
+          ) : (
+            lowStock !== null && (
+              <p className="ff-subline mt-0.5 text-xs text-ff-red">Only {lowStock} left</p>
+            )
           )}
         </div>
       </Link>
