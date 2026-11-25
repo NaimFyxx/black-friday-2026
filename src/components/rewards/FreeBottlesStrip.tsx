@@ -41,7 +41,7 @@ export function FreeBottlesStrip({
 
   return (
     <section className={cn("relative overflow-hidden bg-ff-red text-ff-black", className)}>
-      {/* A few stars around the headline (placeholder until Andrea's starburst). */}
+      {/* A few of Andrea's starbursts around the headline. */}
       <RewardStar light filled className="absolute top-6 left-[6%] h-5 w-5 rotate-12 opacity-80" />
       <RewardStar
         light
