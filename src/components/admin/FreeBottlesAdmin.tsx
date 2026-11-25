@@ -9,7 +9,7 @@ import {
   setFreeBottlesSettings,
   type FreeBottlesSettings,
 } from "@/lib/admin.functions";
-import { ErrorBox, Loading, Panel, Section, Toggle } from "./AdminUi";
+import { ErrorBox, Loading, Panel, Section } from "./AdminUi";
 
 const input =
   "w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-ff-red";
@@ -63,27 +63,9 @@ export function FreeBottlesAdmin() {
         <Loading />
       ) : (
         <Panel className="space-y-5">
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Who sees it</p>
-            <Toggle
-              value={s.mode}
-              options={[
-                { key: "off", label: "Off" },
-                { key: "preview", label: "Preview only for me" },
-                { key: "on", label: "On for everyone" },
-              ]}
-              onChange={(mode) => {
-                const next = { ...s, mode };
-                setS(next);
-                void save(next);
-              }}
-            />
-            <p className="text-xs text-muted-foreground">
-              Preview only: open <code>friday.myfyxx.com/?preview=rewards</code> once on your phone;
-              that browser keeps seeing it until you open <code>?preview=off</code>. Nobody else
-              sees anything.
-            </p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Switch it on, and choose preview only, under &quot;Offers on the site&quot; above.
+          </p>
 
           <label className="flex items-center justify-between gap-4">
             <span className="text-sm">

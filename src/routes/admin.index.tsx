@@ -610,11 +610,18 @@ function OffersSection() {
           on: data.gift_card_discount_enabled,
         },
         {
-          key: "mystery_gift_enabled",
-          title: "Green Room mystery gift",
+          key: "rewards_enabled",
+          title: "Free bottles bar (replaces the Green Room mystery gift)",
           description:
-            "The progress bar in the cart and the floating cart bar, and the Congratulations message every 50 JOD. Display only: no gift is added to orders.",
-          on: data.mystery_gift_enabled,
+            "The progress bar with five stars (JOD 50 to 250, each a better free bottle): home page, product cards and pages, the cart, the floating cart bar and a short message after each add to cart. Display only: no bottle is added to orders. Amounts, text and bottles: see Free bottles bar below.",
+          on: data.rewards_enabled,
+        },
+        {
+          key: "rewards_preview_only",
+          title: "Free bottles bar: preview only for me",
+          description:
+            "On: only phones that opened friday.myfyxx.com/?preview=rewards see the bar (?preview=off hides it again). Off: everyone sees it while the switch above is on.",
+          on: data.rewards_preview_only,
         },
         {
           key: "rewards_strip_enabled",

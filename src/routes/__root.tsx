@@ -15,7 +15,6 @@ import appCss from "../styles.css?url";
 import { SiteFooter } from "../components/SiteFooter";
 import { SiteHeader } from "../components/SiteHeader";
 import { Toaster } from "../components/ui/sonner";
-import { GiftUnlockNotifier } from "../components/cart/GiftUnlockNotifier";
 import { FreeBottlesPopup } from "../components/rewards/FreeBottlesPopup";
 import { useCartSync } from "../hooks/useCartSync";
 import { useKlaviyoFormsOff } from "../hooks/useKlaviyoFormsOff";
@@ -502,7 +501,6 @@ function RootComponent() {
       <Outlet />
       {!isAdminPage && <SiteFooter />}
       <Toaster position="top-center" />
-      <GiftUnlockNotifier />
       <FreeBottlesPopup />
     </QueryClientProvider>
   );

@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/sheet";
 import { trackBeginCheckout } from "@/lib/analytics";
 import { CartRecommendations } from "@/components/cart/CartRecommendations";
-import { MysteryGiftTracker } from "@/components/cart/MysteryGiftTracker";
 import { FreeBottlesStrip } from "@/components/rewards/FreeBottlesStrip";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { usePreview } from "@/lib/preview";
@@ -35,8 +34,6 @@ export function CartDrawer() {
   // After the sale: no crossed-out prices or savings.
   const teaserData = useQuery(teaserQueryOptions(usePreview())).data;
   const ended = teaserData?.state === "ended";
-  // Green Room mystery gift: switched on/off in bf_settings.mystery_gift_enabled.
-  const giftOn = !!teaserData?.mystery_gift && !ended;
   // Checkout clicked: keep the spinner until the browser leaves for Shopify.
   const [goingToCheckout, setGoingToCheckout] = useState(false);
   useEffect(() => {
@@ -149,11 +146,6 @@ export function CartDrawer() {
               {/* Items and suggestions scroll together. Right padding keeps the
                   remove buttons clear of the scrollbar. */}
               <div className="min-h-0 flex-1 overflow-y-auto pr-3">
-                {giftOn && (
-                  <div className="pt-3">
-                    <MysteryGiftTracker subtotal={totalPrice} />
-                  </div>
-                )}
                 <ul className="divide-y divide-border py-2">
                   {items.map((item) => (
                     <li key={item.variantId} className="flex gap-4 py-4">

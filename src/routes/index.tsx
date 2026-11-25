@@ -397,7 +397,7 @@ function Storefront() {
         </div>
       </section>
 
-      {state !== "ended" && <FloatingCart sale={sale} showGift={!!teaser?.mystery_gift} />}
+      {state !== "ended" && <FloatingCart sale={sale} />}
       <BackToTop raised={mounted && cartCount > 0} />
       {state !== "ended" && <SpinWidget raised={mounted && cartCount > 0} />}
     </main>

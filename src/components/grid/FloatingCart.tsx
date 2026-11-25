@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ShoppingBag } from "lucide-react";
 
-import { giftLine, giftProgress } from "@/lib/mystery-gift";
+import { cardLine, progress, rewardTotal, useFreeBottles } from "@/lib/free-bottles";
 import { formatJod } from "@/lib/shopify";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
 import { useCartUi } from "@/stores/cartUiStore";
@@ -12,16 +12,9 @@ import { useCartUi } from "@/stores/cartUiStore";
  * sync). Opens the existing cart drawer.
  */
 
-export function FloatingCart({
-  sale,
-  ended = false,
-  showGift = false,
-}: {
-  sale: boolean;
-  ended?: boolean;
-  /** Show the Green Room mystery gift progress (bf_settings.mystery_gift_enabled). */
-  showGift?: boolean;
-}) {
+export function FloatingCart({ sale, ended = false }: { sale: boolean; ended?: boolean }) {
+  // Free bottles bar (display only): a thin bar and the next goal.
+  const bottles = useFreeBottles();
   const [mounted, setMounted] = useState(false);
   const items = useCartStore((s) => s.items);
   const count = useCartStore(selectCartCount);
@@ -48,8 +41,6 @@ export function FloatingCart({
     return sum + (cmp > price ? (cmp - price) * i.quantity : 0);
   }, 0);
 
-  const gift = giftProgress(total);
-
   return (
     <button
       type="button"
@@ -73,17 +64,19 @@ export function FloatingCart({
           View cart
         </span>
       </span>
-      {showGift && !ended && (
-        // Mystery gift progress, the same bar and line as in the cart.
+      {bottles && !ended && (
+        // Free bottles progress, the same goal as in the cart.
         <span className="block w-full">
           <span className="block h-1.5 overflow-hidden rounded-full bg-ff-cream/20">
             <span
               className="block h-full rounded-full bg-ff-red transition-[width] duration-500 ease-out"
-              style={{ width: `${gift.pct}%` }}
+              style={{
+                width: `${progress(rewardTotal(items, bottles.count_discounted), bottles).fill}%`,
+              }}
             />
           </span>
           <span className="mt-1 block text-[11px] leading-tight text-ff-warm-cream">
-            {giftLine(total, true)}
+            {cardLine(rewardTotal(items, bottles.count_discounted), bottles)}
           </span>
         </span>
       )}

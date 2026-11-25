@@ -56,8 +56,6 @@ export interface TeaserInfo {
   gift_card_discount?: number;
   /** Fyxx Rewards line on the home and product pages (bf_settings.rewards_strip_enabled). */
   rewards_strip?: boolean;
-  /** Green Room mystery gift on/off (bf_settings.mystery_gift_enabled). */
-  mystery_gift?: boolean;
   /** Header navigation sections (bf_settings.nav_groups). */
   nav_groups?: string[];
   copy: {

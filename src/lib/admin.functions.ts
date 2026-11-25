@@ -828,7 +828,8 @@ export const getCarts = createServerFn({ method: "GET" }).handler(async () => {
 
 const OFFER_KEYS = [
   "gift_card_discount_enabled",
-  "mystery_gift_enabled",
+  "rewards_enabled",
+  "rewards_preview_only",
   "rewards_strip_enabled",
   "last_piece_enabled",
 ] as const;
@@ -850,7 +851,8 @@ export const getOfferSwitches = createServerFn({ method: "GET" }).handler(async 
   return {
     gift_card_discount_enabled: m.get("gift_card_discount_enabled") === true,
     gift_card_discount_pct: n(m.get("gift_card_discount_pct")) || 10,
-    mystery_gift_enabled: m.get("mystery_gift_enabled") === true,
+    rewards_enabled: m.get("rewards_enabled") === true,
+    rewards_preview_only: m.get("rewards_preview_only") !== false,
     rewards_strip_enabled: m.get("rewards_strip_enabled") === true,
     last_piece_enabled: m.get("last_piece_enabled") === true,
   };
@@ -1153,7 +1155,6 @@ const FbSlot = z.object({
   text: z.string().max(240),
 });
 const FbSettings = z.object({
-  mode: z.enum(["off", "preview", "on"]),
   count_discounted: z.boolean(),
   delivery: z.number().min(0).max(100000),
   thresholds: z.array(z.number().min(0).max(100000)).length(5),
@@ -1190,12 +1191,6 @@ export const getFreeBottlesSettings = createServerFn({ method: "GET" }).handler(
       : [];
     const str = (v: unknown) => (typeof v === "string" ? v : "");
     return {
-      mode:
-        m.get("rewards_enabled") !== true
-          ? "off"
-          : m.get("rewards_preview_only") === false
-            ? "on"
-            : "preview",
       count_discounted: m.get("rewards_count_discounted") !== false,
       delivery: n(m.get("free_delivery_threshold")),
       thresholds: [1, 2, 3, 4, 5].map((i) => n(m.get(`reward_${i}`))),
@@ -1224,8 +1219,6 @@ export const setFreeBottlesSettings = createServerFn({ method: "POST" })
     const client = await db();
     const now = new Date().toISOString();
     const rows: Array<{ key: string; value: unknown; updated_at: string }> = [
-      { key: "rewards_enabled", value: data.mode !== "off", updated_at: now },
-      { key: "rewards_preview_only", value: data.mode !== "on", updated_at: now },
       { key: "rewards_count_discounted", value: data.count_discounted, updated_at: now },
       { key: "free_delivery_threshold", value: data.delivery, updated_at: now },
       ...data.thresholds.map((v, i) => ({ key: `reward_${i + 1}`, value: v, updated_at: now })),
