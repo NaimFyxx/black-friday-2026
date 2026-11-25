@@ -45,6 +45,7 @@ import {
   type Bucket,
   type DaySales,
   type SourceRow,
+  getOrdersList,
   getVisitors,
 } from "@/lib/admin.functions";
 import { formatJod } from "@/lib/shopify";
@@ -126,6 +127,8 @@ function OverviewPage() {
               leavingLoading={leaving.isLoading}
             />
           </Section>
+
+          <OrdersSection range={range} />
 
           <Section
             title="Paid ads or free"
@@ -1277,5 +1280,156 @@ function OrdersByVisits({ orders: o }: { orders: VisitorOrders }) {
         </div>
       )}
     </Panel>
+  );
+}
+
+/** Status pill for an order: cancelled first, then Shopify's payment status. */
+function OrderStatus({ cancelled, status }: { cancelled: boolean; status: string | null }) {
+  const s = (status ?? "").toUpperCase();
+  const [label, cls] = cancelled
+    ? ["Cancelled", "bg-red-100 text-red-800"]
+    : s === "PAID"
+      ? ["Payment received", "bg-green-100 text-green-800"]
+      : s === "REFUNDED"
+        ? ["Refunded", "bg-red-100 text-red-800"]
+        : s === "PARTIALLY_REFUNDED"
+          ? ["Partly refunded", "bg-amber-100 text-amber-900"]
+          : s === "PENDING" || s === "AUTHORIZED" || s === "PARTIALLY_PAID"
+            ? ["Not paid yet", "bg-secondary text-muted-foreground"]
+            : [
+                s ? s.charAt(0) + s.slice(1).toLowerCase().replace(/_/g, " ") : "Unknown",
+                "bg-secondary text-muted-foreground",
+              ];
+  return (
+    <span
+      className={`inline-block rounded-full px-2 py-px text-[11px] font-semibold whitespace-nowrap ${cls}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** Every order (this site's checkout and myfyxx.com after a visit), cancelled and refunded included. */
+function OrdersSection({ range }: { range: Range }) {
+  const fn = useServerFn(getOrdersList);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-orders-list", range],
+    queryFn: () => fn({ data: range }),
+    staleTime: 30_000,
+    retry: 1,
+  });
+  const rows = data?.rows ?? [];
+  const cancelled = rows.filter((r) => r.cancelled).length;
+  const refunded = rows.filter(
+    (r) => !r.cancelled && /REFUNDED/i.test(r.financialStatus ?? ""),
+  ).length;
+  return (
+    <Section
+      title="All orders"
+      intro="Every order from Friday visitors, newest first, with who ordered, where they came from and the order's status. Cancelled and refunded orders are listed too, so nothing is missed."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : isLoading || !data ? (
+        <Loading />
+      ) : data.status !== "ok" ? (
+        <p className="text-sm text-muted-foreground">
+          Orders from Shopify can&apos;t be read right now{data.message ? `: ${data.message}` : "."}
+        </p>
+      ) : (
+        <>
+          <p className="text-sm">
+            {fmtNum(rows.length)} order{rows.length === 1 ? "" : "s"}
+            {cancelled > 0 && <> · {fmtNum(cancelled)} cancelled</>}
+            {refunded > 0 && <> · {fmtNum(refunded)} refunded</>}
+          </p>
+          <Panel className="overflow-x-auto p-0">
+            {rows.length === 0 ? (
+              <p className="p-8 text-center text-sm text-muted-foreground">
+                No orders in this time yet.
+              </p>
+            ) : (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left">
+                    <th className={TH}>Order</th>
+                    <th className={`${TH} hidden sm:table-cell`}>Customer</th>
+                    <th className={`${TH} hidden lg:table-cell`}>Where</th>
+                    <th className={`${TH} hidden sm:table-cell`}>Came from</th>
+                    <th className={`${THR} hidden lg:table-cell`}>Visits before</th>
+                    <th className={THR}>Total</th>
+                    <th className={TH}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr
+                      key={r.id}
+                      className={`${TR} ${r.cancelled ? "text-muted-foreground" : ""}`}
+                    >
+                      <td className={TD}>
+                        <a
+                          href={`${SHOPIFY_ADMIN_ORDERS}/${r.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-medium underline hover:no-underline"
+                        >
+                          {r.name}
+                        </a>
+                        <span className="block text-xs text-muted-foreground">
+                          {fmtDate(r.createdAt, true)}
+                        </span>
+                        <span className="block text-xs sm:hidden">
+                          {r.customer ?? "Customer"}
+                          {r.isFirstOrder ? " · new customer" : ""}
+                        </span>
+                        <span className="block text-xs whitespace-normal sm:hidden">
+                          <SourceName source={r.source} medium={r.medium} />
+                        </span>
+                        <span className="block text-xs text-muted-foreground lg:hidden">
+                          {r.where === "site" ? "This site's checkout" : "Later on myfyxx.com"}
+                          {r.visits
+                            ? ` · ${fmtNum(r.visits)} visit${r.visits === 1 ? "" : "s"} before`
+                            : ""}
+                        </span>
+                      </td>
+                      <td className={`${TD} hidden sm:table-cell`}>
+                        {r.customer ?? "Customer"}
+                        {r.isFirstOrder && (
+                          <span className="block text-xs text-muted-foreground">new customer</span>
+                        )}
+                      </td>
+                      <td className={`${TD} hidden lg:table-cell`}>
+                        {r.where === "site" ? "This site's checkout" : "Later on myfyxx.com"}
+                      </td>
+                      <td className={`${TD} hidden sm:table-cell`}>
+                        <SourceName source={r.source} medium={r.medium} />
+                      </td>
+                      <td className={`${TDR} hidden lg:table-cell`}>
+                        {r.visits ? fmtNum(r.visits) : "–"}
+                      </td>
+                      <td className={`${TDR} ${r.cancelled ? "line-through" : ""}`}>
+                        {fmtMoney(r.total, r.currency)}
+                      </td>
+                      <td className={TD}>
+                        <OrderStatus cancelled={r.cancelled} status={r.financialStatus} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </Panel>
+          <Note>
+            &quot;This site&apos;s checkout&quot;: ordered through the Fyxx Friday cart. &quot;Later
+            on myfyxx.com&quot;: ordered on the website within 30 days of a visit. The order number
+            opens the order in Shopify. Visits before: how many times that browser came to the site
+            before ordering (counted from 23 Nov). Cancelled orders are crossed out here and left
+            out of the totals above; refunded orders are still counted in the totals above, as
+            before.
+          </Note>
+        </>
+      )}
+    </Section>
   );
 }

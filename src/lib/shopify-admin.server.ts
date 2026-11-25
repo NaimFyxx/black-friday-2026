@@ -15,6 +15,8 @@ export type SiteOrder = {
   total: number;
   currency: string;
   cancelled: boolean;
+  /** Shopify payment status: PAID, PENDING, REFUNDED, PARTIALLY_REFUNDED... */
+  financialStatus?: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
@@ -39,6 +41,8 @@ export type AfterVisitOrder = {
   campaign: string | null;
   firstVisit: string | null;
   visitorId?: string | null;
+  financialStatus?: string | null;
+  customerName?: string | null;
   isFirstOrder: boolean | null;
 };
 

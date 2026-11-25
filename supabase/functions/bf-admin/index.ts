@@ -89,7 +89,7 @@ const ORDERS_QUERY = `
     orders(first: 250, after: $after, query: $q, sortKey: CREATED_AT) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        id name createdAt cancelledAt
+        id name createdAt cancelledAt displayFinancialStatus
         customAttributes { key value }
         totalPriceSet { shopMoney { amount currencyCode } }
         customer { numberOfOrders }
@@ -98,8 +98,8 @@ const ORDERS_QUERY = `
   }
 `;
 
-// Short customer names ("Sara K.") for orders that carry a visitor ID, so
-// /admin can show who came back before buying. A separate, optional query:
+// Short customer names ("Sara K.") for the orders list and the visitors on
+// /admin. A separate, optional query:
 // if Pulse's app may not read customer names, orders still work without them.
 const NAMES_QUERY = `
   query bfNames($ids: [ID!]!) {
@@ -118,7 +118,7 @@ function shortName(first?: string | null, last?: string | null): string | null {
 
 // deno-lint-ignore no-explicit-any
 async function addCustomerNames(orders: any[]) {
-  const ids = orders.filter((o) => o.visitorId).map((o) => o.id);
+  const ids = orders.map((o) => o.id);
   const names = new Map<string, string | null>();
   try {
     for (let i = 0; i < ids.length; i += 100) {
@@ -160,6 +160,7 @@ async function siteOrders(since: string, until: string) {
             total: Number(o.totalPriceSet.shopMoney.amount) || 0,
             currency: o.totalPriceSet.shopMoney.currencyCode,
             cancelled: o.cancelledAt != null,
+            financialStatus: o.displayFinancialStatus ?? null,
             source: attr.get("_bf_visit_source") || null,
             medium: attr.get("_bf_visit_medium") || null,
             campaign: attr.get("_bf_visit_campaign") || null,
@@ -178,6 +179,7 @@ async function siteOrders(since: string, until: string) {
         total: Number(o.totalPriceSet.shopMoney.amount) || 0,
         currency: o.totalPriceSet.shopMoney.currencyCode,
         cancelled: o.cancelledAt != null,
+        financialStatus: o.displayFinancialStatus ?? null,
         utm_source: attr.get("_utm_source") || null,
         // No UTM tags: the referring site (instagram.com, direct...) takes the
         // medium's place, the same rule the Sources page uses for visits.
@@ -195,7 +197,7 @@ async function siteOrders(since: string, until: string) {
     after = d.orders.pageInfo.endCursor;
   }
   // deno-lint-ignore no-explicit-any
-  await addCustomerNames(orders as any[]);
+  await addCustomerNames([...orders, ...afterVisit] as any[]);
   return { orders, afterVisit };
 }
 

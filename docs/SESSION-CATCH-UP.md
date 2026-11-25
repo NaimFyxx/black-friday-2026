@@ -816,3 +816,10 @@ Owner approved the bf_events change.
 - Product cards (grid, Goes well with) and product pages show red "Last piece" when stock is exactly 1 (bf_products.stock, synced every 15 min). On cards it replaces "Only 1 left".
 - Product page reads bf_stock(handle); shown only for single-option products.
 - Switch: bf_settings.last_piece_enabled (on), /admin > Offers on the site > "Last piece label". SQL: docs/sql/2026-11-25-bf-last-piece.sql.
+
+## 2026-11-25: "All orders" list on /admin
+- New section right under "The main numbers" on the Overview: every order from Friday visitors in the chosen range, newest first. Order number (opens the order in Shopify admin), date, customer (first name + last initial, "new customer" when it is their first order), where (this site's checkout, or later on myfyxx.com), came from (friendly source + Paid/Free/Unknown), visits before ordering (visitor ID), total, status.
+- Status: Cancelled (crossed out), or Shopify's payment status: Payment received, Refunded, Partly refunded, Not paid yet. Cancelled orders stay left out of the totals; refunded orders are still counted in the totals (unchanged rule, owner may want to revisit).
+- bf-admin `orders`: now returns `financialStatus` (displayFinancialStatus) on both lists, and short customer names for all Friday-site and after-visit orders (still the optional names step).
+- `getOrdersList` in admin.functions.ts (uses bf_visits_before for visits before ordering).
+- Checked 25 Nov in Shopify: #171270 (a Friday-site order) is REFUNDED, not cancelled; none of the Friday-site orders since 23 Nov has cancelledAt.

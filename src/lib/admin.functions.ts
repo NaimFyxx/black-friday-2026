@@ -1034,3 +1034,99 @@ export const getVisitors = createServerFn({ method: "GET" })
       })),
     };
   });
+
+// ── Orders list (every order, cancelled and refunded ones included) ────
+
+export type OrderListRow = {
+  id: string;
+  name: string;
+  createdAt: string;
+  total: number;
+  currency: string;
+  /** "site" = through this site's checkout; "later" = on myfyxx.com after a visit. */
+  where: "site" | "later";
+  cancelled: boolean;
+  financialStatus: string | null;
+  customer: string | null;
+  source: string | null;
+  medium: string | null;
+  campaign: string | null;
+  /** Visits by that browser up to the order (null when no visitor ID). */
+  visits: number | null;
+  isFirstOrder: boolean | null;
+};
+
+/** Every order through this site's checkout or on myfyxx.com after a visit, newest first. */
+export const getOrdersList = createServerFn({ method: "GET" })
+  .validator((d: unknown) => RangeInput.parse(d))
+  .handler(async ({ data: range }) => {
+    const { assertAdmin } = await import("./admin-session.server");
+    await assertAdmin();
+    const { fetchSiteOrders } = await import("./shopify-admin.server");
+    const shop = await fetchSiteOrders(range.since, range.until);
+    if (shop.status !== "ok") {
+      return {
+        status: shop.status,
+        message: shop.status === "error" ? shop.message : null,
+        rows: [] as OrderListRow[],
+      };
+    }
+    const rows: Array<OrderListRow & { visitorId: string | null }> = [
+      ...shop.orders.map((o) => ({
+        id: o.id,
+        name: o.name,
+        createdAt: o.createdAt,
+        total: o.total,
+        currency: o.currency,
+        where: "site" as const,
+        cancelled: o.cancelled,
+        financialStatus: o.financialStatus ?? null,
+        customer: o.customerName ?? null,
+        source: o.utm_source,
+        medium: o.utm_medium,
+        campaign: o.utm_campaign,
+        visits: null,
+        isFirstOrder: o.isFirstOrder,
+        visitorId: o.visitorId ?? null,
+      })),
+      ...(shop.afterVisit ?? []).map((o) => ({
+        id: o.id,
+        name: o.name,
+        createdAt: o.createdAt,
+        total: o.total,
+        currency: o.currency,
+        where: "later" as const,
+        cancelled: o.cancelled,
+        financialStatus: o.financialStatus ?? null,
+        customer: o.customerName ?? null,
+        source: o.source,
+        medium: o.medium,
+        campaign: o.campaign,
+        visits: null,
+        isFirstOrder: o.isFirstOrder,
+        visitorId: o.visitorId ?? null,
+      })),
+    ];
+    const withId = rows.filter((r) => r.visitorId);
+    if (withId.length) {
+      const client = await db();
+      const { data: vb } = await client.rpc("bf_visits_before", {
+        p_items: withId.map((r) => ({ visitor_id: r.visitorId, at: r.createdAt })),
+      });
+      const m = new Map<string, number>();
+      for (const v of (vb as Array<{ visitor_id: string; at: string; visits: unknown }> | null) ??
+        []) {
+        m.set(`${v.visitor_id}|${new Date(v.at).getTime()}`, n(v.visits));
+      }
+      for (const r of withId) {
+        const v = m.get(`${r.visitorId}|${new Date(r.createdAt).getTime()}`);
+        r.visits = v ? v : null;
+      }
+    }
+    rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return {
+      status: "ok" as const,
+      message: null,
+      rows: rows.map(({ visitorId: _v, ...r }) => ({ ...r, id: r.id.split("/").pop() ?? r.id })),
+    };
+  });
