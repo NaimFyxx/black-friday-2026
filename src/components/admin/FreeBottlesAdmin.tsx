@@ -122,6 +122,16 @@ export function FreeBottlesAdmin() {
             />
             <Txt label="All unlocked" value={s.text.done} onChange={(v) => setText({ done: v })} />
             <Txt
+              label="Reward words for level 1 (fills {reward})"
+              value={s.text.first}
+              onChange={(v) => setText({ first: v })}
+            />
+            <Txt
+              label="Reward words for levels 2 to 5 ({level} = the star label)"
+              value={s.text.upgrade}
+              onChange={(v) => setText({ upgrade: v })}
+            />
+            <Txt
               label="Reward not set yet"
               value={s.text.soon}
               onChange={(v) => setText({ soon: v })}

@@ -30,6 +30,10 @@ export type FreeBottlesConfig = {
     card?: string;
     done?: string;
     soon?: string;
+    /** The reward phrase for level 1, e.g. "your free bottle". */
+    first?: string;
+    /** The reward phrase for levels 2 and up, e.g. "a better free bottle ({level})". */
+    upgrade?: string;
     labels?: string[];
   };
   slots: RewardSlot[];
@@ -44,15 +48,11 @@ export const DEFAULT_TEXT = {
   card: "Add {amount} more for {reward}",
   done: "You've unlocked the best free bottle",
   soon: "Revealed soon",
+  // One free bottle that gets better at each level (not a new bottle each time).
+  first: "your free bottle",
+  upgrade: "a better free bottle ({level})",
   // [0] = free delivery (only shown when its amount is above 0), then one per star.
-  labels: [
-    "Free delivery",
-    "Your free bottle",
-    "Free bottle level 2",
-    "Free bottle level 3",
-    "Free bottle level 4",
-    "Free bottle level 5",
-  ],
+  labels: ["Free delivery", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5"],
 };
 
 const PREVIEW_KEY = "bf_rewards_preview";
@@ -145,11 +145,21 @@ function fill(template: string, amount: number, reward: string) {
   return template.replace("{amount}", formatJod(amount)).replace("{reward}", mid(reward));
 }
 
-/** "You're JOD 18.500 away from 2 free bottles" (or the "all unlocked" line). */
+/**
+ * What reaching a milestone gives, as a phrase: level 1 = "your free bottle",
+ * later levels = "a better free bottle (level 3)" (the same bottle, upgraded).
+ */
+export function rewardPhrase(m: Milestone, cfg: FreeBottlesConfig): string {
+  if (m.index === 0) return m.label;
+  if (m.index === 1) return cfg.text.first || DEFAULT_TEXT.first;
+  return (cfg.text.upgrade || DEFAULT_TEXT.upgrade).replace("{level}", mid(m.label));
+}
+
+/** "You're JOD 18.500 away from a better free bottle (level 3)" (or the "done" line). */
 export function awayLine(total: number, cfg: FreeBottlesConfig): string {
   const p = progress(total, cfg);
   if (!p.next) return cfg.text.done || DEFAULT_TEXT.done;
-  return fill(cfg.text.away || DEFAULT_TEXT.away, p.left, p.next.label);
+  return fill(cfg.text.away || DEFAULT_TEXT.away, p.left, rewardPhrase(p.next, cfg));
 }
 
 /** "Add JOD 12.000 more for 2 free bottles" (product cards and pages). */
@@ -157,7 +167,11 @@ export function cardLine(total: number, cfg: FreeBottlesConfig): string {
   // Cards always point at the next free bottle (free delivery is minor).
   const next = progress(total, cfg).milestones.find((m) => m.index > 0 && !m.reached);
   if (!next) return cfg.text.done || DEFAULT_TEXT.done;
-  return fill(cfg.text.card || DEFAULT_TEXT.card, round3(next.amount - total), next.label);
+  return fill(
+    cfg.text.card || DEFAULT_TEXT.card,
+    round3(next.amount - total),
+    rewardPhrase(next, cfg),
+  );
 }
 
 /** One reward level (star) with what it gives, for the reward cards. */
@@ -167,10 +181,12 @@ export type RewardLevel = {
   label: string;
   slot: RewardSlot;
   reached: boolean;
+  /** The level the shopper is on now (their bottle). Lower reached levels are "upgraded". */
+  current: boolean;
 };
 
 export function rewardLevels(total: number, cfg: FreeBottlesConfig): RewardLevel[] {
-  return progress(total, cfg)
+  const list = progress(total, cfg)
     .milestones.filter((m) => m.index > 0)
     .map((m) => ({
       level: m.index,
@@ -178,7 +194,11 @@ export function rewardLevels(total: number, cfg: FreeBottlesConfig): RewardLevel
       label: m.label,
       slot: cfg.slots[m.index - 1] ?? {},
       reached: m.reached,
+      current: false,
     }));
+  const top = list.filter((r) => r.reached).pop();
+  if (top) top.current = true;
+  return list;
 }
 
 /** The best level unlocked so far (null before the first one). */
@@ -200,7 +220,7 @@ export function awayParts(
   const template = cfg.text.away || DEFAULT_TEXT.away;
   const values: Record<string, string> = {
     "{amount}": formatJod(p.left),
-    "{reward}": mid(p.next.label),
+    "{reward}": mid(rewardPhrase(p.next, cfg)),
   };
   return template
     .split(/(\{amount\}|\{reward\})/)

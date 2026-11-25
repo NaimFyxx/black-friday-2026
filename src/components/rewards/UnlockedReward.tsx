@@ -31,7 +31,7 @@ export function UnlockedReward({
         <RewardStar light filled className="ff-star-pop h-4 w-4 shrink-0" />
       )}
       <p className="min-w-0 text-xs leading-snug">
-        <span className="ff-subline tracking-wide uppercase">Unlocked: {r.label}</span>
+        <span className="ff-subline tracking-wide uppercase">Your free bottle: {r.label}</span>
         {r.slot.name && <span className="block text-ff-warm-cream">{r.slot.name}</span>}
       </p>
     </div>

@@ -56,7 +56,9 @@ function PopupCard({ cfg, total, from }: { cfg: FreeBottlesConfig; total: number
       {upgraded && (
         // Reached a new star with this add: say what they upgraded to.
         <p className="ff-subline mt-1 text-sm leading-snug text-ff-cream">
-          Upgraded to {upgraded.label}
+          {upgraded.level === 1
+            ? "Free bottle unlocked"
+            : `Free bottle upgraded to ${upgraded.label}`}
           {upgraded.slot.name ? `: ${upgraded.slot.name}` : ""}
         </p>
       )}

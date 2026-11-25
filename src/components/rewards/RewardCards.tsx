@@ -27,11 +27,19 @@ function RewardImage({ r, className }: { r: RewardLevel; className?: string }) {
 }
 
 function Status({ r }: { r: RewardLevel }) {
-  return r.reached ? (
-    <span className="ff-subline inline-flex rounded-full bg-ff-red px-3 py-1 text-[11px] text-ff-cream">
-      Unlocked
-    </span>
-  ) : (
+  if (r.current)
+    return (
+      <span className="ff-subline inline-flex rounded-full bg-ff-red px-3 py-1 text-[11px] text-ff-cream">
+        Your bottle now
+      </span>
+    );
+  if (r.reached)
+    return (
+      <span className="ff-subline inline-flex text-[11px] text-ff-black/50">
+        Upgraded
+      </span>
+    );
+  return (
     <span className="ff-num inline-flex rounded-full border border-ff-black/30 px-3 py-1 text-[11px] text-ff-black">
       Unlock at {formatJod(r.amount)}
     </span>
@@ -53,7 +61,8 @@ export function RewardCard({
     <div
       className={cn(
         "snap-start rounded-2xl bg-ff-cream p-3 text-ff-black",
-        r.reached && "ring-2 ring-ff-burgundy",
+        r.current && "ring-2 ring-ff-burgundy",
+        r.reached && !r.current && "opacity-60",
         row ? "flex w-60 shrink-0 gap-3" : "w-36 shrink-0 md:w-48",
       )}
     >
