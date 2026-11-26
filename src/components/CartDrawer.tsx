@@ -51,6 +51,7 @@ export function CartDrawer() {
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const removeItem = useCartStore((state) => state.removeItem);
   const getCheckoutUrl = useCartStore((state) => state.getCheckoutUrl);
+  const cartId = useCartStore((state) => state.cartId);
   const syncCart = useCartStore((state) => state.syncCart);
   const prepareCheckoutFn = useServerFn(prepareCheckout);
   const totalItems = useCartStore(selectCartCount);
@@ -78,6 +79,15 @@ export function CartDrawer() {
   // checkout so Shopify pre-fills it and the order earns their points.
   const { user } = useRewardsAuth();
 
+  // Attach the member's email / phone / saved address to the cart as soon as
+  // they are signed in and a cart exists - not only when they click Checkout
+  // here. So however they reach checkout later (a new navigation, or a checkout
+  // page reloaded after they logged in), their details are already on the cart.
+  // Best-effort and self-gating: no signed-in session means it is a no-op.
+  useEffect(() => {
+    if (user?.email && cartId) void prefillCheckout(cartId);
+  }, [user?.email, cartId]);
+
   const handleCheckout = () => {
     const checkoutUrl = getCheckoutUrl();
     if (checkoutUrl) {
@@ -104,10 +114,12 @@ export function CartDrawer() {
       // Latest campaign onto the cart first (orders read it), plus the signed-in
       // member's email so checkout pre-fills it and the order earns their
       // points. Then hand off.
-      const cartId = useCartStore.getState().cartId;
       const email = user?.email;
       // Pre-fill the member's email (+ phone + saved address) on the cart. The
       // address is applied server-side; if that fails, fall back to email only.
+      // Always attempt it (it self-gates: with no signed-in session it is a
+      // no-op), so a member who logged in after the cart was made is covered
+      // even if the client auth state had not caught up yet.
       const prefill = () =>
         prefillCheckout(cartId!).then((ok) =>
           ok ? undefined : email ? setCartBuyerEmail(cartId!, email).catch(() => {}) : undefined,
@@ -115,10 +127,7 @@ export function CartDrawer() {
       // Also wait (max ~1 s) for GA4 begin_checkout to go out before leaving.
       const prepared = (
         cartId
-          ? Promise.all([
-              refreshCartAttributes(cartId).catch(() => {}),
-              email ? prefill().catch(() => {}) : Promise.resolve(),
-            ])
+          ? Promise.all([refreshCartAttributes(cartId).catch(() => {}), prefill().catch(() => {})])
           : Promise.resolve()
       ).then(() => prepareCheckoutFn({ data: { url: normal } }));
       Promise.all([prepared, tracked.catch(() => {})])
