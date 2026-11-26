@@ -853,3 +853,7 @@ Owner approved the bf_events change.
 - FACE_VALUES now 25, 50, 100, 150, 200 (src/components/hero/GiftCardSticker.tsx).
 - Bug fixed: the sticker found each Shopify variant by price == face value. Shopify now sells the cards at 10% off (25 -> 22.500 ... 200 -> 180), so no variant matched and every Add to cart said "This gift card isn't available right now". Now matched by variant title ("JOD 25.000", "JOD 150.00").
 - Prices shown are Shopify's (face value crossed out when Shopify's price is lower). "The X% comes off at checkout" only shows when the /admin discount is on and Shopify's price is NOT already reduced.
+
+## 2026-11-26: gift card as a normal product ("All" and search only)
+- Hidden main "Gift Cards" (handles: fyxx-gift-card, hidden: true) in bf_settings.category_mapping; "Gift Cards" removed from exclusions. No category circle, not in any nav group, last in the default "All" order, findable by search. SQL notes: docs/sql/2026-11-26-bf-gift-card-in-catalog.sql.
+- Fixed a latent admin bug: saving /admin/sale ran the mapping through a zod schema that stripped unknown keys (image_handle, handles, require_tags, catch_all_types, sub collections/handles). Schemas now .passthrough() and accept `hidden`.

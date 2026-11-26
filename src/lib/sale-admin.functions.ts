@@ -145,19 +145,27 @@ const copy = (max: number) =>
       message: "Please don't use dashes like – or — in shop text",
     });
 
-const SubSchema = z.object({
-  name: z.string().min(1).max(40),
-  tags: z.array(z.string()).optional(),
-  product_types: z.array(z.string()).optional(),
-});
+const SubSchema = z
+  .object({
+    name: z.string().min(1).max(40),
+    tags: z.array(z.string()).optional(),
+    product_types: z.array(z.string()).optional(),
+  })
+  .passthrough(); // keep collections / handles
 const MappingSchema = z
   .array(
-    z.object({
-      name: z.string().min(1).max(40),
-      product_types: z.array(z.string()).optional(),
-      fallback_sub: z.string().max(40).optional(),
-      subs: z.array(SubSchema).optional(),
-    }),
+    z
+      .object({
+        name: z.string().min(1).max(40),
+        product_types: z.array(z.string()).optional(),
+        fallback_sub: z.string().max(40).optional(),
+        subs: z.array(SubSchema).optional(),
+        // Hidden: in "All" and search only, no category circle (e.g. Gift Cards).
+        hidden: z.boolean().optional(),
+      })
+      // Keep the other keys (image_handle, handles, require_tags,
+      // catch_all_types...): without this, saving on /admin/sale dropped them.
+      .passthrough(),
   )
   .min(1);
 const ExclusionsSchema = z.object({
