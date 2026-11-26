@@ -11,8 +11,7 @@ import { FloatingCart } from "@/components/grid/FloatingCart";
 import { TopDeals } from "@/components/grid/TopDeals";
 import { YourUsual } from "@/components/grid/YourUsual";
 import { MembersRewards } from "@/components/members/MembersRewards";
-import { FreeBottlesStrip } from "@/components/rewards/FreeBottlesStrip";
-import { TeaserHero } from "@/components/hero/TeaserHero";
+import { FridayHero } from "@/components/hero/FridayHero";
 import { QuickLinks } from "@/components/grid/QuickLinks";
 import { SaleEndCountdown } from "@/components/hero/SaleEndCountdown";
 import { usePreview, useSim } from "@/lib/preview";
@@ -137,8 +136,10 @@ function Storefront() {
   const items = (data?.pages ?? []).flatMap((page) => page.items);
   const state = facets?.state ?? data?.pages[0]?.state ?? "preview";
   const sale = state === "sale";
-  // Teaser phase (before sale_start): the big hero replaces the small logo banner.
-  const showHero = state === "preview" && !!teaser && teaser.state === "preview";
+  // Before and during the sale: the burgundy hero (logo, bottles, gift card, free
+  // gift progress) replaces the small logo banner. After the sale: the banner.
+  const showHero = state !== "ended" && !!teaser && teaser.state !== "ended";
+  const invalidateAll = useCallback(() => void queryClient.invalidateQueries(), [queryClient]);
   const filtersAnchor = useRef<HTMLDivElement>(null);
   const scrollToFilters = useCallback(() => {
     const el = filtersAnchor.current;
@@ -233,15 +234,7 @@ function Storefront() {
         </div>
       </div>
 
-      {showHero && (
-        <TeaserHero
-          info={teaser}
-          onStart={scrollToFilters}
-          onSaleStarted={() => queryClient.invalidateQueries()}
-        />
-      )}
-
-      {state !== "ended" && <FreeBottlesStrip />}
+      {showHero && <FridayHero info={teaser} onSaleStarted={invalidateAll} />}
       {state !== "ended" && <MembersRewards where="home" />}
 
       <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">

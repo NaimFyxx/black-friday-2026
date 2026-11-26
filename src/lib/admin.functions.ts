@@ -832,6 +832,7 @@ const OFFER_KEYS = [
   "rewards_preview_only",
   "rewards_strip_enabled",
   "last_piece_enabled",
+  "show_planned_discount",
 ] as const;
 export type OfferKey = (typeof OFFER_KEYS)[number];
 
@@ -855,6 +856,7 @@ export const getOfferSwitches = createServerFn({ method: "GET" }).handler(async 
     rewards_preview_only: m.get("rewards_preview_only") !== false,
     rewards_strip_enabled: m.get("rewards_strip_enabled") === true,
     last_piece_enabled: m.get("last_piece_enabled") === true,
+    show_planned_discount: m.get("show_planned_discount") === true,
   };
 });
 
@@ -1166,6 +1168,7 @@ const FbSettings = z.object({
     soon: z.string().max(80),
     first: z.string().max(80),
     upgrade: z.string().max(80),
+    current: z.string().max(80),
     labels: z.array(z.string().max(60)).length(6),
   }),
   slots: z.array(FbSlot).length(5),
@@ -1204,6 +1207,7 @@ export const getFreeBottlesSettings = createServerFn({ method: "GET" }).handler(
         soon: str(text["soon"]),
         first: str(text["first"]),
         upgrade: str(text["upgrade"]),
+        current: str(text["current"]),
         labels: [0, 1, 2, 3, 4, 5].map((i) => labels[i] ?? ""),
       },
       slots: [0, 1, 2, 3, 4].map((i) => {

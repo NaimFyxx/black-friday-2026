@@ -1,0 +1,15 @@
+-- 2026-11-26: Fyxx gift card as a normal product, in "All" and search only
+-- (applied as migration bf_gift_card_in_catalog).
+-- * bf_settings.exclusions.product_types: "Gift Cards" removed.
+-- * bf_settings.category_mapping: new main
+--     {"name": "Gift Cards", "handles": ["fyxx-gift-card"], "hidden": true}
+--   (only that handle is matched; other gift card products stay out).
+-- * bf_catalog_facets: mains with "hidden": true get no category circle
+--   (... with ordinality as t(m, ord) where not coalesce((m ->> 'hidden')::boolean, false)).
+-- * bf_catalog: default order puts hidden mains after everything else
+--   (v_hidden text[] from the mapping; order term (k.main_category = any(v_hidden)) before blk).
+-- Prices still come from Shopify only.
+-- Second migration bf_visible_always_show_mains:
+-- * category_mapping "Gift Cards" also gets "always_show": true.
+-- * bf_visible(...8 args): mains with always_show skip the sale_list_filter
+--   (only in-sale products) and, on Friday, the "must be discounted" rule.

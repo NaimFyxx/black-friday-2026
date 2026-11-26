@@ -34,6 +34,8 @@ export type FreeBottlesConfig = {
     first?: string;
     /** The reward phrase for levels 2 and up, e.g. "a better free bottle ({level})". */
     upgrade?: string;
+    /** Under the bar: "Your free gift: {level}". */
+    current?: string;
     labels?: string[];
   };
   slots: RewardSlot[];
@@ -51,6 +53,7 @@ export const DEFAULT_TEXT = {
   // One free bottle that gets better at each level (not a new bottle each time).
   first: "your free bottle",
   upgrade: "a better free bottle ({level})",
+  current: "Your free gift: {level}",
   // [0] = free delivery (only shown when its amount is above 0), then one per star.
   labels: ["Free delivery", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5"],
 };

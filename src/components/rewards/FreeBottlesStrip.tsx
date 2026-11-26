@@ -2,82 +2,50 @@ import { DEFAULT_TEXT, rewardLevels, useFreeBottles, useRewardTotal } from "@/li
 import { cn } from "@/lib/utils";
 import { AwayLine } from "./AwayLine";
 import { FreeBottlesBar } from "./FreeBottlesBar";
-import { RewardCarousel } from "./RewardCards";
-import { RewardStar } from "./RewardStar";
+import { LevelChips } from "./LevelChips";
 import { UnlockedReward } from "./UnlockedReward";
 
 /**
- * Free bottles section in Andrea's style (red block like Post-02 / the red
- * feed post: big cream capitals, black body text, cream highlights).
- * Home page (under the hero): headline, "away" line, bar, what you unlocked
- * and the five reward cards. Cart (`inCart`): the same, tighter.
+ * Free gift progress inside the burgundy hero (not its own section): headline,
+ * the "away" line, the bar, the current level and the levels row. Never shows
+ * what the gifts are. Renders nothing when the bar is switched off.
  */
-export function FreeBottlesStrip({
-  className,
-  inCart = false,
-}: {
-  className?: string;
-  inCart?: boolean;
-}) {
+export function HeroFreeBottles({ className }: { className?: string }) {
   const cfg = useFreeBottles();
   const total = useRewardTotal(cfg);
   if (!cfg) return null;
-  const levels = rewardLevels(total, cfg);
-
-  if (inCart) {
-    return (
-      <div className={cn("rounded-2xl bg-ff-red px-3 pt-3 pb-3 text-ff-black", className)}>
-        <AwayLine
-          cfg={cfg}
-          total={total}
-          className="ff-headline text-center text-[13px] leading-snug uppercase"
-        />
-        <FreeBottlesBar cfg={cfg} total={total} />
-        <UnlockedReward cfg={cfg} total={total} className="mx-auto mt-1 mb-2 w-fit" />
-        <RewardCarousel levels={levels} cfg={cfg} row />
-      </div>
-    );
-  }
-
   return (
-    <section className={cn("relative overflow-hidden bg-ff-red text-ff-black", className)}>
-      {/* A few of Andrea's starbursts around the headline. */}
-      <RewardStar
-        light
-        filled
-        className="absolute top-3 left-[4%] h-4 w-4 rotate-12 opacity-80 md:top-6 md:left-[6%] md:h-5 md:w-5"
+    <div className={cn("mx-auto w-full max-w-xl text-center text-ff-cream", className)}>
+      <p className="ff-headline text-sm leading-tight text-ff-red uppercase md:text-2xl">
+        {cfg.text.headline || DEFAULT_TEXT.headline}
+      </p>
+      <AwayLine
+        cfg={cfg}
+        total={total}
+        className="mt-1 text-[11px] text-ff-cream md:text-sm"
+        strongClassName="text-ff-red"
       />
-      <RewardStar
-        light
-        filled
-        className="absolute top-4 right-[4%] h-3 w-3 -rotate-12 opacity-70 md:top-16 md:right-[8%] md:h-4 md:w-4"
+      <FreeBottlesBar cfg={cfg} total={total} tone="burgundy" />
+      <UnlockedReward cfg={cfg} total={total} tone="burgundy" className="mx-auto mb-2 w-fit" />
+      <LevelChips levels={rewardLevels(total, cfg)} tone="burgundy" />
+    </div>
+  );
+}
+
+/** The cart: the same progress at the top of the cart, on Andrea's red block. */
+export function FreeBottlesStrip({ className }: { className?: string; inCart?: boolean }) {
+  const cfg = useFreeBottles();
+  const total = useRewardTotal(cfg);
+  if (!cfg) return null;
+  return (
+    <div className={cn("rounded-2xl bg-ff-red px-3 pt-3 pb-3 text-ff-black", className)}>
+      <AwayLine
+        cfg={cfg}
+        total={total}
+        className="ff-headline text-center text-[13px] leading-snug uppercase"
       />
-      <div className="mx-auto max-w-[1100px] px-5 pt-5 pb-5 md:px-10 md:pt-12 md:pb-9">
-        <p className="ff-subline hidden text-center text-xs tracking-[0.25em] text-ff-cream uppercase md:block md:text-sm">
-          Fyxx Friday
-        </p>
-        <h2 className="ff-headline text-center text-[22px] leading-none text-ff-cream uppercase md:mt-2 md:text-6xl md:leading-[0.95]">
-          {cfg.text.headline || DEFAULT_TEXT.headline}
-        </h2>
-        <AwayLine
-          cfg={cfg}
-          total={total}
-          className="mt-1.5 text-center text-xs md:mt-4 md:text-lg"
-        />
-        <div className="mx-auto mt-0 max-w-xl md:mt-2">
-          <FreeBottlesBar cfg={cfg} total={total} />
-          <UnlockedReward
-            cfg={cfg}
-            total={total}
-            className="mx-auto mt-0 w-fit scale-90 md:mt-1 md:scale-100"
-          />
-        </div>
-        <RewardCarousel
-          levels={levels}
-          cfg={cfg}
-          className="-mx-5 mt-3 px-5 md:mx-0 md:mt-6 md:justify-center md:px-0"
-        />
-      </div>
-    </section>
+      <FreeBottlesBar cfg={cfg} total={total} />
+      <UnlockedReward cfg={cfg} total={total} className="mx-auto mt-1 w-fit" />
+    </div>
   );
 }

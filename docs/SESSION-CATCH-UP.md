@@ -844,3 +844,29 @@ Owner approved the bf_events change.
 - Data: RPC bf_link_funnel(p_since, p_until) (service role only) + Shopify site orders (they carry _utm_content). getLinks in admin.functions.ts. Test links (bf_settings.test_utm_sources) and team visits left out; {{site_source_name}} grouped under Meta. Untagged visits summed in the note.
 - Date picker gained "Today" (from midnight Amman time), for every admin page that uses it.
 - Read only. No tracking, links or utm_campaign changed.
+
+## 2026-11-26: "Added to cart" message that would not go away
+- Cause: Sonner pauses a toast's countdown while the pointer is over it. On phones the toasts sit over the header/cart button; a tap there left the toast "hovered" and it never closed. Reproduced in a browser: with the pointer on the toast it stayed indefinitely.
+- Fix (src/components/ui/sonner.tsx): AutoClose closes every toast 0.8 s after its own duration (default 4 s) whatever the hover state; toasts also get a small close button. Applies to all toasts (Added to cart, free bottles message, admin saves).
+
+## 2026-11-26: gift cards: 150 JOD added, Add to cart fixed
+- FACE_VALUES now 25, 50, 100, 150, 200 (src/components/hero/GiftCardSticker.tsx).
+- Bug fixed: the sticker found each Shopify variant by price == face value. Shopify now sells the cards at 10% off (25 -> 22.500 ... 200 -> 180), so no variant matched and every Add to cart said "This gift card isn't available right now". Now matched by variant title ("JOD 25.000", "JOD 150.00").
+- Prices shown are Shopify's (face value crossed out when Shopify's price is lower). "The X% comes off at checkout" only shows when the /admin discount is on and Shopify's price is NOT already reduced.
+
+## 2026-11-26: gift card as a normal product ("All" and search only)
+- Hidden main "Gift Cards" (handles: fyxx-gift-card, hidden: true) in bf_settings.category_mapping; "Gift Cards" removed from exclusions. No category circle, not in any nav group, last in the default "All" order, findable by search. SQL notes: docs/sql/2026-11-26-bf-gift-card-in-catalog.sql.
+- Fixed a latent admin bug: saving /admin/sale ran the mapping through a zod schema that stripped unknown keys (image_handle, handles, require_tags, catch_all_types, sub collections/handles). Schemas now .passthrough() and accept `hidden`.
+- Gift card also needed "always_show": true (bf_visible: skips sale_list_filter and the Friday "discounted only" rule) and getSaleVariantIds returns no filter for always_show products, so the card's Add to cart opens the amount picker. Verified on live data: search "gift card" finds it (now and in Friday preview), it is last of 1,000 in All, no circle, not in other categories.
+
+## 2026-11-27 02:30: Friday % shown before 10:00 (Naim's decision)
+- Replaces the old rule "never show the real discount before Friday 10:00" and the blurred badge. Cards show "-25% off on Friday" from the planned sale list (percent only). Products without a planned % keep the blurred blank.
+- Switch: /admin > Offers on the site > "Show the Friday % before 10:00" (bf_settings.show_planned_discount, on). From 10:00 the real Shopify discount shows as before.
+- DB: bf_card adds planned_percent (docs/sql/2026-11-27-bf-planned-discount.sql). Front end: CatalogCard badge, catalog.ts type, admin switch.
+- Noted: rewards_preview_only was switched OFF by Naim at 02:25, so the free bottles bar is now public.
+- 02:40: badge text shortened: bf_settings.sale_label_preview "off on Friday" -> "off" (badges read "-25% off"). Editable on /admin/sale.
+
+## 2026-11-27 03:00: new opening block (Naim)
+- The teaser hero is gone (headline, countdown, "Remind me at 10:00", "Add to calendar", "Fill your cart" button). TeaserHero.tsx and HeroReminder.tsx deleted. New FridayHero (src/components/hero/FridayHero.tsx), shown before AND during the sale: burgundy, cream logo + the four bottles, the floating gift card sticker, and the free gift progress folded in (HeroFreeBottles, no separate red section). A hidden timer still refreshes the page at sale_start (the countdown used to do that). The catalog's small logo banner now only shows after the sale.
+- No more reminder sign-ups from the hero (the cart reminder form is unchanged); people already on the Klaviyo list still get the 10:00 email.
+- Free gift: never shows what the gifts are. Reward cards removed (RewardCards.tsx deleted); bar popovers show level + amount only. Hero has a quiet level row (LevelChips): passed levels crossed out and faded, current filled, upcoming with amount. Cart and product page: bar + "Your free gift: Level 2" pill only. Bar amounts only for levels still ahead. New text key rewards_text.current ("Your free gift: {level}"), editable in admin. Burgundy tone for bar/stars in the hero.

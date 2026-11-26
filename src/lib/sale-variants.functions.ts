@@ -27,6 +27,21 @@ export const getSaleVariantIds = createServerFn({ method: "GET" })
       .maybeSingle();
     if (e1) throw new Error(e1.message);
     if (sw?.value !== true) return { filter: false, ids: [] };
+    // Products in an "always_show" main (bf_settings.category_mapping, e.g. the
+    // gift card) are not on the sale list: every size can be picked.
+    const [{ data: map }, { data: prod }] = await Promise.all([
+      db.from("bf_settings").select("value").eq("key", "category_mapping").maybeSingle(),
+      db.from("bf_products").select("main_category").eq("product_id", data.productId).maybeSingle(),
+    ]);
+    const always = new Set(
+      (Array.isArray(map?.value)
+        ? (map.value as Array<{ name?: string; always_show?: boolean }>)
+        : []
+      )
+        .filter((m) => m.always_show === true)
+        .map((m) => m.name),
+    );
+    if (prod?.main_category && always.has(prod.main_category)) return { filter: false, ids: [] };
     const { data: rows, error } = await db
       .from("bf_sale_flags")
       .select("variant_gid")

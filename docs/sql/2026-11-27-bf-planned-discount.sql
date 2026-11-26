@@ -1,0 +1,10 @@
+-- 2026-11-27 (02:30 Amman): show the planned Friday % before 10:00
+-- (applied as migration bf_planned_discount_badge). Naim's decision, replacing
+-- the earlier rule "never show the real discount before Friday 10:00".
+-- * bf_settings.show_planned_discount = true (switch on /admin > Offers on the site).
+-- * bf_card(b, p_state): STABLE; adds planned_percent before the sale when the
+--   switch is on and the card's variant is on the sale list:
+--   floor((price_now - sale_price) / price_now * 100) from bf_sale_list.
+--   Only the percent leaves the database (no sale price, no cost).
+--   Execute revoked from anon/authenticated; called only inside SECURITY DEFINER
+--   functions (bf_catalog, bf_catalog_facets, bf_pairings, bf_usual_items).

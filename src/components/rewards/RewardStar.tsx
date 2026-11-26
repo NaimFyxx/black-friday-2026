@@ -8,14 +8,21 @@ import { cn } from "@/lib/utils";
 export function RewardStar({
   filled,
   light = false,
+  dark = false,
   className,
 }: {
   filled: boolean;
   light?: boolean;
+  /** On burgundy: red when reached, a faint cream outline before. */
+  dark?: boolean;
   className?: string;
 }) {
   const on = light ? "fill-ff-cream stroke-ff-cream" : "fill-ff-red stroke-ff-red";
-  const off = light ? "fill-transparent stroke-ff-cream/70" : "fill-ff-cream stroke-ff-burgundy/40";
+  const off = light
+    ? "fill-transparent stroke-ff-cream/70"
+    : dark
+      ? "fill-transparent stroke-ff-cream/50"
+      : "fill-ff-cream stroke-ff-burgundy/40";
   return (
     <svg viewBox="0 0 24 24" aria-hidden className={cn("block", className)}>
       <path

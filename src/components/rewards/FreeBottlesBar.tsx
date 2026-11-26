@@ -2,14 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { DEFAULT_TEXT, progress, type FreeBottlesConfig, type Milestone } from "@/lib/free-bottles";
+import { progress, type FreeBottlesConfig, type Milestone } from "@/lib/free-bottles";
 import { formatJod } from "@/lib/shopify";
 import { cn } from "@/lib/utils";
 import { RewardStar } from "./RewardStar";
 
 /**
  * The free bottles progress bar: free delivery as a small dot (when set), then the stars
- * (the free bottle rewards). Full size: tap a star to see what you get.
+ * (the free bottle levels). Full size: tap a star for its level and amount
+ * (never what the gift is).
  * Compact (the after-add popup): no tapping, no labels. Display only.
  */
 export function FreeBottlesBar({
@@ -17,10 +18,13 @@ export function FreeBottlesBar({
   total,
   compact = false,
   fromTotal,
+  tone = "red",
 }: {
   cfg: FreeBottlesConfig;
   total: number;
   compact?: boolean;
+  /** "red": on Andrea's red blocks (cart, product page). "burgundy": in the hero. */
+  tone?: "red" | "burgundy";
   /** Stars unlocked between this total and `total` pop on first show. */
   fromTotal?: number;
 }) {
@@ -38,9 +42,17 @@ export function FreeBottlesBar({
 
   return (
     <div className={cn("relative px-3", compact ? "pt-1 pb-1" : "pt-6 pb-5")}>
-      <div className="relative h-1.5 rounded-full bg-ff-black/20">
+      <div
+        className={cn(
+          "relative h-1.5 rounded-full",
+          tone === "burgundy" ? "bg-ff-cream/15" : "bg-ff-black/20",
+        )}
+      >
         <div
-          className="absolute inset-y-0 left-0 rounded-full bg-ff-cream transition-[width] duration-500 ease-out"
+          className={cn(
+            "absolute inset-y-0 left-0 rounded-full transition-[width] duration-500 ease-out",
+            tone === "burgundy" ? "bg-ff-red" : "bg-ff-cream",
+          )}
           style={{ width: `${p.fill}%` }}
         />
         {p.milestones.map((m) => (
@@ -52,6 +64,7 @@ export function FreeBottlesBar({
             compact={compact}
             pop={popFrom !== null && m.index > popFrom && m.index <= p.bottles}
             next={p.next?.index === m.index}
+            tone={tone}
           />
         ))}
       </div>
@@ -66,6 +79,7 @@ function Marker({
   compact,
   pop,
   next = false,
+  tone,
 }: {
   m: Milestone;
   cfg: FreeBottlesConfig;
@@ -73,7 +87,9 @@ function Marker({
   compact: boolean;
   pop: boolean;
   next?: boolean;
+  tone: "red" | "burgundy";
 }) {
+  const dark = tone === "burgundy";
   const delivery = m.index === 0;
   const icon = delivery ? (
     <span
@@ -87,7 +103,8 @@ function Marker({
     </span>
   ) : (
     <RewardStar
-      light
+      light={!dark}
+      dark={dark}
       filled={m.reached}
       className={cn(compact ? "h-4 w-4" : "h-6 w-6", pop && "ff-star-pop")}
     />
@@ -126,12 +143,17 @@ function Marker({
         <span className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 text-[9px] leading-none whitespace-nowrap text-ff-black">
           {m.label}
         </span>
-      ) : (
+      ) : m.reached ? null : (
+        // Amounts only for levels still ahead (reached ones need no price tag).
         <span
           className={cn(
             "ff-num pointer-events-none absolute top-full text-[9px] leading-none whitespace-nowrap",
             // The next goal stands out; the rest stay quiet.
-            next ? "font-semibold text-ff-cream" : "text-ff-black/70",
+            next
+              ? cn("font-semibold", dark ? "text-ff-red" : "text-ff-cream")
+              : dark
+                ? "text-ff-cream/60"
+                : "text-ff-black/70",
             // The last star sits at the right edge: keep its amount inside the box.
             m.pos >= 99 ? "right-1" : "left-1/2 -translate-x-1/2",
           )}
@@ -144,9 +166,7 @@ function Marker({
   );
 }
 
-function RewardDetails({ m, cfg, total }: { m: Milestone; cfg: FreeBottlesConfig; total: number }) {
-  const slot = m.index > 0 ? cfg.slots[m.index - 1] : undefined;
-  const hasSlot = !!(slot?.name || slot?.image || slot?.text);
+function RewardDetails({ m, total }: { m: Milestone; cfg: FreeBottlesConfig; total: number }) {
   const left = Math.round((m.amount - total) * 1000) / 1000;
   return (
     <div className="text-sm">
@@ -154,26 +174,6 @@ function RewardDetails({ m, cfg, total }: { m: Milestone; cfg: FreeBottlesConfig
       <p className="mt-0.5 text-xs text-ff-black/70">
         {m.reached ? "Unlocked" : `Spend ${formatJod(m.amount)}. ${formatJod(left)} to go.`}
       </p>
-      {m.index > 0 &&
-        (hasSlot ? (
-          <div className="mt-2 flex gap-3">
-            {slot?.image && (
-              <img
-                src={slot.image}
-                alt=""
-                className="h-16 w-12 shrink-0 rounded-sm bg-ff-warm-cream object-contain"
-              />
-            )}
-            <div className="min-w-0">
-              {slot?.name && <p className="ff-subline leading-snug">{slot.name}</p>}
-              {slot?.text && <p className="mt-0.5 text-xs text-ff-black/70">{slot.text}</p>}
-            </div>
-          </div>
-        ) : (
-          <p className="mt-2 text-xs text-ff-burgundy italic">
-            {cfg.text.soon || DEFAULT_TEXT.soon}
-          </p>
-        ))}
     </div>
   );
 }
