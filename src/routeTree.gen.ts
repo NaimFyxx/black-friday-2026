@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as PairingsRouteImport } from './routes/pairings'
+import { Route as WaRouteImport } from './routes/wa'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as AdminCohortRouteImport } from './routes/admin.cohort'
@@ -36,6 +37,11 @@ const AdminRoute = AdminRouteImport.update({
 const PairingsRoute = PairingsRouteImport.update({
   id: '/pairings',
   path: '/pairings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WaRoute = WaRouteImport.update({
+  id: '/wa',
+  path: '/wa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/pairings': typeof PairingsRoute
+  '/wa': typeof WaRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pairings': typeof PairingsRoute
+  '/wa': typeof WaRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/pairings': typeof PairingsRoute
+  '/wa': typeof WaRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/pairings'
+    | '/wa'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/pairings'
+    | '/wa'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/pairings'
+    | '/wa'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
@@ -185,6 +197,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
   PairingsRoute: typeof PairingsRoute
+  WaRoute: typeof WaRoute
   ProductHandleRoute: typeof ProductHandleRoute
 }
 
@@ -209,6 +222,13 @@ declare module '@tanstack/react-router' {
       path: '/pairings'
       fullPath: '/pairings'
       preLoaderRoute: typeof PairingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/wa': {
+      id: '/wa'
+      path: '/wa'
+      fullPath: '/wa'
+      preLoaderRoute: typeof WaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -314,6 +334,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
   PairingsRoute: PairingsRoute,
+  WaRoute: WaRoute,
   ProductHandleRoute: ProductHandleRoute,
 }
 export const routeTree = rootRouteImport

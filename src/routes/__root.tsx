@@ -35,6 +35,7 @@ import { KLAVIYO_COMPANY_ID } from "../lib/campaign-config";
 import { simAllowed } from "../lib/preview-sim.functions";
 import { getTrackingState, reportClientError } from "../lib/track.functions";
 import { DEFAULT_TRACKING_HOSTS } from "../lib/tracking-hosts";
+import { isRedirectPath } from "../lib/redirect-paths";
 
 // Send a client error to the /admin error log. Deduped per page load so one
 // crash loop can't spam it, and capped at 5 reports per page.
@@ -318,10 +319,10 @@ function adminCheck(): Promise<boolean> {
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   // Hidden preview (?preview=friday / ended): see src/lib/preview.ts.
   // Admins on ?preview=friday also see the planned Friday prices (sim).
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const preview = readPreview();
     const sim = preview === "friday" ? await adminCheck() : false;
-    return { preview, sim };
+    return { preview, sim, redirectPage: isRedirectPath(location.pathname) };
   },
   // Ask the server once per full page load whether to track this visitor
   // (the /admin Tracking switches). Fails open: an error means "track".
@@ -390,7 +391,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     scripts: [
       {
         children:
-          loaderData?.enabled === false
+          match.context.redirectPage || loaderData?.enabled === false
             ? NO_TRACKING_SNIPPET
             : trackingSnippet(loaderData?.hosts ?? DEFAULT_TRACKING_HOSTS),
       },
@@ -408,13 +409,17 @@ function RootShell({ children }: { children: ReactNode }) {
   const isAdmin = useRouterState({
     select: (state) => state.location.pathname.startsWith("/admin"),
   });
+  // Redirect pages (e.g. /wa) must not fire the <noscript> pixel either.
+  const isRedirect = useRouterState({
+    select: (state) => isRedirectPath(state.location.pathname),
+  });
   return (
     <html lang="en">
       <head>
         <HeadContent />
       </head>
       <body>
-        {trackingEnabled && !isAdmin && (
+        {trackingEnabled && !isAdmin && !isRedirect && (
           <noscript>
             <img
               height="1"
