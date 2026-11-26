@@ -214,7 +214,7 @@ function ShortLinksPage() {
                     <Input
                       value={form.slug}
                       onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-                      placeholder="wa"
+                      placeholder="e.g. wa"
                       disabled={editing}
                       autoCapitalize="none"
                       autoCorrect="off"
@@ -247,7 +247,7 @@ function ShortLinksPage() {
                   <Input
                     value={form.utm_source}
                     onChange={(e) => setForm((f) => ({ ...f, utm_source: e.target.value }))}
-                    placeholder="whatsapp"
+                    placeholder="e.g. whatsapp"
                   />
                 </Field>
                 <Field label="utm_medium">
