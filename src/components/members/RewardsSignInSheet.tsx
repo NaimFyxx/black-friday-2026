@@ -235,6 +235,8 @@ function SignInDialog({
                   id="rw-email"
                   label="Email"
                   type="email"
+                  name="email"
+                  autoComplete="email"
                   required
                   autoFocus
                   maxLength={200}
@@ -326,6 +328,11 @@ function SignInDialog({
                 <input
                   inputMode="numeric"
                   autoComplete="one-time-code"
+                  name="one-time-code"
+                  aria-label="6-digit code"
+                  data-1p-ignore
+                  data-lpignore="true"
+                  data-form-type="other"
                   pattern="\d*"
                   maxLength={6}
                   autoFocus
@@ -568,7 +575,8 @@ export function ActivationNotice({ className }: { className?: string }) {
       className={cn("mx-auto max-w-sm rounded-xl px-3 py-2 text-center text-[11px]", className)}
       style={{ background: "#fff", border: "1px solid rgba(35,31,32,0.12)", color: MUTED }}
     >
-      Almost there, check your email and set a password so your Friday points count.{" "}
+      Your Fyxx account is not active yet. Check your email to set a password so your Friday points
+      count.{" "}
       {sent ? (
         <span style={{ color: INK }}>Email sent.</span>
       ) : (
