@@ -11,9 +11,8 @@ import { teaserQueryOptions } from "@/lib/teaser";
 
 /** Where "Log in to collect your points" goes. */
 export const LOGIN_URL = "https://www.myfyxx.com/account/login";
-/** "Join Fyxx Rewards": register, with the campaign UTMs. */
-export const JOIN_URL =
-  "https://myfyxx.com/account/register?utm_source=friday-site&utm_medium=referral&utm_campaign=fyxx-friday-2026-11-27&utm_content=tier-points-join";
+/** "Join Fyxx Rewards": the Fyxx Rewards info page. Opens in a new tab. */
+export const JOIN_URL = "https://www.myfyxx.com/pages/rewards";
 
 export const INK = "#231F20";
 export const CREAM = "#FBF5F2";

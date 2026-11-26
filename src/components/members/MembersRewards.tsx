@@ -121,6 +121,8 @@ export function MembersRewards({
           </a>
           <a
             href={JOIN_URL}
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={() => trackTierPointsJoinTap(where)}
             className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors hover:bg-black/5"
             style={{ border: `1px solid ${INK}`, color: INK }}

@@ -181,6 +181,8 @@ export function RewardsCartSheet({ className }: { className?: string }) {
                 </a>
                 <a
                   href={JOIN_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={() => trackTierPointsJoinTap("cart")}
                   className="inline-flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-semibold text-white transition-opacity hover:opacity-85"
                   style={{ background: INK }}
