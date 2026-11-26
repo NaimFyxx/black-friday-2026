@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { trackTierPointsJoinTap, trackTierPointsOpen } from "@/lib/analytics";
+import { useRewardsAuth } from "@/hooks/useRewardsAuth";
 import { RewardsLoginButton } from "./RewardsSignInSheet";
 import {
   CREAM,
@@ -27,6 +28,7 @@ import {
  */
 export function RewardsCartSheet({ className }: { className?: string }) {
   const on = useRewardsStripOn();
+  const { signedIn } = useRewardsAuth();
   const [open, setOpen] = useState(false);
   // Live drag-to-dismiss on the phone: offset the sheet while a finger drags
   // the handle down; let go past the threshold to close.
@@ -176,16 +178,18 @@ export function RewardsCartSheet({ className }: { className?: string }) {
                     className="h-10 flex-1"
                   />
                 )}
-                <a
-                  href={JOIN_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackTierPointsJoinTap("cart")}
-                  className="inline-flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-semibold text-white transition-opacity hover:opacity-85"
-                  style={{ background: INK }}
-                >
-                  Join Fyxx Rewards
-                </a>
+                {!signedIn && (
+                  <a
+                    href={JOIN_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackTierPointsJoinTap("cart")}
+                    className="inline-flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-semibold text-white transition-opacity hover:opacity-85"
+                    style={{ background: INK }}
+                  >
+                    Join Fyxx Rewards
+                  </a>
+                )}
               </div>
               <p className="mx-auto mt-3 max-w-sm text-center text-[11px]" style={{ color: MUTED }}>
                 Points land after your order. Some product categories don't earn points.

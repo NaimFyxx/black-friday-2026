@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { trackTierPointsJoinTap, trackTierPointsOpen } from "@/lib/analytics";
+import { useRewardsAuth } from "@/hooks/useRewardsAuth";
 import { RewardsLoginButton } from "./RewardsSignInSheet";
 import {
   CREAM,
@@ -34,6 +35,8 @@ export function MembersRewards({
   where?: RewardsWhere;
 }) {
   const [open, setOpen] = useState(false);
+  // Members who have joined don't need the "Join" button.
+  const { signedIn } = useRewardsAuth();
   // Sale state + bf_settings.rewards_strip_enabled (see useRewardsStripOn).
   if (!useRewardsStripOn()) return null;
   const toggle = () =>
@@ -115,16 +118,18 @@ export function MembersRewards({
               variant="solid"
             />
           )}
-          <a
-            href={JOIN_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackTierPointsJoinTap(where)}
-            className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors hover:bg-black/5"
-            style={{ border: `1px solid ${INK}`, color: INK }}
-          >
-            Join Fyxx Rewards
-          </a>
+          {!signedIn && (
+            <a
+              href={JOIN_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackTierPointsJoinTap(where)}
+              className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors hover:bg-black/5"
+              style={{ border: `1px solid ${INK}`, color: INK }}
+            >
+              Join Fyxx Rewards
+            </a>
+          )}
         </div>
         <p className="mt-2 text-center text-[11px]" style={{ color: MUTED }}>
           {EARN_NOTE}

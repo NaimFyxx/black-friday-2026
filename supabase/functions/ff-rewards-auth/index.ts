@@ -197,8 +197,14 @@ Deno.serve(async (req) => {
       }
       await db.from("email_otps").update({ consumed_at: new Date().toISOString() }).eq("id", row.id);
 
-      const firstName = String(body.firstName ?? "").trim().slice(0, 50);
-      const lastName = String(body.lastName ?? "").trim().slice(0, 50);
+      // Look up the Shopify customer once: used both for the returning-member
+      // name (so the UI can greet them) and to decide whether to create one.
+      const existing = await findCustomer(email).catch(() => null);
+
+      // New users give their name in the sheet; returning members get it from
+      // their Shopify customer, so a returning member is always greeted by name.
+      const firstName = String(body.firstName ?? "").trim().slice(0, 50) || (existing?.firstName ?? "");
+      const lastName = String(body.lastName ?? "").trim().slice(0, 50) || (existing?.lastName ?? "");
       const acceptsMarketing = body.acceptsMarketing === true;
       const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
       const meta: Record<string, unknown> = {};
@@ -213,9 +219,21 @@ Deno.serve(async (req) => {
       const { data: link, error: linkErr } = await db.auth.admin.generateLink({ type: "magiclink", email });
       if (linkErr || !link?.properties?.hashed_token) { console.error("[ff-auth] generateLink", linkErr?.message); return json({ error: "session_error" }, 500); }
 
+      // Existing auth user (createUser was a no-op): backfill the name onto their
+      // profile if it is missing, so the greeting works. Runs before the client
+      // sets the session, so the minted session reflects it.
+      try {
+        const u = link.user as { id?: string; user_metadata?: Record<string, unknown> } | undefined;
+        const cur = (u?.user_metadata ?? {}) as Record<string, unknown>;
+        const hasName = (typeof cur.first_name === "string" && cur.first_name.trim()) ||
+          (typeof cur.full_name === "string" && cur.full_name.trim());
+        if (!isNew && u?.id && !hasName && Object.keys(meta).length) {
+          await db.auth.admin.updateUserById(u.id, { user_metadata: { ...cur, ...meta } });
+        }
+      } catch (e) { console.error("[ff-auth] name backfill", String(e)); }
+
       let shopify: { created: boolean; invited: boolean } = { created: false, invited: false };
       try {
-        const existing = await findCustomer(email);
         if (!existing) {
           const c = await createCustomer(email, firstName, lastName, acceptsMarketing);
           if (c?.id) { const invited = await sendInvite(c.id); shopify = { created: true, invited }; }
