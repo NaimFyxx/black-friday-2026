@@ -109,3 +109,30 @@ export async function resendInvite(email: string): Promise<{ ok: boolean }> {
     return { ok: false };
   }
 }
+
+/**
+ * Server-side: put the signed-in member's email + phone + default address on the
+ * cart so Shopify checkout pre-fills their details. Authenticated with the
+ * member's own Supabase token, and the address is read + applied server-side, so
+ * it never reaches the browser. Returns true on success.
+ */
+export async function prefillCheckout(cartId: string): Promise<boolean> {
+  try {
+    const { data: s } = await supabase.auth.getSession();
+    const token = s.session?.access_token;
+    if (!token || !cartId) return false;
+    const res = await fetch(FN_URL, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        apikey: KEY,
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ action: "prefill_checkout", cartId }),
+    });
+    const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    return res.status === 200 && data["ok"] === true;
+  } catch {
+    return false;
+  }
+}

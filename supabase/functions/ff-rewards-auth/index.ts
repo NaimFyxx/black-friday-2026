@@ -14,6 +14,10 @@ const SHOP = Deno.env.get("SHOPIFY_STORE");
 const API_VERSION = "2026-10";
 const FROM = "Fyxx <info@myfyxx.com>";
 const PARTICIPANT_TAG = "black-friday-2026";
+// Storefront API (public token) used to set the cart buyer identity server-side
+// so the customer's address never reaches the browser.
+const STOREFRONT_URL = `https://${SHOP}/api/${API_VERSION}/graphql.json`;
+const STOREFRONT_TOKEN = "6bdaffcdd3b82d66838dff6365ead6cd";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -85,6 +89,14 @@ async function shopRest(path: string, init: RequestInit = {}) {
     ...init,
     headers: { "content-type": "application/json", "X-Shopify-Access-Token": token, ...(init.headers ?? {}) },
   });
+}
+async function sfGql(query: string, variables: Record<string, unknown>) {
+  const r = await fetch(STOREFRONT_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json", "X-Shopify-Storefront-Access-Token": STOREFRONT_TOKEN },
+    body: JSON.stringify({ query, variables }),
+  });
+  return await r.json();
 }
 function gidNum(gid: string): number | null {
   const m = /\/(\d+)$/.exec(gid ?? "");
@@ -184,6 +196,46 @@ Deno.serve(async (req) => {
       const r = await fetch(`https://${SHOP}/admin/oauth/access_scopes.json`, { headers: { "X-Shopify-Access-Token": token } });
       const j = await r.json().catch(() => ({}));
       return json({ hasToken: !!token, scopes: (j.access_scopes ?? []).map((s: { handle?: string }) => s.handle) });
+    }
+
+    // Pre-fill checkout for a signed-in member: verify THEIR Supabase token,
+    // read THEIR email + default address from Shopify (Admin), and set it on the
+    // cart via the Storefront API. The address never reaches the browser.
+    if (action === "prefill_checkout") {
+      const authz = req.headers.get("authorization") ?? "";
+      const token = authz.toLowerCase().startsWith("bearer ") ? authz.slice(7) : "";
+      const { data: ures } = await db.auth.getUser(token);
+      const userEmail = (ures?.user?.email ?? "").toLowerCase();
+      if (!userEmail) return json({ ok: false, reason: "unauthorized" }, 401);
+      const cartId = String(body.cartId ?? "");
+      if (!cartId.startsWith("gid://shopify/Cart/")) return json({ ok: false, reason: "bad_cart" }, 400);
+      const cj = await shopGql(
+        `query($q:String!){ customers(first:1, query:$q){ edges{ node{ phone defaultAddress{ firstName lastName address1 address2 city province zip country phone } } } } }`,
+        { q: `email:${userEmail}` },
+      );
+      const n = cj?.data?.customers?.edges?.[0]?.node;
+      const a = n?.defaultAddress;
+      const bi: Record<string, unknown> = { email: userEmail };
+      const phone = n?.phone ?? a?.phone;
+      if (phone) bi.phone = phone;
+      if (a && (a.address1 || a.city)) {
+        const da: Record<string, unknown> = {};
+        const fields: Record<string, unknown> = {
+          firstName: a.firstName, lastName: a.lastName, address1: a.address1, address2: a.address2,
+          city: a.city, province: a.province, country: a.country, zip: a.zip, phone: a.phone ?? phone,
+        };
+        for (const k of Object.keys(fields)) if (fields[k]) da[k] = fields[k];
+        bi.deliveryAddressPreferences = [{ deliveryAddress: da }];
+      }
+      const M = `mutation($cartId:ID!,$bi:CartBuyerIdentityInput!){ cartBuyerIdentityUpdate(cartId:$cartId, buyerIdentity:$bi){ userErrors{ message } } }`;
+      const sf = await sfGql(M, { cartId, bi });
+      const errs = sf?.data?.cartBuyerIdentityUpdate?.userErrors ?? sf?.errors;
+      if (errs?.length) {
+        console.error("[ff-auth] prefill buyerIdentity", JSON.stringify(errs).slice(0, 300));
+        await sfGql(M, { cartId, bi: { email: userEmail } }).catch(() => {});
+        return json({ ok: true, partial: true });
+      }
+      return json({ ok: true, hadAddress: !!bi.deliveryAddressPreferences });
     }
 
     if (!email || !email.includes("@")) return json({ error: "bad_email" }, 400);

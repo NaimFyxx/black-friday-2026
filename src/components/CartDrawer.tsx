@@ -22,6 +22,7 @@ import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { ReminderForm } from "@/components/reminder/ReminderForm";
 import { useRewardsAuth } from "@/hooks/useRewardsAuth";
+import { prefillCheckout } from "@/lib/rewards-auth";
 import { refreshCartAttributes, setCartBuyerEmail, type CartItem } from "@/lib/shopify-cart";
 import { withStoredUtm } from "@/lib/utm-attribution";
 import { prepareCheckout } from "@/lib/checkout-handoff.functions";
@@ -105,12 +106,18 @@ export function CartDrawer() {
       // points. Then hand off.
       const cartId = useCartStore.getState().cartId;
       const email = user?.email;
+      // Pre-fill the member's email (+ phone + saved address) on the cart. The
+      // address is applied server-side; if that fails, fall back to email only.
+      const prefill = () =>
+        prefillCheckout(cartId!).then((ok) =>
+          ok ? undefined : email ? setCartBuyerEmail(cartId!, email).catch(() => {}) : undefined,
+        );
       // Also wait (max ~1 s) for GA4 begin_checkout to go out before leaving.
       const prepared = (
         cartId
           ? Promise.all([
               refreshCartAttributes(cartId).catch(() => {}),
-              email ? setCartBuyerEmail(cartId, email).catch(() => {}) : Promise.resolve(),
+              email ? prefill().catch(() => {}) : Promise.resolve(),
             ])
           : Promise.resolve()
       ).then(() => prepareCheckoutFn({ data: { url: normal } }));
