@@ -408,20 +408,24 @@ export function RewardsLoginButton({
   label?: string;
   variant?: "solid" | "outline";
 }) {
-  const { signedIn, firstName } = useRewardsAuth();
+  const { signedIn, firstName, signOut } = useRewardsAuth();
   const [open, setOpen] = useState(false);
 
   if (signedIn) {
     return (
-      <span
+      <button
+        type="button"
+        onClick={() => void signOut()}
+        title="Sign out"
         className={cn(
-          "inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-semibold",
+          "group inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-semibold transition-opacity hover:opacity-80",
           className,
         )}
         style={{ border: `1px solid ${INK}`, color: INK }}
       >
         Hi{firstName ? `, ${firstName}` : " there"} 👋
-      </span>
+        <span className="text-[11px] font-normal opacity-60 group-hover:opacity-100">Sign out</span>
+      </button>
     );
   }
 
