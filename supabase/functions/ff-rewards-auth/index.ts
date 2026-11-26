@@ -48,9 +48,13 @@ function tse(a: string, b: string): boolean {
 }
 
 // ---- Shopify (client-credentials, same pattern as the other Pulse functions) ----
+// Cache the app token but refresh it every few minutes, so a scope change on the
+// app (e.g. adding write_customers) is picked up without a redeploy.
 let shopToken = "";
+let shopTokenAt = 0;
+const TOKEN_TTL_MS = 5 * 60 * 1000;
 async function shopTokenGet(): Promise<string> {
-  if (shopToken) return shopToken;
+  if (shopToken && Date.now() - shopTokenAt < TOKEN_TTL_MS) return shopToken;
   const r = await fetch(`https://${SHOP}/admin/oauth/access_token`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -62,6 +66,7 @@ async function shopTokenGet(): Promise<string> {
   });
   const j = await r.json();
   shopToken = j.access_token ?? "";
+  shopTokenAt = Date.now();
   return shopToken;
 }
 async function shopGql(query: string, variables: Record<string, unknown> = {}) {

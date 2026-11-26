@@ -30,8 +30,8 @@ reads/writes it. 10-minute expiry, max 5 attempts per code, max 3 sends per
 
 ## Shopify scope note
 
-Customer **lookup** needs `read_customers` (present). Creating a brand-new
-customer needs **`write_customers`**, which must be added to the Shopify app's
-Admin API scopes. Until then, existing-member sign-in works; a brand-new person
-still gets a Friday account and is enrolled in Fyxx Rewards when they check out
-with the same email.
+Customer **lookup** needs `read_customers` and creating a customer needs
+**`write_customers`**. Both are granted on the Pulse Shopify app (write_customers
+added on app version pulse-9, Nov 2026), and the create path is verified working.
+The app token is fetched via client-credentials and cached for 5 minutes, so any
+future scope change is picked up without a redeploy.
