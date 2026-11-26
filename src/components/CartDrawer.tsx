@@ -16,6 +16,7 @@ import {
 import { trackBeginCheckout } from "@/lib/analytics";
 import { CartRecommendations } from "@/components/cart/CartRecommendations";
 import { FreeBottlesStrip } from "@/components/rewards/FreeBottlesStrip";
+import { RewardsCartSheet } from "@/components/members/RewardsCartSheet";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
@@ -242,6 +243,9 @@ export function CartDrawer() {
                     You're saving {formatJod(totalSaved, currency)}
                   </p>
                 )}
+                {/* Fyxx Rewards 2x points: one line, opens the tiers sheet.
+                    Sale state (and ?preview=friday) only; null otherwise. */}
+                <RewardsCartSheet className="mt-3" />
                 <Button
                   onClick={handleCheckout}
                   size="lg"

@@ -450,6 +450,30 @@ export function trackOutbound(destination: "website" | "app", label: string, url
   logEvent("outbound", { destination, linkLabel: label });
 }
 
+// ── Fyxx Rewards 2x points (tier points) ──────────────────────────────
+// Where the shopper opened the tiers or tapped a button. Stored in the
+// bf_events `destination` column (reused: it is free text, and the outbound
+// report reads it only for the "outbound" event).
+export type TierPointsWhere = "home" | "product" | "cart";
+
+/** The shopper opened the Fyxx Rewards tiers (home, product or cart). */
+export function trackTierPointsOpen(where: TierPointsWhere): void {
+  trackEvent("tier_points_open", { where });
+  logEvent("tier_points_open", { destination: where });
+}
+
+/** The shopper tapped "Join Fyxx Rewards". */
+export function trackTierPointsJoinTap(where: TierPointsWhere): void {
+  trackEvent("tier_points_join_tap", { where });
+  logEvent("tier_points_join_tap", { destination: where });
+}
+
+/** The shopper tapped "Log in to collect your points" / "Log in". */
+export function trackTierPointsLoginTap(where: TierPointsWhere): void {
+  trackEvent("tier_points_login_tap", { where });
+  logEvent("tier_points_login_tap", { destination: where });
+}
+
 /**
  * Klaviyo "Viewed Product" on a product page, in the same format as Klaviyo's
  * Shopify integration, so segments can use what people looked at. Sent only

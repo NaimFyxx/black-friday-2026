@@ -457,7 +457,10 @@ function ProductPage() {
             <FreeBottlesBox className="mt-4" />
 
             {/* Fyxx Rewards: one thin line, "See tiers" opens the tiers. */}
-            <MembersRewards className="mt-6 overflow-hidden rounded-xl border border-ff-black/10" />
+            <MembersRewards
+              where="product"
+              className="mt-6 overflow-hidden rounded-xl border border-ff-black/10"
+            />
           </div>
         </div>
 

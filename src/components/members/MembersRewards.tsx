@@ -1,40 +1,49 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { ChevronDown } from "lucide-react";
 
-import { usePreview } from "@/lib/preview";
-import { teaserQueryOptions } from "@/lib/teaser";
+import {
+  trackTierPointsJoinTap,
+  trackTierPointsLoginTap,
+  trackTierPointsOpen,
+} from "@/lib/analytics";
+import {
+  CREAM,
+  EARN_NOTE,
+  INK,
+  JOIN_URL,
+  LOGIN_URL,
+  MUTED,
+  SERIF,
+  TIERS,
+  useRewardsStripOn,
+  type RewardsWhere,
+} from "./rewards-tiers";
 
 /**
- * Thin "Members earn up to 2x points" line under the hero; tap to open the
- * tiers. Compact Fyxx Rewards strip in the Fyxx Rewards look
- * (FYXX_Web-Rewards palette: warm black #231F20, cream #FBF5F2, muted #8A8175,
- * Baskervville serif, the membership-card tier colours). One bar blending the
- * four tier colours, a bubble per tier with its points multiplier, and a
- * small login button. Visual only: not connected to LoyaltyLion or Shopify.
+ * Thin "Members earn up to 2x points" line under the hero (home) and the box
+ * under Add to cart (product). Tap to open the tiers. Compact Fyxx Rewards
+ * strip in the Fyxx Rewards look (FYXX_Web-Rewards palette: warm black #231F20,
+ * cream #FBF5F2, muted #8A8175, Baskervville serif, the membership-card tier
+ * colours). One bar blending the four tier colours, a bubble per tier with its
+ * points multiplier, the Friday rate under each, and Log in / Join buttons.
+ * Shown only during the sale (Fri 10:00 to midnight, and ?preview=friday), not
+ * in the teaser or after. Visual only: not connected to LoyaltyLion or Shopify.
  */
-
-/** Where "Log in to collect your points" goes. */
-const LOGIN_URL = "https://www.myfyxx.com/account/login";
-
-const INK = "#231F20";
-const CREAM = "#FBF5F2";
-const MUTED = "#8A8175";
-const SERIF = { fontFamily: '"Baskervville", "Times New Roman", Georgia, serif' };
-
-/** Tier card colours (light to dark) and Black Friday points multipliers. */
-const TIERS = [
-  { name: "Blue", points: "1.25x", from: "#C2C9E2", to: "#97A2CA" },
-  { name: "Silver", points: "1.5x", from: "#C9CACD", to: "#9A9CA0" },
-  { name: "Gold", points: "1.75x", from: "#F2E8BF", to: "#E2C98E" },
-  { name: "Platinum", points: "2x", from: "#D2B6EE", to: "#B387CF" },
-];
-
-export function MembersRewards({ className }: { className?: string }) {
+export function MembersRewards({
+  className,
+  where = "home",
+}: {
+  className?: string;
+  where?: RewardsWhere;
+}) {
   const [open, setOpen] = useState(false);
-  // Switched on/off in /admin (Offers): bf_settings.rewards_strip_enabled.
-  const on = !!useQuery(teaserQueryOptions(usePreview())).data?.rewards_strip;
-  if (!on) return null;
+  // Sale state + bf_settings.rewards_strip_enabled (see useRewardsStripOn).
+  if (!useRewardsStripOn()) return null;
+  const toggle = () =>
+    setOpen((o) => {
+      if (!o) trackTierPointsOpen(where);
+      return !o;
+    });
   return (
     <section
       aria-labelledby="members-rewards"
@@ -46,7 +55,7 @@ export function MembersRewards({ className }: { className?: string }) {
         type="button"
         aria-expanded={open}
         aria-controls="members-rewards-tiers"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         className="mx-auto flex w-full max-w-[1320px] items-center justify-center gap-2 px-5 py-2 text-left md:px-10"
       >
         <img
@@ -94,22 +103,34 @@ export function MembersRewards({ className }: { className?: string }) {
                     {t.name}
                   </span>
                   <br />
-                  {t.points} points
+                  {t.rate} pts per JOD{" "}1
                 </span>
               </li>
             ))}
           </ol>
         </div>
 
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
           <a
             href={LOGIN_URL}
+            onClick={() => trackTierPointsLoginTap(where)}
             className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
             style={{ background: INK }}
           >
             Log in to collect your points
           </a>
+          <a
+            href={JOIN_URL}
+            onClick={() => trackTierPointsJoinTap(where)}
+            className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors hover:bg-black/5"
+            style={{ border: `1px solid ${INK}`, color: INK }}
+          >
+            Join Fyxx Rewards
+          </a>
         </div>
+        <p className="mt-2 text-center text-[11px]" style={{ color: MUTED }}>
+          {EARN_NOTE}
+        </p>
       </div>
     </section>
   );

@@ -242,7 +242,7 @@ function Storefront() {
       )}
 
       {state !== "ended" && <FreeBottlesStrip />}
-      {state !== "ended" && <MembersRewards />}
+      {state !== "ended" && <MembersRewards where="home" />}
 
       <section id="catalog" className="scroll-mt-16 bg-ff-cream md:scroll-mt-24">
         <div className="mx-auto max-w-[1320px] px-5 pt-8 pb-12 md:px-10 md:pt-10 md:pb-16">

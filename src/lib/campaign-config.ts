@@ -13,13 +13,19 @@ export const CAMPAIGN_LABEL = "Black Friday 2026";
 export const CAMPAIGN_START = "2026-11-20T00:00:00+03:00";
 export const CAMPAIGN_END = "2026-12-01T00:00:00+03:00";
 
-/** Events the site records into Supabase (bf_events.event). */
+/** Events the site records into Supabase (bf_events.event). Adding a value
+ *  here also needs the bf_events CHECK constraint updated in Supabase
+ *  (docs/sql/2026-11-26-bf-tier-points-events.sql). */
 export const TRACKED_EVENTS = [
   "visit",
   "view_item",
   "add_to_cart",
   "begin_checkout",
   "outbound",
+  // Fyxx Rewards 2x points (tiers opened / Join tapped / Log in tapped).
+  "tier_points_open",
+  "tier_points_join_tap",
+  "tier_points_login_tap",
 ] as const;
 export type TrackedEventName = (typeof TRACKED_EVENTS)[number];
 
