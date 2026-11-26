@@ -871,3 +871,7 @@ Owner approved the bf_events change.
 - No more reminder sign-ups from the hero (the cart reminder form is unchanged); people already on the Klaviyo list still get the 10:00 email.
 - Free gift: never shows what the gifts are. Reward cards removed (RewardCards.tsx deleted); bar popovers show level + amount only. Hero has a quiet level row (LevelChips): passed levels crossed out and faded, current filled, upcoming with amount. Cart and product page: bar + "Your free gift: Level 2" pill only. Bar amounts only for levels still ahead. New text key rewards_text.current ("Your free gift: {level}"), editable in admin. Burgundy tone for bar/stars in the hero.
 - 03:20: phones only (desktop unchanged): logo 31vw + bottles 15vw, gift card sticker 70px, free gift part as a soft panel (cream/6% fill, thin ring) with a small cream eyebrow headline, 12px away line, slimmer bar (dense: 18px stars, 8px amounts), level pills hidden (md and up only); catalog top padding pt-4 on phones. Search bar starts at 60% of the first screen on iPhone 13, 46% on Pixel 7, 73% on iPhone SE (was 88%, 71%, 107%).
+
+## 2026-11-27 03:40: wording "level up"
+- ticker_preview and ticker_sale: "FYXX FRIDAY IS LIVE | FYXX FRIDAY IS LIVE" (Naim). Note: says "live" before 10:00 too.
+- rewards_text: headline "Spend more, level up your free gift", upgrade "a free gift level up ({level})", done "Your free gift is fully leveled up". After-add message: "Free gift unlocked" at level 1, then "Leveled up! Your free gift is now Level 3". Code defaults updated to match.
