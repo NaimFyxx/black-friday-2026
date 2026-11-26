@@ -637,6 +637,13 @@ function OffersSection() {
             'Red "Last piece" text on product cards and product pages when only one is left in stock.',
           on: data.last_piece_enabled,
         },
+        {
+          key: "show_planned_discount",
+          title: "Show the Friday % before 10:00",
+          description:
+            'Product photos show the real planned discount ("-25% off on Friday") instead of a blurred number before the sale starts. Off: blurred again. From 10:00 Friday the real Shopify discount shows either way.',
+          on: data.show_planned_discount,
+        },
       ]
     : [];
   return (

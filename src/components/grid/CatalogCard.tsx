@@ -165,13 +165,21 @@ export const CatalogCard = memo(function CatalogCard({
           )}
           {preSaleLabel && item.in_sale && !badge && (
             <span className="ff-num absolute top-2 left-2 max-w-[calc(100%-1rem)] rounded-full bg-ff-red px-2.5 py-1 text-[11px] leading-tight text-ff-cream">
-              {/* A blurred blank, not a number: the real discount isn't known before 10:00. */}
-              -
-              <span
-                aria-hidden
-                className="mx-0.5 inline-block h-2.5 w-4 rounded-sm bg-ff-cream/80 align-middle blur-[2px]"
-              />
-              % <span className="ff-subline">{preSaleLabel}</span>
+              {item.planned_percent && item.planned_percent > 0 ? (
+                // The planned Friday % (bf_settings.show_planned_discount on).
+                <>
+                  -{item.planned_percent}% <span className="ff-subline">{preSaleLabel}</span>
+                </>
+              ) : (
+                <>
+                  {/* No planned % for this card: a blurred blank, not a number. */}-
+                  <span
+                    aria-hidden
+                    className="mx-0.5 inline-block h-2.5 w-4 rounded-sm bg-ff-cream/80 align-middle blur-[2px]"
+                  />
+                  % <span className="ff-subline">{preSaleLabel}</span>
+                </>
+              )}
             </span>
           )}
           {badge && !soldOut && (

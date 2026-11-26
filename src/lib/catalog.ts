@@ -45,6 +45,8 @@ export interface CatalogItem {
   discount_percent: number; // 0 outside the sale
   /** On the Fyxx Friday sale list (bf_sale_flags). */
   in_sale?: boolean;
+  /** Before 10:00 Friday: the planned Friday % off for this card (bf_settings.show_planned_discount). */
+  planned_percent?: number | null;
   /** false: sold out during the sale (listed last, no add button). */
   available?: boolean;
   /** Units left of this variant (null when Shopify doesn't track it). */

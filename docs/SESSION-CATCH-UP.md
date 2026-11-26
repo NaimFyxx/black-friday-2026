@@ -858,3 +858,9 @@ Owner approved the bf_events change.
 - Hidden main "Gift Cards" (handles: fyxx-gift-card, hidden: true) in bf_settings.category_mapping; "Gift Cards" removed from exclusions. No category circle, not in any nav group, last in the default "All" order, findable by search. SQL notes: docs/sql/2026-11-26-bf-gift-card-in-catalog.sql.
 - Fixed a latent admin bug: saving /admin/sale ran the mapping through a zod schema that stripped unknown keys (image_handle, handles, require_tags, catch_all_types, sub collections/handles). Schemas now .passthrough() and accept `hidden`.
 - Gift card also needed "always_show": true (bf_visible: skips sale_list_filter and the Friday "discounted only" rule) and getSaleVariantIds returns no filter for always_show products, so the card's Add to cart opens the amount picker. Verified on live data: search "gift card" finds it (now and in Friday preview), it is last of 1,000 in All, no circle, not in other categories.
+
+## 2026-11-27 02:30: Friday % shown before 10:00 (Naim's decision)
+- Replaces the old rule "never show the real discount before Friday 10:00" and the blurred badge. Cards show "-25% off on Friday" from the planned sale list (percent only). Products without a planned % keep the blurred blank.
+- Switch: /admin > Offers on the site > "Show the Friday % before 10:00" (bf_settings.show_planned_discount, on). From 10:00 the real Shopify discount shows as before.
+- DB: bf_card adds planned_percent (docs/sql/2026-11-27-bf-planned-discount.sql). Front end: CatalogCard badge, catalog.ts type, admin switch.
+- Noted: rewards_preview_only was switched OFF by Naim at 02:25, so the free bottles bar is now public.
