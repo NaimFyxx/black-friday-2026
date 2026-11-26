@@ -54,6 +54,33 @@ export async function refreshCartAttributes(cartId: string): Promise<void> {
   if (errors.length) console.error("Cart attributes update failed:", errors);
 }
 
+const CART_BUYER_IDENTITY_MUTATION = `
+  mutation cartBuyerIdentityUpdate($cartId: ID!, $buyerIdentity: CartBuyerIdentityInput!) {
+    cartBuyerIdentityUpdate(cartId: $cartId, buyerIdentity: $buyerIdentity) {
+      userErrors { field message }
+    }
+  }
+`;
+
+/**
+ * Put the signed-in member's email on the cart so Shopify checkout pre-fills it
+ * and the order (and its Fyxx Rewards points) are tied to their account. Called
+ * right before handoff. The Storefront API sets it on the cart by id, so the
+ * checkout URL is unchanged. Best-effort: never blocks checkout.
+ */
+export async function setCartBuyerEmail(cartId: string, email: string): Promise<void> {
+  if (!cartId || !email) return;
+  try {
+    const data = await storefrontApiRequest<{
+      cartBuyerIdentityUpdate?: { userErrors?: Array<{ message: string }> };
+    }>(CART_BUYER_IDENTITY_MUTATION, { cartId, buyerIdentity: { email } });
+    const errors = data?.data?.cartBuyerIdentityUpdate?.userErrors ?? [];
+    if (errors.length) console.error("Cart buyer identity update failed:", errors);
+  } catch (err) {
+    console.error("Cart buyer identity update error:", err);
+  }
+}
+
 export interface CartItem {
   lineId: string | null; // Shopify cart line ID, null until synced
   product: ShopifyProduct;

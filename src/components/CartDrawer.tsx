@@ -21,7 +21,8 @@ import { formatJod, formatPrice } from "@/lib/shopify";
 import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { ReminderForm } from "@/components/reminder/ReminderForm";
-import { refreshCartAttributes, type CartItem } from "@/lib/shopify-cart";
+import { useRewardsAuth } from "@/hooks/useRewardsAuth";
+import { refreshCartAttributes, setCartBuyerEmail, type CartItem } from "@/lib/shopify-cart";
 import { withStoredUtm } from "@/lib/utm-attribution";
 import { prepareCheckout } from "@/lib/checkout-handoff.functions";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
@@ -72,6 +73,10 @@ export function CartDrawer() {
     return sum + (cmp > price ? (cmp - price) * item.quantity : 0);
   }, 0);
 
+  // Signed-in Fyxx Rewards member: their email is attached to the cart at
+  // checkout so Shopify pre-fills it and the order earns their points.
+  const { user } = useRewardsAuth();
+
   const handleCheckout = () => {
     const checkoutUrl = getCheckoutUrl();
     if (checkoutUrl) {
@@ -95,11 +100,19 @@ export function CartDrawer() {
       const go = (url: string) => {
         window.location.href = url;
       };
-      // Latest campaign onto the cart first (orders read it), then hand off.
+      // Latest campaign onto the cart first (orders read it), plus the signed-in
+      // member's email so checkout pre-fills it and the order earns their
+      // points. Then hand off.
       const cartId = useCartStore.getState().cartId;
+      const email = user?.email;
       // Also wait (max ~1 s) for GA4 begin_checkout to go out before leaving.
       const prepared = (
-        cartId ? refreshCartAttributes(cartId).catch(() => {}) : Promise.resolve()
+        cartId
+          ? Promise.all([
+              refreshCartAttributes(cartId).catch(() => {}),
+              email ? setCartBuyerEmail(cartId, email).catch(() => {}) : Promise.resolve(),
+            ])
+          : Promise.resolve()
       ).then(() => prepareCheckoutFn({ data: { url: normal } }));
       Promise.all([prepared, tracked.catch(() => {})])
         .then(([r]) => go(r ? withStoredUtm(r.url) : normal))
