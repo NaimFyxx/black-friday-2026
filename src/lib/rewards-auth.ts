@@ -32,6 +32,8 @@ export interface EmailLookup {
   exists: boolean;
   firstName: string | null;
   lastName: string | null;
+  /** Shopify account is "enabled" (password set) -> a full rewards member. */
+  activated: boolean;
 }
 
 /** Does this email already have a Fyxx account? Source of truth is Shopify. */
@@ -42,10 +44,11 @@ export async function lookupEmail(email: string): Promise<EmailLookup> {
       exists: !!data["exists"],
       firstName: (data["firstName"] as string | null) ?? null,
       lastName: (data["lastName"] as string | null) ?? null,
+      activated: data["activated"] === true,
     };
   } catch {
     // Never block sign-in on the check: fall back to the "create" path.
-    return { exists: false, firstName: null, lastName: null };
+    return { exists: false, firstName: null, lastName: null, activated: false };
   }
 }
 
@@ -66,16 +69,18 @@ export interface VerifyInput {
   /** New users only (collected by the sheet). */
   firstName?: string;
   lastName?: string;
+  phone?: string;
   acceptsMarketing?: boolean;
 }
 
 /**
  * Verify the code; on success this ALSO establishes the Supabase session in the
- * browser (no second email is sent). Returns whether the account was new.
+ * browser (no second email is sent). Returns whether the account was new and
+ * whether their Shopify account is already activated.
  */
 export async function verifyCode(
   input: VerifyInput,
-): Promise<{ ok: boolean; isNew?: boolean; reason?: string }> {
+): Promise<{ ok: boolean; isNew?: boolean; activated?: boolean; reason?: string }> {
   let status: number;
   let data: Record<string, unknown>;
   try {
@@ -92,5 +97,15 @@ export async function verifyCode(
     type: data["type"] as "magiclink",
   } as Parameters<typeof supabase.auth.verifyOtp>[0]);
   if (error) return { ok: false, reason: "session_error" };
-  return { ok: true, isNew: !!data["isNew"] };
+  return { ok: true, isNew: !!data["isNew"], activated: data["activated"] === true };
+}
+
+/** Re-send the Shopify "set a password" activation email. */
+export async function resendInvite(email: string): Promise<{ ok: boolean }> {
+  try {
+    const { status, data } = await callFn({ action: "resend_invite", email });
+    return { ok: status === 200 && data["ok"] === true };
+  } catch {
+    return { ok: false };
+  }
 }

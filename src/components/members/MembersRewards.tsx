@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-import { trackTierPointsJoinTap, trackTierPointsOpen } from "@/lib/analytics";
+import { trackTierPointsOpen } from "@/lib/analytics";
 import { useRewardsAuth } from "@/hooks/useRewardsAuth";
-import { RewardsLoginButton } from "./RewardsSignInSheet";
+import { ActivationNotice, RewardsLoginButton } from "./RewardsSignInSheet";
 import {
   CREAM,
   EARN_NOTE,
   INK,
-  JOIN_URL,
   MUTED,
   SERIF,
   SHOW_LOGIN,
@@ -119,21 +118,18 @@ export function MembersRewards({
             />
           )}
           {!signedIn && (
-            <a
-              href={JOIN_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackTierPointsJoinTap(where)}
-              className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold transition-colors hover:bg-black/5"
-              style={{ border: `1px solid ${INK}`, color: INK }}
-            >
-              Join Fyxx Rewards
-            </a>
+            <RewardsLoginButton
+              where={where}
+              tap="join"
+              label="Join Fyxx Rewards"
+              variant="outline"
+            />
           )}
         </div>
         <p className="mt-2 text-center text-[11px]" style={{ color: MUTED }}>
           {EARN_NOTE}
         </p>
+        <ActivationNotice className="mt-3" />
       </div>
     </section>
   );

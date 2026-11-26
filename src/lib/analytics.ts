@@ -474,6 +474,18 @@ export function trackTierPointsLoginTap(where: TierPointsWhere): void {
   logEvent("tier_points_login_tap", { destination: where });
 }
 
+/** An existing member finished signing in (not a new account). */
+export function trackRewardsSignin(where: TierPointsWhere): void {
+  trackEvent("rewards_signin", { where });
+  logEvent("rewards_signin", { destination: where });
+}
+
+/** A new rewards account was created on the site. */
+export function trackRewardsSignup(where: TierPointsWhere): void {
+  trackEvent("rewards_signup", { where });
+  logEvent("rewards_signup", { destination: where });
+}
+
 /**
  * Klaviyo "Viewed Product" on a product page, in the same format as Klaviyo's
  * Shopify integration, so segments can use what people looked at. Sent only

@@ -3,19 +3,10 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import { trackTierPointsJoinTap, trackTierPointsOpen } from "@/lib/analytics";
+import { trackTierPointsOpen } from "@/lib/analytics";
 import { useRewardsAuth } from "@/hooks/useRewardsAuth";
-import { RewardsLoginButton } from "./RewardsSignInSheet";
-import {
-  CREAM,
-  INK,
-  JOIN_URL,
-  MUTED,
-  SERIF,
-  SHOW_LOGIN,
-  TIERS,
-  useRewardsStripOn,
-} from "./rewards-tiers";
+import { ActivationNotice, RewardsLoginButton } from "./RewardsSignInSheet";
+import { CREAM, INK, MUTED, SERIF, SHOW_LOGIN, TIERS, useRewardsStripOn } from "./rewards-tiers";
 
 /**
  * Cart slide-out: one thin Fyxx Rewards line above Checkout, "Members earn up
@@ -179,21 +170,19 @@ export function RewardsCartSheet({ className }: { className?: string }) {
                   />
                 )}
                 {!signedIn && (
-                  <a
-                    href={JOIN_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => trackTierPointsJoinTap("cart")}
-                    className="inline-flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-semibold text-white transition-opacity hover:opacity-85"
-                    style={{ background: INK }}
-                  >
-                    Join Fyxx Rewards
-                  </a>
+                  <RewardsLoginButton
+                    where="cart"
+                    tap="join"
+                    label="Join Fyxx Rewards"
+                    variant="solid"
+                    className="h-10 flex-1"
+                  />
                 )}
               </div>
               <p className="mx-auto mt-3 max-w-sm text-center text-[11px]" style={{ color: MUTED }}>
                 Points land after your order. Some product categories don't earn points.
               </p>
+              <ActivationNotice className="mt-3" />
             </div>
           </div>
         </DialogPrimitive.Content>

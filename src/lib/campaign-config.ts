@@ -26,6 +26,9 @@ export const TRACKED_EVENTS = [
   "tier_points_open",
   "tier_points_join_tap",
   "tier_points_login_tap",
+  // Fyxx Rewards sign-in: existing member signed in vs new account created.
+  "rewards_signin",
+  "rewards_signup",
 ] as const;
 export type TrackedEventName = (typeof TRACKED_EVENTS)[number];
 

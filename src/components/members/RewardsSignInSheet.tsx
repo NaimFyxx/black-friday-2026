@@ -5,7 +5,12 @@ import { ArrowLeft, Loader2, Mail, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useRewardsAuth } from "@/hooks/useRewardsAuth";
 import { lookupEmail, sendCode, verifyCode } from "@/lib/rewards-auth";
-import { trackTierPointsLoginTap } from "@/lib/analytics";
+import {
+  trackRewardsSignin,
+  trackRewardsSignup,
+  trackTierPointsJoinTap,
+  trackTierPointsLoginTap,
+} from "@/lib/analytics";
 import { CREAM, INK, MUTED, SERIF, type RewardsWhere } from "./rewards-tiers";
 
 /**
@@ -64,9 +69,11 @@ function errorText(reason?: string): string {
 }
 
 function SignInDialog({
+  where,
   open,
   onOpenChange,
 }: {
+  where: RewardsWhere;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
@@ -74,6 +81,7 @@ function SignInDialog({
   const [email, setEmail] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [acceptsMarketing, setAcceptsMarketing] = useState(true);
   const [code, setCode] = useState("");
   const [isNewUser, setIsNewUser] = useState(false);
@@ -87,6 +95,7 @@ function SignInDialog({
     setCode("");
     setFirstName("");
     setLastName("");
+    setPhone("");
     setGreeting(null);
     setError(null);
     setInfo(null);
@@ -151,7 +160,12 @@ function SignInDialog({
       email: email.trim().toLowerCase(),
       code,
       ...(isNewUser
-        ? { firstName: firstName.trim(), lastName: lastName.trim(), acceptsMarketing }
+        ? {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            phone: phone.trim(),
+            acceptsMarketing,
+          }
         : {}),
     });
     setBusy(null);
@@ -159,6 +173,9 @@ function SignInDialog({
       setError(errorText(res.reason));
       return;
     }
+    // Count existing sign-ins vs new accounts.
+    if (res.isNew) trackRewardsSignup(where);
+    else trackRewardsSignin(where);
     close(false);
   };
 
@@ -254,6 +271,16 @@ function SignInDialog({
                     placeholder="Last"
                   />
                 </div>
+                <Field
+                  id="rw-phone"
+                  label="Phone"
+                  type="tel"
+                  inputMode="tel"
+                  maxLength={32}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="07 9999 9999"
+                />
                 <label className="flex cursor-pointer items-start gap-2 text-left">
                   <input
                     type="checkbox"
@@ -402,11 +429,14 @@ export function RewardsLoginButton({
   className,
   label = "Log in",
   variant = "solid",
+  tap = "login",
 }: {
   where: RewardsWhere;
   className?: string;
   label?: string;
   variant?: "solid" | "outline";
+  /** Which tap to record when this opens the sheet. */
+  tap?: "login" | "join";
 }) {
   const { signedIn, firstName, signOut } = useRewardsAuth();
   const [open, setOpen] = useState(false);
@@ -439,7 +469,8 @@ export function RewardsLoginButton({
       <button
         type="button"
         onClick={() => {
-          trackTierPointsLoginTap(where);
+          if (tap === "join") trackTierPointsJoinTap(where);
+          else trackTierPointsLoginTap(where);
           setOpen(true);
         }}
         className={cn(
@@ -450,7 +481,47 @@ export function RewardsLoginButton({
       >
         {label}
       </button>
-      <SignInDialog open={open} onOpenChange={setOpen} />
+      <SignInDialog where={where} open={open} onOpenChange={setOpen} />
     </>
+  );
+}
+
+/**
+ * Shown to a signed-in member whose Shopify account isn't activated yet (no
+ * password set), nudging them to finish so their points count. Renders nothing
+ * while signed out, still loading, or already activated.
+ */
+export function ActivationNotice({ className }: { className?: string }) {
+  const { signedIn, activated, resendActivation } = useRewardsAuth();
+  const [sent, setSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (!signedIn || activated !== false) return null;
+
+  return (
+    <div
+      className={cn("mx-auto max-w-sm rounded-xl px-3 py-2 text-center text-[11px]", className)}
+      style={{ background: "#fff", border: "1px solid rgba(35,31,32,0.12)", color: MUTED }}
+    >
+      Almost there, check your email and set a password so your Friday points count.{" "}
+      {sent ? (
+        <span style={{ color: INK }}>Email sent.</span>
+      ) : (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            const r = await resendActivation();
+            setBusy(false);
+            if (r.ok) setSent(true);
+          }}
+          className="font-semibold underline underline-offset-2 disabled:opacity-50"
+          style={{ color: INK }}
+        >
+          {busy ? "Sending..." : "Resend email"}
+        </button>
+      )}
+    </div>
   );
 }

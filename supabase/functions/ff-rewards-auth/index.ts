@@ -125,6 +125,31 @@ async function sendInvite(customerId: number): Promise<boolean> {
     return false;
   }
 }
+// Normalize a typed phone to E.164 (store is Jordan): "07..." -> "+9627...",
+// "00..." -> "+...", a bare international number -> "+...".
+function normPhone(p: string): string {
+  let s = (p ?? "").replace(/[\s()\-.]/g, "");
+  if (!s) return "";
+  if (s.startsWith("00")) s = "+" + s.slice(2);
+  else if (s.startsWith("0")) s = "+962" + s.slice(1);
+  else if (!s.startsWith("+") && /^\d+$/.test(s)) s = "+" + s;
+  return s;
+}
+// Best-effort: set the phone on a customer. Never blocks sign-up (a bad or
+// duplicate phone is a soft failure).
+async function setPhone(customerId: number, phone: string): Promise<boolean> {
+  const e164 = normPhone(phone);
+  if (!e164) return false;
+  try {
+    const j = await shopGql(
+      `mutation($input:CustomerInput!){ customerUpdate(input:$input){ userErrors{ message } } }`,
+      { input: { id: `gid://shopify/Customer/${customerId}`, phone: e164 } },
+    );
+    return !(j?.data?.customerUpdate?.userErrors?.length || j?.errors);
+  } catch {
+    return false;
+  }
+}
 
 // ---- Resend ----
 function otpHtml(code: string): string {
@@ -165,7 +190,17 @@ Deno.serve(async (req) => {
 
     if (action === "lookup") {
       const c = await findCustomer(email).catch((e) => { console.error("[ff-auth] lookup", String(e)); return null; });
-      return json({ exists: !!c, firstName: c?.firstName ?? null, lastName: c?.lastName ?? null });
+      return json({ exists: !!c, firstName: c?.firstName ?? null, lastName: c?.lastName ?? null, activated: c?.state === "enabled" });
+    }
+
+    // Re-send the Shopify account-activation invite (the "set a password" email),
+    // for a signed-in member who has not activated yet.
+    if (action === "resend_invite") {
+      const c = await findCustomer(email).catch(() => null);
+      if (!c?.id) return json({ ok: false, reason: "not_found" }, 404);
+      if (c.state === "enabled") return json({ ok: true, alreadyActivated: true });
+      const ok = await sendInvite(c.id);
+      return json({ ok });
     }
 
     if (action === "send") {
@@ -205,6 +240,7 @@ Deno.serve(async (req) => {
       // their Shopify customer, so a returning member is always greeted by name.
       const firstName = String(body.firstName ?? "").trim().slice(0, 50) || (existing?.firstName ?? "");
       const lastName = String(body.lastName ?? "").trim().slice(0, 50) || (existing?.lastName ?? "");
+      const phone = String(body.phone ?? "").trim().slice(0, 32);
       const acceptsMarketing = body.acceptsMarketing === true;
       const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
       const meta: Record<string, unknown> = {};
@@ -236,13 +272,21 @@ Deno.serve(async (req) => {
       try {
         if (!existing) {
           const c = await createCustomer(email, firstName, lastName, acceptsMarketing);
-          if (c?.id) { const invited = await sendInvite(c.id); shopify = { created: true, invited }; }
+          if (c?.id) {
+            if (phone) await setPhone(c.id, phone);
+            const invited = await sendInvite(c.id);
+            shopify = { created: true, invited };
+          }
         }
       } catch (e) { console.error("[ff-auth] shopify ensure", String(e)); }
 
+      // Activated = their Shopify account is "enabled" (password set). New
+      // customers start disabled until they use the activation invite.
+      const activated = existing?.state === "enabled";
+
       let type = "magiclink";
       try { type = new URL(link.properties.action_link).searchParams.get("type") ?? "magiclink"; } catch { /* keep */ }
-      return json({ ok: true, token_hash: link.properties.hashed_token, type, isNew, shopify });
+      return json({ ok: true, token_hash: link.properties.hashed_token, type, isNew, shopify, activated });
     }
 
     return json({ error: "unknown_action" }, 400);
