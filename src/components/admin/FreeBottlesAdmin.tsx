@@ -132,6 +132,11 @@ export function FreeBottlesAdmin() {
               onChange={(v) => setText({ upgrade: v })}
             />
             <Txt
+              label="Line under the bar ({level} = the current level)"
+              value={s.text.current}
+              onChange={(v) => setText({ current: v })}
+            />
+            <Txt
               label="Reward not set yet"
               value={s.text.soon}
               onChange={(v) => setText({ soon: v })}

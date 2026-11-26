@@ -6,16 +6,19 @@ export function AwayLine({
   cfg,
   total,
   className,
+  strongClassName = "text-ff-cream",
 }: {
   cfg: FreeBottlesConfig;
   total: number;
   className?: string;
+  /** Colour of the amount and the reward ("text-ff-red" in the burgundy hero). */
+  strongClassName?: string;
 }) {
   return (
     <p className={cn("text-ff-black", className)}>
       {awayParts(total, cfg).map((p, i) =>
         p.strong ? (
-          <span key={i} className="ff-num font-semibold text-ff-cream">
+          <span key={i} className={cn("ff-num font-semibold", strongClassName)}>
             {p.text}
           </span>
         ) : (

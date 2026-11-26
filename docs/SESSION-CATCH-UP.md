@@ -865,3 +865,8 @@ Owner approved the bf_events change.
 - DB: bf_card adds planned_percent (docs/sql/2026-11-27-bf-planned-discount.sql). Front end: CatalogCard badge, catalog.ts type, admin switch.
 - Noted: rewards_preview_only was switched OFF by Naim at 02:25, so the free bottles bar is now public.
 - 02:40: badge text shortened: bf_settings.sale_label_preview "off on Friday" -> "off" (badges read "-25% off"). Editable on /admin/sale.
+
+## 2026-11-27 03:00: new opening block (Naim)
+- The teaser hero is gone (headline, countdown, "Remind me at 10:00", "Add to calendar", "Fill your cart" button). TeaserHero.tsx and HeroReminder.tsx deleted. New FridayHero (src/components/hero/FridayHero.tsx), shown before AND during the sale: burgundy, cream logo + the four bottles, the floating gift card sticker, and the free gift progress folded in (HeroFreeBottles, no separate red section). A hidden timer still refreshes the page at sale_start (the countdown used to do that). The catalog's small logo banner now only shows after the sale.
+- No more reminder sign-ups from the hero (the cart reminder form is unchanged); people already on the Klaviyo list still get the 10:00 email.
+- Free gift: never shows what the gifts are. Reward cards removed (RewardCards.tsx deleted); bar popovers show level + amount only. Hero has a quiet level row (LevelChips): passed levels crossed out and faded, current filled, upcoming with amount. Cart and product page: bar + "Your free gift: Level 2" pill only. Bar amounts only for levels still ahead. New text key rewards_text.current ("Your free gift: {level}"), editable in admin. Burgundy tone for bar/stars in the hero.

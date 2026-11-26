@@ -1,4 +1,4 @@
-import { currentReward, type FreeBottlesConfig } from "@/lib/free-bottles";
+import { currentReward, DEFAULT_TEXT, type FreeBottlesConfig } from "@/lib/free-bottles";
 import { cn } from "@/lib/utils";
 import { RewardStar } from "./RewardStar";
 
@@ -10,29 +10,33 @@ export function UnlockedReward({
   cfg,
   total,
   className,
+  tone = "red",
 }: {
   cfg: FreeBottlesConfig;
   total: number;
   className?: string;
+  tone?: "red" | "burgundy";
 }) {
   const r = currentReward(total, cfg);
   if (!r) return null;
+  // Level only: what the gift is stays a surprise.
   return (
     <div
       key={r.level}
       className={cn(
-        "flex items-center gap-2.5 rounded-full bg-ff-burgundy px-3 py-1.5 text-left text-ff-cream",
+        "flex items-center gap-2 rounded-full px-3 py-1.5 text-left",
+        tone === "burgundy" ? "bg-ff-cream/10 text-ff-cream" : "bg-ff-burgundy text-ff-cream",
         className,
       )}
     >
-      {r.slot.image ? (
-        <img src={r.slot.image} alt="" className="h-10 w-8 shrink-0 object-contain" />
-      ) : (
-        <RewardStar light filled className="ff-star-pop h-4 w-4 shrink-0" />
-      )}
-      <p className="min-w-0 text-xs leading-snug">
-        <span className="ff-subline tracking-wide uppercase">Your free bottle: {r.label}</span>
-        {r.slot.name && <span className="block text-ff-warm-cream">{r.slot.name}</span>}
+      <RewardStar
+        light={tone !== "burgundy"}
+        dark={tone === "burgundy"}
+        filled
+        className="ff-star-pop h-4 w-4 shrink-0"
+      />
+      <p className="ff-subline min-w-0 text-[10px] leading-snug tracking-wide uppercase md:text-xs">
+        {(cfg.text.current || DEFAULT_TEXT.current).replace("{level}", r.label)}
       </p>
     </div>
   );
