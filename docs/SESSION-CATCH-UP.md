@@ -844,3 +844,7 @@ Owner approved the bf_events change.
 - Data: RPC bf_link_funnel(p_since, p_until) (service role only) + Shopify site orders (they carry _utm_content). getLinks in admin.functions.ts. Test links (bf_settings.test_utm_sources) and team visits left out; {{site_source_name}} grouped under Meta. Untagged visits summed in the note.
 - Date picker gained "Today" (from midnight Amman time), for every admin page that uses it.
 - Read only. No tracking, links or utm_campaign changed.
+
+## 2026-11-26: "Added to cart" message that would not go away
+- Cause: Sonner pauses a toast's countdown while the pointer is over it. On phones the toasts sit over the header/cart button; a tap there left the toast "hovered" and it never closed. Reproduced in a browser: with the pointer on the toast it stayed indefinitely.
+- Fix (src/components/ui/sonner.tsx): AutoClose closes every toast 0.8 s after its own duration (default 4 s) whatever the hover state; toasts also get a small close button. Applies to all toasts (Added to cart, free bottles message, admin saves).
