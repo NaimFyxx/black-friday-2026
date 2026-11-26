@@ -10,9 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as PairingsRouteImport } from './routes/pairings'
-import { Route as WaRouteImport } from './routes/wa'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminActivityRouteImport } from './routes/admin.activity'
 import { Route as AdminCohortRouteImport } from './routes/admin.cohort'
@@ -20,6 +20,7 @@ import { Route as AdminErrorsRouteImport } from './routes/admin.errors'
 import { Route as AdminLinksRouteImport } from './routes/admin.links'
 import { Route as AdminReportRouteImport } from './routes/admin.report'
 import { Route as AdminSaleRouteImport } from './routes/admin.sale'
+import { Route as AdminShortLinksRouteImport } from './routes/admin.short-links'
 import { Route as AdminSpinsRouteImport } from './routes/admin.spins'
 import { Route as AdminTrackingRouteImport } from './routes/admin.tracking'
 import { Route as ProductHandleRouteImport } from './routes/product.$handle'
@@ -27,6 +28,11 @@ import { Route as ProductHandleRouteImport } from './routes/product.$handle'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SlugRoute = SlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -37,11 +43,6 @@ const AdminRoute = AdminRouteImport.update({
 const PairingsRoute = PairingsRouteImport.update({
   id: '/pairings',
   path: '/pairings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const WaRoute = WaRouteImport.update({
-  id: '/wa',
-  path: '/wa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -79,6 +80,11 @@ const AdminSaleRoute = AdminSaleRouteImport.update({
   path: '/sale',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminShortLinksRoute = AdminShortLinksRouteImport.update({
+  id: '/short-links',
+  path: '/short-links',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSpinsRoute = AdminSpinsRouteImport.update({
   id: '/spins',
   path: '/spins',
@@ -97,15 +103,16 @@ const ProductHandleRoute = ProductHandleRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
   '/admin': typeof AdminRouteWithChildren
   '/pairings': typeof PairingsRoute
-  '/wa': typeof WaRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/report': typeof AdminReportRoute
   '/admin/sale': typeof AdminSaleRoute
+  '/admin/short-links': typeof AdminShortLinksRoute
   '/admin/spins': typeof AdminSpinsRoute
   '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
@@ -113,14 +120,15 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
   '/pairings': typeof PairingsRoute
-  '/wa': typeof WaRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/report': typeof AdminReportRoute
   '/admin/sale': typeof AdminSaleRoute
+  '/admin/short-links': typeof AdminShortLinksRoute
   '/admin/spins': typeof AdminSpinsRoute
   '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
@@ -129,15 +137,16 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$slug': typeof SlugRoute
   '/admin': typeof AdminRouteWithChildren
   '/pairings': typeof PairingsRoute
-  '/wa': typeof WaRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/cohort': typeof AdminCohortRoute
   '/admin/errors': typeof AdminErrorsRoute
   '/admin/links': typeof AdminLinksRoute
   '/admin/report': typeof AdminReportRoute
   '/admin/sale': typeof AdminSaleRoute
+  '/admin/short-links': typeof AdminShortLinksRoute
   '/admin/spins': typeof AdminSpinsRoute
   '/admin/tracking': typeof AdminTrackingRoute
   '/product/$handle': typeof ProductHandleRoute
@@ -147,15 +156,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$slug'
     | '/admin'
     | '/pairings'
-    | '/wa'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
     | '/admin/links'
     | '/admin/report'
     | '/admin/sale'
+    | '/admin/short-links'
     | '/admin/spins'
     | '/admin/tracking'
     | '/product/$handle'
@@ -163,14 +173,15 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$slug'
     | '/pairings'
-    | '/wa'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
     | '/admin/links'
     | '/admin/report'
     | '/admin/sale'
+    | '/admin/short-links'
     | '/admin/spins'
     | '/admin/tracking'
     | '/product/$handle'
@@ -178,15 +189,16 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$slug'
     | '/admin'
     | '/pairings'
-    | '/wa'
     | '/admin/activity'
     | '/admin/cohort'
     | '/admin/errors'
     | '/admin/links'
     | '/admin/report'
     | '/admin/sale'
+    | '/admin/short-links'
     | '/admin/spins'
     | '/admin/tracking'
     | '/product/$handle'
@@ -195,9 +207,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SlugRoute: typeof SlugRoute
   AdminRoute: typeof AdminRouteWithChildren
   PairingsRoute: typeof PairingsRoute
-  WaRoute: typeof WaRoute
   ProductHandleRoute: typeof ProductHandleRoute
 }
 
@@ -208,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$slug': {
+      id: '/$slug'
+      path: '/$slug'
+      fullPath: '/$slug'
+      preLoaderRoute: typeof SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -222,13 +241,6 @@ declare module '@tanstack/react-router' {
       path: '/pairings'
       fullPath: '/pairings'
       preLoaderRoute: typeof PairingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/wa': {
-      id: '/wa'
-      path: '/wa'
-      fullPath: '/wa'
-      preLoaderRoute: typeof WaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -280,6 +292,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSaleRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/short-links': {
+      id: '/admin/short-links'
+      path: '/short-links'
+      fullPath: '/admin/short-links'
+      preLoaderRoute: typeof AdminShortLinksRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/spins': {
       id: '/admin/spins'
       path: '/spins'
@@ -311,6 +330,7 @@ interface AdminRouteChildren {
   AdminLinksRoute: typeof AdminLinksRoute
   AdminReportRoute: typeof AdminReportRoute
   AdminSaleRoute: typeof AdminSaleRoute
+  AdminShortLinksRoute: typeof AdminShortLinksRoute
   AdminSpinsRoute: typeof AdminSpinsRoute
   AdminTrackingRoute: typeof AdminTrackingRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -323,6 +343,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLinksRoute: AdminLinksRoute,
   AdminReportRoute: AdminReportRoute,
   AdminSaleRoute: AdminSaleRoute,
+  AdminShortLinksRoute: AdminShortLinksRoute,
   AdminSpinsRoute: AdminSpinsRoute,
   AdminTrackingRoute: AdminTrackingRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -332,9 +353,9 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SlugRoute: SlugRoute,
   AdminRoute: AdminRouteWithChildren,
   PairingsRoute: PairingsRoute,
-  WaRoute: WaRoute,
   ProductHandleRoute: ProductHandleRoute,
 }
 export const routeTree = rootRouteImport

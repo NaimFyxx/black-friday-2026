@@ -14,4 +14,19 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("ranks the short-link catch-all below every real route", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+    const leaf = (path: string) => router.matchRoutes(path).at(-1)?.routeId;
+
+    // Real routes always win over /$slug.
+    expect(leaf("/")).toBe("/");
+    expect(leaf("/pairings")).toBe("/pairings");
+    expect(leaf("/admin")).toBe("/admin/");
+    expect(leaf("/product/some-handle")).toBe("/product/$handle");
+
+    // A bare word that is not a real route falls through to the short-link route.
+    expect(leaf("/wa")).toBe("/$slug");
+    expect(leaf("/anything-else")).toBe("/$slug");
+  });
 });

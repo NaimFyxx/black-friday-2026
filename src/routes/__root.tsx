@@ -35,7 +35,8 @@ import { KLAVIYO_COMPANY_ID } from "../lib/campaign-config";
 import { simAllowed } from "../lib/preview-sim.functions";
 import { getTrackingState, reportClientError } from "../lib/track.functions";
 import { DEFAULT_TRACKING_HOSTS } from "../lib/tracking-hosts";
-import { isRedirectPath } from "../lib/redirect-paths";
+import { slugFromPath } from "../lib/redirect-paths";
+import { isActiveShortLink } from "../lib/short-links.functions";
 
 // Send a client error to the /admin error log. Deduped per page load so one
 // crash loop can't spam it, and capped at 5 reports per page.
@@ -322,7 +323,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   beforeLoad: async ({ location }) => {
     const preview = readPreview();
     const sim = preview === "friday" ? await adminCheck() : false;
-    return { preview, sim, redirectPage: isRedirectPath(location.pathname) };
+    // A live short-link slug (e.g. /wa) is a redirect page: no tracking here, it
+    // fires once on the final URL. Only bare single-segment paths are looked up,
+    // so ordinary pages never touch the database. Never throws.
+    let redirectPage = false;
+    const slug = slugFromPath(location.pathname);
+    if (slug) {
+      try {
+        redirectPage = (await isActiveShortLink({ data: { slug } })).active;
+      } catch {
+        redirectPage = false;
+      }
+    }
+    return { preview, sim, redirectPage };
   },
   // Ask the server once per full page load whether to track this visitor
   // (the /admin Tracking switches). Fails open: an error means "track".
@@ -410,9 +423,7 @@ function RootShell({ children }: { children: ReactNode }) {
     select: (state) => state.location.pathname.startsWith("/admin"),
   });
   // Redirect pages (e.g. /wa) must not fire the <noscript> pixel either.
-  const isRedirect = useRouterState({
-    select: (state) => isRedirectPath(state.location.pathname),
-  });
+  const isRedirect = Route.useRouteContext({ select: (c) => c.redirectPage === true });
   return (
     <html lang="en">
       <head>
