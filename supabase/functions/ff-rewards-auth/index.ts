@@ -102,6 +102,13 @@ function gidNum(gid: string): number | null {
   const m = /\/(\d+)$/.exec(gid ?? "");
   return m ? Number(m[1]) : null;
 }
+// Shopify's Customer.state enum comes back UPPERCASE ("ENABLED" / "DISABLED" /
+// "INVITED" / "DECLINED"). "Enabled" means a full, activated account (a
+// non-guest in LoyaltyLion, so it earns points). Compare case-insensitively:
+// a lowercase "enabled" check silently reports every member as not activated.
+function isEnabled(state: string | null | undefined): boolean {
+  return (state ?? "").toUpperCase() === "ENABLED";
+}
 type Cust = { id: number | null; firstName: string | null; lastName: string | null; state: string | null };
 async function findCustomer(email: string): Promise<Cust | null> {
   const j = await shopGql(
@@ -242,7 +249,7 @@ Deno.serve(async (req) => {
 
     if (action === "lookup") {
       const c = await findCustomer(email).catch((e) => { console.error("[ff-auth] lookup", String(e)); return null; });
-      return json({ exists: !!c, firstName: c?.firstName ?? null, lastName: c?.lastName ?? null, activated: c?.state === "enabled" });
+      return json({ exists: !!c, firstName: c?.firstName ?? null, lastName: c?.lastName ?? null, activated: isEnabled(c?.state) });
     }
 
     // Re-send the Shopify account-activation invite (the "set a password" email),
@@ -250,7 +257,7 @@ Deno.serve(async (req) => {
     if (action === "resend_invite") {
       const c = await findCustomer(email).catch(() => null);
       if (!c?.id) return json({ ok: false, reason: "not_found" }, 404);
-      if (c.state === "enabled") return json({ ok: true, alreadyActivated: true });
+      if (isEnabled(c.state)) return json({ ok: true, alreadyActivated: true });
       const ok = await sendInvite(c.id);
       return json({ ok });
     }
@@ -334,7 +341,7 @@ Deno.serve(async (req) => {
 
       // Activated = their Shopify account is "enabled" (password set). New
       // customers start disabled until they use the activation invite.
-      const activated = existing?.state === "enabled";
+      const activated = isEnabled(existing?.state);
 
       let type = "magiclink";
       try { type = new URL(link.properties.action_link).searchParams.get("type") ?? "magiclink"; } catch { /* keep */ }
