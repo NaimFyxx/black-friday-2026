@@ -545,6 +545,141 @@ export type Database = {
         }
         Relationships: []
       }
+      bf_cost_layers: {
+        Row: {
+          company: string | null
+          created: string | null
+          description: string | null
+          layer_id: number | null
+          loaded_at: string | null
+          product_id: number | null
+          qty: number | null
+          unit_cost: number | null
+        }
+        Insert: {
+          company?: string | null
+          created?: string | null
+          description?: string | null
+          layer_id?: number | null
+          loaded_at?: string | null
+          product_id?: number | null
+          qty?: number | null
+          unit_cost?: number | null
+        }
+        Update: {
+          company?: string | null
+          created?: string | null
+          description?: string | null
+          layer_id?: number | null
+          loaded_at?: string | null
+          product_id?: number | null
+          qty?: number | null
+          unit_cost?: number | null
+        }
+        Relationships: []
+      }
+      bf_cost_odoo_categories: {
+        Row: {
+          categ_id: number | null
+          cost_method: string | null
+          name: string | null
+        }
+        Insert: {
+          categ_id?: number | null
+          cost_method?: string | null
+          name?: string | null
+        }
+        Update: {
+          categ_id?: number | null
+          cost_method?: string | null
+          name?: string | null
+        }
+        Relationships: []
+      }
+      bf_cost_odoo_products: {
+        Row: {
+          active: boolean | null
+          categ_id: number | null
+          category: string | null
+          loaded_at: string | null
+          product_id: number | null
+          sku: string | null
+          standard_price: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          categ_id?: number | null
+          category?: string | null
+          loaded_at?: string | null
+          product_id?: number | null
+          sku?: string | null
+          standard_price?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          categ_id?: number | null
+          category?: string | null
+          loaded_at?: string | null
+          product_id?: number | null
+          sku?: string | null
+          standard_price?: number | null
+        }
+        Relationships: []
+      }
+      bf_cost_po_lines: {
+        Row: {
+          currency: string | null
+          date_order: string | null
+          discount: number | null
+          line_id: number | null
+          loaded_at: string | null
+          po_name: string | null
+          price_unit: number | null
+          product_id: number | null
+          product_name: string | null
+          qty: number | null
+          qty_received: number | null
+          state: string | null
+          supplier: string | null
+          taxes: Json | null
+          uom: string | null
+        }
+        Insert: {
+          currency?: string | null
+          date_order?: string | null
+          discount?: number | null
+          line_id?: number | null
+          loaded_at?: string | null
+          po_name?: string | null
+          price_unit?: number | null
+          product_id?: number | null
+          product_name?: string | null
+          qty?: number | null
+          qty_received?: number | null
+          state?: string | null
+          supplier?: string | null
+          taxes?: Json | null
+          uom?: string | null
+        }
+        Update: {
+          currency?: string | null
+          date_order?: string | null
+          discount?: number | null
+          line_id?: number | null
+          loaded_at?: string | null
+          po_name?: string | null
+          price_unit?: number | null
+          product_id?: number | null
+          product_name?: string | null
+          qty?: number | null
+          qty_received?: number | null
+          state?: string | null
+          supplier?: string | null
+          taxes?: Json | null
+          uom?: string | null
+        }
+        Relationships: []
+      }
       bf_error_log: {
         Row: {
           area: string
@@ -629,6 +764,7 @@ export type Database = {
           utm_term: string | null
           value: number | null
           variant_id: string | null
+          visitor_id: string | null
         }
         Insert: {
           created_at?: string
@@ -653,6 +789,7 @@ export type Database = {
           utm_term?: string | null
           value?: number | null
           variant_id?: string | null
+          visitor_id?: string | null
         }
         Update: {
           created_at?: string
@@ -677,6 +814,124 @@ export type Database = {
           utm_term?: string | null
           value?: number | null
           variant_id?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: []
+      }
+      bf_gift_ladder: {
+        Row: {
+          active: boolean
+          backup_sku: string[]
+          backup_title: string | null
+          category: string
+          gift_sku: string[]
+          gift_title: string
+          gift_value_jod: number | null
+          image_url: string | null
+          level_jod: number
+          max_qty: number | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          backup_sku?: string[]
+          backup_title?: string | null
+          category: string
+          gift_sku?: string[]
+          gift_title: string
+          gift_value_jod?: number | null
+          image_url?: string | null
+          level_jod: number
+          max_qty?: number | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          backup_sku?: string[]
+          backup_title?: string | null
+          category?: string
+          gift_sku?: string[]
+          gift_title?: string
+          gift_value_jod?: number | null
+          image_url?: string | null
+          level_jod?: number
+          max_qty?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      bf_gift_log: {
+        Row: {
+          backup_used: boolean
+          category: string | null
+          decided_at: string
+          fallback_used: boolean
+          gift_sku: string[]
+          gift_title: string | null
+          level_jod: number | null
+          note: string | null
+          order_gid: string | null
+          order_id: string
+          order_name: string | null
+          order_number: string | null
+          order_value_jod: number | null
+          raw: Json | null
+          shop_source_name: string | null
+          source: string | null
+          spend_cigars_jod: number
+          spend_spirits_jod: number
+          spend_wine_jod: number
+          status: string
+          tags: string[]
+          test_mode: boolean
+        }
+        Insert: {
+          backup_used?: boolean
+          category?: string | null
+          decided_at?: string
+          fallback_used?: boolean
+          gift_sku?: string[]
+          gift_title?: string | null
+          level_jod?: number | null
+          note?: string | null
+          order_gid?: string | null
+          order_id: string
+          order_name?: string | null
+          order_number?: string | null
+          order_value_jod?: number | null
+          raw?: Json | null
+          shop_source_name?: string | null
+          source?: string | null
+          spend_cigars_jod?: number
+          spend_spirits_jod?: number
+          spend_wine_jod?: number
+          status: string
+          tags?: string[]
+          test_mode?: boolean
+        }
+        Update: {
+          backup_used?: boolean
+          category?: string | null
+          decided_at?: string
+          fallback_used?: boolean
+          gift_sku?: string[]
+          gift_title?: string | null
+          level_jod?: number | null
+          note?: string | null
+          order_gid?: string | null
+          order_id?: string
+          order_name?: string | null
+          order_number?: string | null
+          order_value_jod?: number | null
+          raw?: Json | null
+          shop_source_name?: string | null
+          source?: string | null
+          spend_cigars_jod?: number
+          spend_spirits_jod?: number
+          spend_wine_jod?: number
+          status?: string
+          tags?: string[]
+          test_mode?: boolean
         }
         Relationships: []
       }
@@ -1046,6 +1301,171 @@ export type Database = {
         }
         Relationships: []
       }
+      bf_sale_list_backup_20261124: {
+        Row: {
+          built_at: string | null
+          compare_at_now: number | null
+          cost: number | null
+          discount: number | null
+          in_sale: boolean | null
+          margin_now: number | null
+          on_sale: boolean | null
+          price_now: number | null
+          product_id: number | null
+          product_type: string | null
+          rule_group: string | null
+          sale_price: number | null
+          sku: string | null
+          source: string | null
+          title: string | null
+          variant_id: number | null
+          variant_title: string | null
+        }
+        Insert: {
+          built_at?: string | null
+          compare_at_now?: number | null
+          cost?: number | null
+          discount?: number | null
+          in_sale?: boolean | null
+          margin_now?: number | null
+          on_sale?: boolean | null
+          price_now?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          rule_group?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          source?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+        }
+        Update: {
+          built_at?: string | null
+          compare_at_now?: number | null
+          cost?: number | null
+          discount?: number | null
+          in_sale?: boolean | null
+          margin_now?: number | null
+          on_sale?: boolean | null
+          price_now?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          rule_group?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          source?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+        }
+        Relationships: []
+      }
+      bf_sale_list_backup_20261125: {
+        Row: {
+          built_at: string | null
+          compare_at_now: number | null
+          cost: number | null
+          discount: number | null
+          in_sale: boolean | null
+          margin_now: number | null
+          on_sale: boolean | null
+          price_now: number | null
+          product_id: number | null
+          product_type: string | null
+          rule_group: string | null
+          sale_price: number | null
+          sku: string | null
+          source: string | null
+          title: string | null
+          variant_id: number | null
+          variant_title: string | null
+        }
+        Insert: {
+          built_at?: string | null
+          compare_at_now?: number | null
+          cost?: number | null
+          discount?: number | null
+          in_sale?: boolean | null
+          margin_now?: number | null
+          on_sale?: boolean | null
+          price_now?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          rule_group?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          source?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+        }
+        Update: {
+          built_at?: string | null
+          compare_at_now?: number | null
+          cost?: number | null
+          discount?: number | null
+          in_sale?: boolean | null
+          margin_now?: number | null
+          on_sale?: boolean | null
+          price_now?: number | null
+          product_id?: number | null
+          product_type?: string | null
+          rule_group?: string | null
+          sale_price?: number | null
+          sku?: string | null
+          source?: string | null
+          title?: string | null
+          variant_id?: number | null
+          variant_title?: string | null
+        }
+        Relationships: []
+      }
+      bf_sale_sync_stage: {
+        Row: {
+          cost: number | null
+          discount_pct: number
+          on_sale: boolean
+          price: number
+          sku: string
+        }
+        Insert: {
+          cost?: number | null
+          discount_pct: number
+          on_sale: boolean
+          price: number
+          sku: string
+        }
+        Update: {
+          cost?: number | null
+          discount_pct?: number
+          on_sale?: boolean
+          price?: number
+          sku?: string
+        }
+        Relationships: []
+      }
+      bf_sale_v3_stage: {
+        Row: {
+          cost: number | null
+          discount_pct: number | null
+          loaded_at: string | null
+          sku: string
+        }
+        Insert: {
+          cost?: number | null
+          discount_pct?: number | null
+          loaded_at?: string | null
+          sku: string
+        }
+        Update: {
+          cost?: number | null
+          discount_pct?: number | null
+          loaded_at?: string | null
+          sku?: string
+        }
+        Relationships: []
+      }
       bf_settings: {
         Row: {
           key: string
@@ -1232,6 +1652,134 @@ export type Database = {
           staff_name?: string
           started_at?: string | null
           status?: string
+        }
+        Relationships: []
+      }
+      camp_creatives: {
+        Row: {
+          ad_id: string | null
+          campaign_id: string
+          created_at: string
+          headline: string | null
+          id: string
+          image_url: string | null
+          label: string | null
+          notes: string | null
+          placement: string | null
+          primary_text: string | null
+          updated_at: string
+          utm_content: string | null
+        }
+        Insert: {
+          ad_id?: string | null
+          campaign_id: string
+          created_at?: string
+          headline?: string | null
+          id?: string
+          image_url?: string | null
+          label?: string | null
+          notes?: string | null
+          placement?: string | null
+          primary_text?: string | null
+          updated_at?: string
+          utm_content?: string | null
+        }
+        Update: {
+          ad_id?: string | null
+          campaign_id?: string
+          created_at?: string
+          headline?: string | null
+          id?: string
+          image_url?: string | null
+          label?: string | null
+          notes?: string | null
+          placement?: string | null
+          primary_text?: string | null
+          updated_at?: string
+          utm_content?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "camp_creatives_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "camp_register"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      camp_register: {
+        Row: {
+          audience: string | null
+          brand: string
+          budget_jod: number | null
+          channel: string
+          created_at: string
+          description: string | null
+          ends_on: string | null
+          goal: string | null
+          id: string
+          landing_url: string | null
+          match_mode: string
+          match_tags: string[]
+          name: string
+          notes: string | null
+          objective: string | null
+          platform_campaign_id: string | null
+          starts_on: string
+          status: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          audience?: string | null
+          brand: string
+          budget_jod?: number | null
+          channel: string
+          created_at?: string
+          description?: string | null
+          ends_on?: string | null
+          goal?: string | null
+          id?: string
+          landing_url?: string | null
+          match_mode?: string
+          match_tags?: string[]
+          name: string
+          notes?: string | null
+          objective?: string | null
+          platform_campaign_id?: string | null
+          starts_on: string
+          status?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          audience?: string | null
+          brand?: string
+          budget_jod?: number | null
+          channel?: string
+          created_at?: string
+          description?: string | null
+          ends_on?: string | null
+          goal?: string | null
+          id?: string
+          landing_url?: string | null
+          match_mode?: string
+          match_tags?: string[]
+          name?: string
+          notes?: string | null
+          objective?: string | null
+          platform_campaign_id?: string | null
+          starts_on?: string
+          status?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
         }
         Relationships: []
       }
@@ -3554,6 +4102,51 @@ export type Database = {
         }
         Relationships: []
       }
+      meta_ad_daily: {
+        Row: {
+          ad_id: string
+          adset_id: string | null
+          clicks: number
+          day: string
+          frequency: number | null
+          impressions: number
+          landing_page_views: number
+          link_clicks: number
+          platform_campaign_id: string
+          reach: number
+          spend_jod: number
+          synced_at: string
+        }
+        Insert: {
+          ad_id: string
+          adset_id?: string | null
+          clicks?: number
+          day: string
+          frequency?: number | null
+          impressions?: number
+          landing_page_views?: number
+          link_clicks?: number
+          platform_campaign_id: string
+          reach?: number
+          spend_jod?: number
+          synced_at?: string
+        }
+        Update: {
+          ad_id?: string
+          adset_id?: string | null
+          clicks?: number
+          day?: string
+          frequency?: number | null
+          impressions?: number
+          landing_page_views?: number
+          link_clicks?: number
+          platform_campaign_id?: string
+          reach?: number
+          spend_jod?: number
+          synced_at?: string
+        }
+        Relationships: []
+      }
       mkt_code_rules: {
         Row: {
           code: string
@@ -3596,6 +4189,7 @@ export type Database = {
           revenue_jod: number
           row_key: string
           session_campaign: string | null
+          session_content: string | null
           session_medium: string | null
           session_source: string | null
           synced_at: string
@@ -3609,6 +4203,7 @@ export type Database = {
           revenue_jod?: number
           row_key: string
           session_campaign?: string | null
+          session_content?: string | null
           session_medium?: string | null
           session_source?: string | null
           synced_at?: string
@@ -3622,6 +4217,7 @@ export type Database = {
           revenue_jod?: number
           row_key?: string
           session_campaign?: string | null
+          session_content?: string | null
           session_medium?: string | null
           session_source?: string | null
           synced_at?: string
@@ -3839,6 +4435,42 @@ export type Database = {
         }
         Relationships: []
       }
+      odoo_card_moves: {
+        Row: {
+          by_who: string | null
+          card_id: number
+          code: string | null
+          family: string | null
+          from_program: number | null
+          id: number
+          moved_at: string | null
+          to_program: number | null
+          undone_at: string | null
+        }
+        Insert: {
+          by_who?: string | null
+          card_id: number
+          code?: string | null
+          family?: string | null
+          from_program?: number | null
+          id?: number
+          moved_at?: string | null
+          to_program?: number | null
+          undone_at?: string | null
+        }
+        Update: {
+          by_who?: string | null
+          card_id?: number
+          code?: string | null
+          family?: string | null
+          from_program?: number | null
+          id?: number
+          moved_at?: string | null
+          to_program?: number | null
+          undone_at?: string | null
+        }
+        Relationships: []
+      }
       odoo_code_age: {
         Row: {
           action: string | null
@@ -4034,6 +4666,51 @@ export type Database = {
           program?: string | null
           reason?: string | null
           shopify_order?: string | null
+        }
+        Relationships: []
+      }
+      odoo_coupon_cleanup: {
+        Row: {
+          card_id: number
+          code: string | null
+          copied_at: string | null
+          created_odoo: string | null
+          deleted_at: string | null
+          expiration_date: string | null
+          partner_id: number | null
+          points: number | null
+          pos_order_id: number | null
+          program_id: number | null
+          program_name: string | null
+          sale_order_id: number | null
+        }
+        Insert: {
+          card_id: number
+          code?: string | null
+          copied_at?: string | null
+          created_odoo?: string | null
+          deleted_at?: string | null
+          expiration_date?: string | null
+          partner_id?: number | null
+          points?: number | null
+          pos_order_id?: number | null
+          program_id?: number | null
+          program_name?: string | null
+          sale_order_id?: number | null
+        }
+        Update: {
+          card_id?: number
+          code?: string | null
+          copied_at?: string | null
+          created_odoo?: string | null
+          deleted_at?: string | null
+          expiration_date?: string | null
+          partner_id?: number | null
+          points?: number | null
+          pos_order_id?: number | null
+          program_id?: number | null
+          program_name?: string | null
+          sale_order_id?: number | null
         }
         Relationships: []
       }
@@ -4331,6 +5008,33 @@ export type Database = {
         }
         Relationships: []
       }
+      odoo_program_archive: {
+        Row: {
+          archived_at: string | null
+          created_odoo: string | null
+          id: number
+          program_id: number
+          program_name: string | null
+          restored_at: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_odoo?: string | null
+          id?: number
+          program_id: number
+          program_name?: string | null
+          restored_at?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_odoo?: string | null
+          id?: number
+          program_id?: number
+          program_name?: string | null
+          restored_at?: string | null
+        }
+        Relationships: []
+      }
       odoo_return_log: {
         Row: {
           at: string
@@ -4364,6 +5068,27 @@ export type Database = {
           result?: string
           return_picking?: string | null
           shopify_order?: string
+        }
+        Relationships: []
+      }
+      odoo_reward_homes: {
+        Row: {
+          created_at: string | null
+          family: string
+          id: number
+          program_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          family: string
+          id?: number
+          program_id: number
+        }
+        Update: {
+          created_at?: string | null
+          family?: string
+          id?: number
+          program_id?: number
         }
         Relationships: []
       }
@@ -5135,6 +5860,48 @@ export type Database = {
         }
         Relationships: []
       }
+      short_links: {
+        Row: {
+          click_count: number
+          created_at: string
+          destination_path: string
+          id: number
+          is_active: boolean
+          slug: string
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          click_count?: number
+          created_at?: string
+          destination_path?: string
+          id?: never
+          is_active?: boolean
+          slug: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          click_count?: number
+          created_at?: string
+          destination_path?: string
+          id?: never
+          is_active?: boolean
+          slug?: string
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
       sync_log: {
         Row: {
           created_at: string
@@ -5632,6 +6399,14 @@ export type Database = {
       }
     }
     Views: {
+      bf_gift_counts: {
+        Row: {
+          category: string | null
+          gifts_given: number | null
+          level_jod: number | null
+        }
+        Relationships: []
+      }
       bf_review_export: {
         Row: {
           line: string | null
@@ -6078,12 +6853,27 @@ export type Database = {
         }[]
       }
       bf_group_mains: { Args: { p_group: string }; Returns: string[] }
+      bf_link_funnel: {
+        Args: { p_since: string; p_until: string }
+        Returns: {
+          cart_sessions: number
+          checkout_sessions: number
+          product_views: number
+          sessions: number
+          utm_campaign: string
+          utm_content: string
+          utm_medium: string
+          utm_source: string
+          utm_term: string
+        }[]
+      }
       bf_main_image: {
         Args: { p_handle: string; p_main: string }
         Returns: string
       }
       bf_outbound: { Args: { p_since: string; p_until: string }; Returns: Json }
       bf_pairings: { Args: { p: Json }; Returns: Json }
+      bf_rewards_config: { Args: never; Returns: Json }
       bf_sale_state:
         | { Args: never; Returns: Json }
         | { Args: { p_preview: string }; Returns: Json }
@@ -6103,6 +6893,7 @@ export type Database = {
       }
       bf_spin: { Args: { p_device: string; p_email: string }; Returns: Json }
       bf_spin_config: { Args: never; Returns: Json }
+      bf_stock: { Args: { p_handle: string }; Returns: number }
       bf_teaser:
         | { Args: never; Returns: Json }
         | { Args: { p: Json }; Returns: Json }
@@ -6233,9 +7024,39 @@ export type Database = {
               isSetofReturn: true
             }
           }
+      bf_visitors: {
+        Args: { p_limit?: number; p_since: string; p_until: string }
+        Returns: Json
+      }
+      bf_visits_before: {
+        Args: { p_items: Json }
+        Returns: {
+          at: string
+          first_seen: string
+          visitor_id: string
+          visits: number
+        }[]
+      }
       btg_claim_next: {
         Args: { gap_seconds: number; stuck_minutes: number }
         Returns: number
+      }
+      camp_creative_results_by_content: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          campaign_id: string
+          orders: number
+          revenue_jod: number
+          utm_content: string
+        }[]
+      }
+      camp_orders_by_campaign: {
+        Args: { p_from: string; p_to: string }
+        Returns: {
+          campaign_id: string
+          orders: number
+          revenue_jod: number
+        }[]
       }
       count_request_add: { Args: { p_sku: string }; Returns: string }
       count_request_list: {
@@ -6457,6 +7278,16 @@ export type Database = {
         }[]
       }
       record_tier_changes: { Args: { as_of?: string }; Returns: number }
+      resolve_short_link: {
+        Args: { p_count?: boolean; p_slug: string }
+        Returns: {
+          destination_path: string
+          utm_campaign: string
+          utm_content: string
+          utm_medium: string
+          utm_source: string
+        }[]
+      }
       stock_balance_ledger: {
         Args: never
         Returns: {
