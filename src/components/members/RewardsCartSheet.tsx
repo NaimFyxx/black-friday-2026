@@ -3,16 +3,12 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import {
-  trackTierPointsJoinTap,
-  trackTierPointsLoginTap,
-  trackTierPointsOpen,
-} from "@/lib/analytics";
+import { trackTierPointsJoinTap, trackTierPointsOpen } from "@/lib/analytics";
+import { RewardsLoginButton } from "./RewardsSignInSheet";
 import {
   CREAM,
   INK,
   JOIN_URL,
-  LOGIN_URL,
   MUTED,
   SERIF,
   SHOW_LOGIN,
@@ -173,14 +169,12 @@ export function RewardsCartSheet({ className }: { className?: string }) {
 
               <div className="mx-auto mt-4 flex max-w-sm gap-2">
                 {SHOW_LOGIN && (
-                  <a
-                    href={LOGIN_URL}
-                    onClick={() => trackTierPointsLoginTap("cart")}
-                    className="inline-flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors hover:bg-black/5"
-                    style={{ border: `1px solid ${INK}`, color: INK }}
-                  >
-                    Log in
-                  </a>
+                  <RewardsLoginButton
+                    where="cart"
+                    label="Log in"
+                    variant="outline"
+                    className="h-10 flex-1"
+                  />
                 )}
                 <a
                   href={JOIN_URL}

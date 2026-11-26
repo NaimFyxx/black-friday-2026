@@ -13,9 +13,9 @@ import { teaserQueryOptions } from "@/lib/teaser";
 export const LOGIN_URL = "https://www.myfyxx.com/account/login";
 /** "Join Fyxx Rewards": the Fyxx Rewards info page. Opens in a new tab. */
 export const JOIN_URL = "https://www.myfyxx.com/pages/rewards";
-/** The log in flow is not built yet: hide the "Log in" button for now. Flip to
- *  true (and wire up the real login) once it is ready. */
-export const SHOW_LOGIN = false;
+/** Show the "Log in" button (email-code sign-in, see RewardsSignInSheet). On
+ *  this branch it is enabled for review; it stays off on main until approved. */
+export const SHOW_LOGIN = true;
 
 export const INK = "#231F20";
 export const CREAM = "#FBF5F2";

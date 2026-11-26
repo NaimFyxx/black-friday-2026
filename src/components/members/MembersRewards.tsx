@@ -1,17 +1,13 @@
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
-import {
-  trackTierPointsJoinTap,
-  trackTierPointsLoginTap,
-  trackTierPointsOpen,
-} from "@/lib/analytics";
+import { trackTierPointsJoinTap, trackTierPointsOpen } from "@/lib/analytics";
+import { RewardsLoginButton } from "./RewardsSignInSheet";
 import {
   CREAM,
   EARN_NOTE,
   INK,
   JOIN_URL,
-  LOGIN_URL,
   MUTED,
   SERIF,
   SHOW_LOGIN,
@@ -113,14 +109,11 @@ export function MembersRewards({
 
         <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
           {SHOW_LOGIN && (
-            <a
-              href={LOGIN_URL}
-              onClick={() => trackTierPointsLoginTap(where)}
-              className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
-              style={{ background: INK }}
-            >
-              Log in to collect your points
-            </a>
+            <RewardsLoginButton
+              where={where}
+              label="Log in to collect your points"
+              variant="solid"
+            />
           )}
           <a
             href={JOIN_URL}
