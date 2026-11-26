@@ -848,3 +848,8 @@ Owner approved the bf_events change.
 ## 2026-11-26: "Added to cart" message that would not go away
 - Cause: Sonner pauses a toast's countdown while the pointer is over it. On phones the toasts sit over the header/cart button; a tap there left the toast "hovered" and it never closed. Reproduced in a browser: with the pointer on the toast it stayed indefinitely.
 - Fix (src/components/ui/sonner.tsx): AutoClose closes every toast 0.8 s after its own duration (default 4 s) whatever the hover state; toasts also get a small close button. Applies to all toasts (Added to cart, free bottles message, admin saves).
+
+## 2026-11-26: gift cards: 150 JOD added, Add to cart fixed
+- FACE_VALUES now 25, 50, 100, 150, 200 (src/components/hero/GiftCardSticker.tsx).
+- Bug fixed: the sticker found each Shopify variant by price == face value. Shopify now sells the cards at 10% off (25 -> 22.500 ... 200 -> 180), so no variant matched and every Add to cart said "This gift card isn't available right now". Now matched by variant title ("JOD 25.000", "JOD 150.00").
+- Prices shown are Shopify's (face value crossed out when Shopify's price is lower). "The X% comes off at checkout" only shows when the /admin discount is on and Shopify's price is NOT already reduced.

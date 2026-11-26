@@ -40,7 +40,7 @@ function useOffer() {
   const INTRO = ON ? "Give the gift of Fyxx for less." : "Give the gift of Fyxx.";
   return { DISCOUNT, PCT, ON, TITLE, INTRO };
 }
-const FACE_VALUES = [25, 50, 100, 200]; // JOD
+const FACE_VALUES = [25, 50, 100, 150, 200]; // JOD
 const GIFT_CARD_HANDLE = "fyxx-gift-card";
 
 const SERIF = { fontFamily: '"Times New Roman", Georgia, "Iowan Old Style", serif' };
@@ -145,6 +145,19 @@ function GiftCardFace() {
   );
 }
 
+/**
+ * The Shopify variant for a face value, found by its name ("JOD 25.000",
+ * "JOD 150.00"), not its price: Shopify may sell the card below face value
+ * (e.g. 22.500 for the 25 card during an offer).
+ */
+function variantFor(node: ShopifyProductNode | null | undefined, face: number) {
+  return node?.variants.edges
+    .map((e) => e.node)
+    .find(
+      (x) => x.availableForSale && Math.abs(Number(x.title.replace(/[^\d.]/g, "")) - face) < 0.001,
+    );
+}
+
 function GiftCardList({ onAdded }: { onAdded: () => void }) {
   const { DISCOUNT, PCT, ON } = useOffer();
   const addItem = useCartStore((st) => st.addItem);
@@ -156,9 +169,7 @@ function GiftCardList({ onAdded }: { onAdded: () => void }) {
   });
 
   const add = async (face: number, node: ShopifyProductNode | null | undefined) => {
-    const v = node?.variants.edges
-      .map((e) => e.node)
-      .find((x) => Math.abs(Number(x.price.amount) - face) < 0.001 && x.availableForSale);
+    const v = variantFor(node, face);
     if (!node || !v) {
       toast.error("This gift card isn't available right now");
       return;
@@ -190,11 +201,24 @@ function GiftCardList({ onAdded }: { onAdded: () => void }) {
     }
   };
 
+  // Shopify already sells the cards below face value: nothing more comes off at checkout.
+  const shopifyReduced = FACE_VALUES.some((f) => {
+    const v = variantFor(product, f);
+    return v ? Number(v.price.amount) < f - 0.001 : false;
+  });
+
   return (
     <>
       <ul className="space-y-2.5">
         {FACE_VALUES.map((face) => {
-          const now = Math.round(face * (1 - DISCOUNT) * 1000) / 1000;
+          // Price from Shopify (what the cart charges); below face value = on offer.
+          const v = variantFor(product, face);
+          const shopify = v ? Number(v.price.amount) : null;
+          const reduced = shopify !== null && shopify < face - 0.001;
+          // Before Shopify answers, or with no Shopify offer: the /admin discount (taken at checkout).
+          const now =
+            shopify !== null && reduced ? shopify : Math.round(face * (1 - DISCOUNT) * 1000) / 1000;
+          const crossed = reduced || ON;
           return (
             <Row key={face}>
               <MiniCard face={face} />
@@ -203,7 +227,7 @@ function GiftCardList({ onAdded }: { onAdded: () => void }) {
                   Fyxx Gift Card {face} JOD
                 </p>
                 <p className="mt-0.5 flex flex-wrap items-baseline gap-x-2">
-                  {ON && (
+                  {crossed && (
                     <s className="ff-small text-xs text-ff-black/55 tabular-nums">
                       {formatJod(face)}
                     </s>
@@ -211,7 +235,7 @@ function GiftCardList({ onAdded }: { onAdded: () => void }) {
                   <span
                     className={cn(
                       "ff-num text-sm font-bold tabular-nums",
-                      ON ? "text-ff-red" : "text-ff-black",
+                      crossed ? "text-ff-red" : "text-ff-black",
                     )}
                   >
                     {formatJod(now)}
@@ -235,7 +259,7 @@ function GiftCardList({ onAdded }: { onAdded: () => void }) {
           );
         })}
       </ul>
-      {ON && (
+      {ON && !shopifyReduced && (
         <p className="ff-small mt-3 text-xs text-ff-black/60">The {PCT}% comes off at checkout.</p>
       )}
     </>
