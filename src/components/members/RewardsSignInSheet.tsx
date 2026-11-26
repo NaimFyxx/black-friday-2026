@@ -11,7 +11,15 @@ import {
   trackTierPointsJoinTap,
   trackTierPointsLoginTap,
 } from "@/lib/analytics";
-import { CREAM, INK, MUTED, SERIF, type RewardsWhere } from "./rewards-tiers";
+import {
+  CREAM,
+  INK,
+  LEARN_MORE_URL,
+  MUTED,
+  REGISTER_URL,
+  SERIF,
+  type RewardsWhere,
+} from "./rewards-tiers";
 
 /**
  * Fyxx Rewards passwordless sign-in / create-account sheet, ported from Fyxx
@@ -483,6 +491,63 @@ export function RewardsLoginButton({
       </button>
       <SignInDialog where={where} open={open} onOpenChange={setOpen} />
     </>
+  );
+}
+
+/**
+ * "Join Fyxx Rewards": a link to the Fyxx account registration page on
+ * myfyxx.com (new tab), so new shoppers create a full, points-earning account.
+ * Hidden for signed-in members. Styled to match RewardsLoginButton.
+ */
+export function JoinRewardsButton({
+  where,
+  className,
+  variant = "outline",
+}: {
+  where: RewardsWhere;
+  className?: string;
+  variant?: "solid" | "outline";
+}) {
+  const { signedIn } = useRewardsAuth();
+  if (signedIn) return null;
+
+  const style =
+    variant === "solid"
+      ? { background: INK, color: "#fff" }
+      : { border: `1px solid ${INK}`, color: INK };
+
+  return (
+    <a
+      href={REGISTER_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => trackTierPointsJoinTap(where)}
+      className={cn(
+        "inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold transition-opacity hover:opacity-85",
+        className,
+      )}
+      style={style}
+    >
+      Join Fyxx Rewards
+    </a>
+  );
+}
+
+/** "Learn more" text link to the Fyxx Rewards info page (new tab). */
+export function LearnMoreLink({ className }: { className?: string }) {
+  return (
+    <a
+      href={LEARN_MORE_URL}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(
+        "text-[11px] font-semibold underline underline-offset-2 transition-opacity hover:opacity-70",
+        className,
+      )}
+      style={{ color: INK }}
+    >
+      Learn more
+    </a>
   );
 }
 

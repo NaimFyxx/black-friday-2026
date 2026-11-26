@@ -4,8 +4,12 @@ import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { trackTierPointsOpen } from "@/lib/analytics";
-import { useRewardsAuth } from "@/hooks/useRewardsAuth";
-import { ActivationNotice, RewardsLoginButton } from "./RewardsSignInSheet";
+import {
+  ActivationNotice,
+  JoinRewardsButton,
+  LearnMoreLink,
+  RewardsLoginButton,
+} from "./RewardsSignInSheet";
 import { CREAM, INK, MUTED, SERIF, SHOW_LOGIN, TIERS, useRewardsStripOn } from "./rewards-tiers";
 
 /**
@@ -19,7 +23,6 @@ import { CREAM, INK, MUTED, SERIF, SHOW_LOGIN, TIERS, useRewardsStripOn } from "
  */
 export function RewardsCartSheet({ className }: { className?: string }) {
   const on = useRewardsStripOn();
-  const { signedIn } = useRewardsAuth();
   const [open, setOpen] = useState(false);
   // Live drag-to-dismiss on the phone: offset the sheet while a finger drags
   // the handle down; let go past the threshold to close.
@@ -169,17 +172,12 @@ export function RewardsCartSheet({ className }: { className?: string }) {
                     className="h-10 flex-1"
                   />
                 )}
-                {!signedIn && (
-                  <RewardsLoginButton
-                    where="cart"
-                    tap="join"
-                    label="Join Fyxx Rewards"
-                    variant="solid"
-                    className="h-10 flex-1"
-                  />
-                )}
+                <JoinRewardsButton where="cart" variant="solid" className="h-10 flex-1" />
               </div>
-              <p className="mx-auto mt-3 max-w-sm text-center text-[11px]" style={{ color: MUTED }}>
+              <p className="mx-auto mt-3 max-w-sm text-center">
+                <LearnMoreLink />
+              </p>
+              <p className="mx-auto mt-1 max-w-sm text-center text-[11px]" style={{ color: MUTED }}>
                 Points land after your order. Some product categories don't earn points.
               </p>
               <ActivationNotice className="mt-3" />

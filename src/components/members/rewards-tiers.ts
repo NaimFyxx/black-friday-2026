@@ -9,10 +9,16 @@ import { useQuery } from "@tanstack/react-query";
 import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
 
-/** Where "Log in to collect your points" goes. */
+/** Where "Log in to collect your points" goes (existing members; also the
+ *  in-site email-code sheet, see RewardsSignInSheet). */
 export const LOGIN_URL = "https://www.myfyxx.com/account/login";
-/** "Join Fyxx Rewards": the Fyxx Rewards info page. Opens in a new tab. */
-export const JOIN_URL = "https://www.myfyxx.com/pages/rewards";
+/** "Join Fyxx Rewards": the Fyxx account registration page on myfyxx.com.
+ *  Opens in a new tab, so new shoppers create a full (points-earning) account
+ *  on Shopify rather than a guest one. */
+export const REGISTER_URL =
+  "https://www.myfyxx.com/account/register?utm_source=friday-site&utm_medium=referral&utm_campaign=fyxx-friday-2026-11-27&utm_content=tier-points-join";
+/** "Learn more": the Fyxx Rewards info page. Opens in a new tab. */
+export const LEARN_MORE_URL = "https://www.myfyxx.com/pages/rewards";
 /** Show the "Log in" button (email-code sign-in, see RewardsSignInSheet). On
  *  this branch it is enabled for review; it stays off on main until approved. */
 export const SHOW_LOGIN = true;

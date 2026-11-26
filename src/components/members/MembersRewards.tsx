@@ -2,8 +2,12 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 
 import { trackTierPointsOpen } from "@/lib/analytics";
-import { useRewardsAuth } from "@/hooks/useRewardsAuth";
-import { ActivationNotice, RewardsLoginButton } from "./RewardsSignInSheet";
+import {
+  ActivationNotice,
+  JoinRewardsButton,
+  LearnMoreLink,
+  RewardsLoginButton,
+} from "./RewardsSignInSheet";
 import {
   CREAM,
   EARN_NOTE,
@@ -34,8 +38,6 @@ export function MembersRewards({
   where?: RewardsWhere;
 }) {
   const [open, setOpen] = useState(false);
-  // Members who have joined don't need the "Join" button.
-  const { signedIn } = useRewardsAuth();
   // Sale state + bf_settings.rewards_strip_enabled (see useRewardsStripOn).
   if (!useRewardsStripOn()) return null;
   const toggle = () =>
@@ -117,16 +119,12 @@ export function MembersRewards({
               variant="solid"
             />
           )}
-          {!signedIn && (
-            <RewardsLoginButton
-              where={where}
-              tap="join"
-              label="Join Fyxx Rewards"
-              variant="outline"
-            />
-          )}
+          <JoinRewardsButton where={where} variant="outline" />
         </div>
-        <p className="mt-2 text-center text-[11px]" style={{ color: MUTED }}>
+        <p className="mt-2 text-center">
+          <LearnMoreLink />
+        </p>
+        <p className="mt-1 text-center text-[11px]" style={{ color: MUTED }}>
           {EARN_NOTE}
         </p>
         <ActivationNotice className="mt-3" />
