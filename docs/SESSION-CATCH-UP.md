@@ -864,3 +864,4 @@ Owner approved the bf_events change.
 - Switch: /admin > Offers on the site > "Show the Friday % before 10:00" (bf_settings.show_planned_discount, on). From 10:00 the real Shopify discount shows as before.
 - DB: bf_card adds planned_percent (docs/sql/2026-11-27-bf-planned-discount.sql). Front end: CatalogCard badge, catalog.ts type, admin switch.
 - Noted: rewards_preview_only was switched OFF by Naim at 02:25, so the free bottles bar is now public.
+- 02:40: badge text shortened: bf_settings.sale_label_preview "off on Friday" -> "off" (badges read "-25% off"). Editable on /admin/sale.
