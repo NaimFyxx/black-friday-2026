@@ -24,7 +24,7 @@ export function UnlockedReward({
     <div
       key={r.level}
       className={cn(
-        "flex items-center gap-2 rounded-full px-3 py-1.5 text-left",
+        "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-left md:gap-2 md:px-3 md:py-1.5",
         tone === "burgundy" ? "bg-ff-cream/10 text-ff-cream" : "bg-ff-burgundy text-ff-cream",
         className,
       )}
@@ -33,7 +33,7 @@ export function UnlockedReward({
         light={tone !== "burgundy"}
         dark={tone === "burgundy"}
         filled
-        className="ff-star-pop h-4 w-4 shrink-0"
+        className="ff-star-pop h-3.5 w-3.5 shrink-0 md:h-4 md:w-4"
       />
       <p className="ff-subline min-w-0 text-[10px] leading-snug tracking-wide uppercase md:text-xs">
         {(cfg.text.current || DEFAULT_TEXT.current).replace("{level}", r.label)}

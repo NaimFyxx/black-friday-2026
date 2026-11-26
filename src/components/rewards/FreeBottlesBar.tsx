@@ -19,6 +19,7 @@ export function FreeBottlesBar({
   compact = false,
   fromTotal,
   tone = "red",
+  dense = false,
 }: {
   cfg: FreeBottlesConfig;
   total: number;
@@ -27,6 +28,8 @@ export function FreeBottlesBar({
   tone?: "red" | "burgundy";
   /** Stars unlocked between this total and `total` pop on first show. */
   fromTotal?: number;
+  /** Slimmer on phones (smaller stars, less padding); full size from md up. */
+  dense?: boolean;
 }) {
   const p = progress(total, cfg);
 
@@ -41,7 +44,12 @@ export function FreeBottlesBar({
   }, [p.bottles]);
 
   return (
-    <div className={cn("relative px-3", compact ? "pt-1 pb-1" : "pt-6 pb-5")}>
+    <div
+      className={cn(
+        "relative px-3",
+        compact ? "pt-1 pb-1" : dense ? "pt-3.5 pb-4 md:pt-6 md:pb-5" : "pt-6 pb-5",
+      )}
+    >
       <div
         className={cn(
           "relative h-1.5 rounded-full",
@@ -65,6 +73,7 @@ export function FreeBottlesBar({
             pop={popFrom !== null && m.index > popFrom && m.index <= p.bottles}
             next={p.next?.index === m.index}
             tone={tone}
+            dense={dense}
           />
         ))}
       </div>
@@ -80,6 +89,7 @@ function Marker({
   pop,
   next = false,
   tone,
+  dense = false,
 }: {
   m: Milestone;
   cfg: FreeBottlesConfig;
@@ -88,6 +98,7 @@ function Marker({
   pop: boolean;
   next?: boolean;
   tone: "red" | "burgundy";
+  dense?: boolean;
 }) {
   const dark = tone === "burgundy";
   const delivery = m.index === 0;
@@ -106,7 +117,10 @@ function Marker({
       light={!dark}
       dark={dark}
       filled={m.reached}
-      className={cn(compact ? "h-4 w-4" : "h-6 w-6", pop && "ff-star-pop")}
+      className={cn(
+        compact ? "h-4 w-4" : dense ? "h-[18px] w-[18px] md:h-6 md:w-6" : "h-6 w-6",
+        pop && "ff-star-pop",
+      )}
     />
   );
 
@@ -126,7 +140,10 @@ function Marker({
           <button
             type="button"
             aria-label={`${m.label}, ${m.reached ? "unlocked" : `at ${formatJod(m.amount)}`}`}
-            className="flex h-8 w-8 items-center justify-center"
+            className={cn(
+              "flex items-center justify-center",
+              dense ? "h-7 w-7 md:h-8 md:w-8" : "h-8 w-8",
+            )}
           >
             {icon}
           </button>
@@ -147,7 +164,8 @@ function Marker({
         // Amounts only for levels still ahead (reached ones need no price tag).
         <span
           className={cn(
-            "ff-num pointer-events-none absolute top-full text-[9px] leading-none whitespace-nowrap",
+            "ff-num pointer-events-none absolute top-full leading-none whitespace-nowrap",
+            dense ? "text-[8px] md:text-[9px]" : "text-[9px]",
             // The next goal stands out; the rest stay quiet.
             next
               ? cn("font-semibold", dark ? "text-ff-red" : "text-ff-cream")

@@ -15,19 +15,27 @@ export function HeroFreeBottles({ className }: { className?: string }) {
   const total = useRewardTotal(cfg);
   if (!cfg) return null;
   return (
-    <div className={cn("mx-auto w-full max-w-xl text-center text-ff-cream", className)}>
-      <p className="ff-headline text-sm leading-tight text-ff-red uppercase md:text-2xl">
+    <div
+      className={cn(
+        "mx-auto w-full max-w-xl text-center text-ff-cream",
+        // Phones: a soft panel, small type. From md: open, bigger.
+        "rounded-2xl bg-ff-cream/[0.06] px-3 pt-2 pb-2 ring-1 ring-ff-cream/10",
+        "md:rounded-none md:bg-transparent md:p-0 md:ring-0",
+        className,
+      )}
+    >
+      <p className="ff-subline text-[10px] tracking-[0.18em] text-ff-cream/75 uppercase md:ff-headline md:text-2xl md:tracking-normal md:text-ff-red">
         {cfg.text.headline || DEFAULT_TEXT.headline}
       </p>
       <AwayLine
         cfg={cfg}
         total={total}
-        className="mt-1 text-[11px] text-ff-cream md:text-sm"
+        className="mt-0.5 text-[12px] leading-snug text-ff-cream md:mt-1 md:text-sm"
         strongClassName="text-ff-red"
       />
-      <FreeBottlesBar cfg={cfg} total={total} tone="burgundy" />
-      <UnlockedReward cfg={cfg} total={total} tone="burgundy" className="mx-auto mb-2 w-fit" />
-      <LevelChips levels={rewardLevels(total, cfg)} tone="burgundy" />
+      <FreeBottlesBar cfg={cfg} total={total} tone="burgundy" dense />
+      <UnlockedReward cfg={cfg} total={total} tone="burgundy" className="mx-auto w-fit md:mb-2" />
+      <LevelChips levels={rewardLevels(total, cfg)} tone="burgundy" className="hidden md:flex" />
     </div>
   );
 }

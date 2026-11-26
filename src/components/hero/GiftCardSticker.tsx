@@ -56,7 +56,7 @@ export function GiftCardSticker({ className }: { className?: string }) {
       onClick={() => setOpen(true)}
       aria-label={`${TITLE}: see the gift cards`}
       className={cn(
-        "group absolute z-10 block w-[92px] rotate-[6deg] transition-transform duration-200 ease-out",
+        "group absolute z-10 block w-[70px] rotate-[6deg] transition-transform duration-200 ease-out",
         "hover:-translate-y-1 hover:rotate-0 focus-visible:-translate-y-1 focus-visible:rotate-0 focus-visible:outline-none",
         "md:w-[136px]",
         GIFT_STICKER_POSITION.mobile,
@@ -121,23 +121,23 @@ function GiftCardFace() {
       <span className="relative flex h-full flex-col items-center justify-center px-2 text-center">
         {ON ? (
           <>
-            <span style={SERIF} className="text-[17px] leading-none md:text-[25px]">
+            <span style={SERIF} className="text-[13px] leading-none md:text-[25px]">
               {PCT}% OFF
             </span>
             <span
               style={SERIF}
-              className="mt-0.5 text-[7.5px] tracking-[0.18em] md:mt-1 md:text-[10.5px]"
+              className="mt-0.5 text-[6px] tracking-[0.18em] md:mt-1 md:text-[10.5px]"
             >
               GIFT CARDS
             </span>
           </>
         ) : (
           // Like the real card: "Gift Card" in cream serif.
-          <span style={SERIF} className="text-[17px] leading-none md:text-[24px]">
+          <span style={SERIF} className="text-[13px] leading-none md:text-[24px]">
             Gift Card
           </span>
         )}
-        <span style={SERIF} className="mt-1 text-[11px] italic leading-none md:mt-1.5 md:text-sm">
+        <span style={SERIF} className="mt-0.5 text-[9px] italic leading-none md:mt-1.5 md:text-sm">
           fyxx
         </span>
       </span>

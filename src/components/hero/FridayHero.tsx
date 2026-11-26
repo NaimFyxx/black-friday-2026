@@ -30,7 +30,7 @@ export function FridayHero({
   return (
     <section aria-label="Fyxx Friday" className="relative bg-ff-burgundy text-ff-cream">
       <GiftCardSticker />
-      <div className="mx-auto max-w-[1100px] px-5 pt-6 pb-7 md:px-10 md:pt-10 md:pb-10">
+      <div className="mx-auto max-w-[1100px] px-4 pt-2.5 pb-3 md:px-10 md:pt-10 md:pb-10">
         <div className="flex items-end justify-center">
           <img
             src="/brand/fyxx-friday-logo-cream.svg"
@@ -38,7 +38,7 @@ export function FridayHero({
             width={2587}
             height={1446}
             fetchPriority="high"
-            className="h-auto w-[50vw] max-w-[420px]"
+            className="h-auto w-[31vw] max-w-[420px] md:w-[50vw]"
           />
           <img
             src="/brand/fyxx-friday-bottles-360.webp"
@@ -49,7 +49,7 @@ export function FridayHero({
             width={360}
             height={459}
             fetchPriority="high"
-            className="-ml-[3vw] h-auto w-[30vw] max-w-[260px] md:-ml-6"
+            className="-ml-[2vw] h-auto w-[15vw] max-w-[260px] md:-ml-6 md:w-[30vw]"
           />
         </div>
         {info.updating && (
@@ -57,7 +57,7 @@ export function FridayHero({
             {info.copy.teaser_updating_note || "Prices are updating, refresh in a few minutes"}
           </p>
         )}
-        <HeroFreeBottles className="mt-5 md:mt-7" />
+        <HeroFreeBottles className="mt-2.5 md:mt-7" />
       </div>
     </section>
   );
