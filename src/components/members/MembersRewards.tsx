@@ -14,6 +14,7 @@ import {
   LOGIN_URL,
   MUTED,
   SERIF,
+  SHOW_LOGIN,
   TIERS,
   useRewardsStripOn,
   type RewardsWhere,
@@ -111,14 +112,16 @@ export function MembersRewards({
         </div>
 
         <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
-          <a
-            href={LOGIN_URL}
-            onClick={() => trackTierPointsLoginTap(where)}
-            className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
-            style={{ background: INK }}
-          >
-            Log in to collect your points
-          </a>
+          {SHOW_LOGIN && (
+            <a
+              href={LOGIN_URL}
+              onClick={() => trackTierPointsLoginTap(where)}
+              className="inline-flex h-9 items-center justify-center rounded-full px-5 text-sm font-semibold text-white transition-opacity hover:opacity-85"
+              style={{ background: INK }}
+            >
+              Log in to collect your points
+            </a>
+          )}
           <a
             href={JOIN_URL}
             target="_blank"

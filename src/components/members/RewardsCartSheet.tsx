@@ -15,6 +15,7 @@ import {
   LOGIN_URL,
   MUTED,
   SERIF,
+  SHOW_LOGIN,
   TIERS,
   useRewardsStripOn,
 } from "./rewards-tiers";
@@ -130,7 +131,7 @@ export function RewardsCartSheet({ className }: { className?: string }) {
                 className="mx-auto h-7 w-auto"
               />
               <DialogPrimitive.Title style={SERIF} className="mt-3 text-center text-xl md:text-2xl">
-                Up to 2x points, <em>today only</em>
+                Up to 2x points <em>this Friday</em>
               </DialogPrimitive.Title>
               <DialogPrimitive.Description
                 id="rewards-sheet-sub"
@@ -171,14 +172,16 @@ export function RewardsCartSheet({ className }: { className?: string }) {
               </ul>
 
               <div className="mx-auto mt-4 flex max-w-sm gap-2">
-                <a
-                  href={LOGIN_URL}
-                  onClick={() => trackTierPointsLoginTap("cart")}
-                  className="inline-flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors hover:bg-black/5"
-                  style={{ border: `1px solid ${INK}`, color: INK }}
-                >
-                  Log in
-                </a>
+                {SHOW_LOGIN && (
+                  <a
+                    href={LOGIN_URL}
+                    onClick={() => trackTierPointsLoginTap("cart")}
+                    className="inline-flex h-10 flex-1 items-center justify-center rounded-full px-4 text-sm font-semibold transition-colors hover:bg-black/5"
+                    style={{ border: `1px solid ${INK}`, color: INK }}
+                  >
+                    Log in
+                  </a>
+                )}
                 <a
                   href={JOIN_URL}
                   target="_blank"

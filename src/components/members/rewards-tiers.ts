@@ -13,6 +13,9 @@ import { teaserQueryOptions } from "@/lib/teaser";
 export const LOGIN_URL = "https://www.myfyxx.com/account/login";
 /** "Join Fyxx Rewards": the Fyxx Rewards info page. Opens in a new tab. */
 export const JOIN_URL = "https://www.myfyxx.com/pages/rewards";
+/** The log in flow is not built yet: hide the "Log in" button for now. Flip to
+ *  true (and wire up the real login) once it is ready. */
+export const SHOW_LOGIN = false;
 
 export const INK = "#231F20";
 export const CREAM = "#FBF5F2";
@@ -47,11 +50,13 @@ export const TIERS: Tier[] = [
 ];
 
 /**
- * Whether to show the Fyxx Rewards tiers. On only during the sale (Fri 10:00
- * to midnight, and ?preview=friday) with bf_settings.rewards_strip_enabled
- * switched on in /admin. Shared by the home / product strip and the cart line.
+ * Whether to show the Fyxx Rewards tiers. On whenever
+ * bf_settings.rewards_strip_enabled is switched on in /admin (Offers): through
+ * the build-up and the Friday sale, hidden only after the sale ends.
+ * (?preview=friday still simulates the sale.) Shared by the home / product
+ * strip and the cart line.
  */
 export function useRewardsStripOn(): boolean {
   const info = useQuery(teaserQueryOptions(usePreview())).data;
-  return !!info?.rewards_strip && info?.state === "sale";
+  return !!info?.rewards_strip && info?.state !== "ended";
 }
