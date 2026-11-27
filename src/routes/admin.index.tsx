@@ -644,6 +644,13 @@ function OffersSection() {
             'Product photos show the real planned discount ("-25% off on Friday") instead of a blurred number before the sale starts. Off: blurred again. From 10:00 Friday the real Shopify discount shows either way.',
           on: data.show_planned_discount,
         },
+        {
+          key: "sale_extras_enabled",
+          title: "Sale-time extras from 10:00",
+          description:
+            'Off: from 10:00 the home page keeps its current look. On: adds "Up to X% off", the "ends at midnight" countdown, quick links, the Top deals row, "Up to X%" under the category circles, the discount filter and sort, and "Only X left". Badges show "-25%" instead of "-25% off".',
+          on: data.sale_extras_enabled,
+        },
       ]
     : [];
   return (

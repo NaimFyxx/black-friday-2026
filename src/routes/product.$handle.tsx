@@ -318,7 +318,10 @@ function ProductPage() {
   // the /admin switch is off or the size has no planned discount).
   const beforeSale = teaser?.state === "preview";
   const badgePct = beforeSale ? (plannedPct ?? (discounted ? pct : 0)) : pct;
-  const badgeLabel = beforeSale ? (teaser?.copy.sale_label_preview ?? "off") : "";
+  const badgeLabel =
+    beforeSale || (teaser?.state === "sale" && teaser?.sale_extras !== true)
+      ? (teaser?.copy.sale_label_preview ?? "off")
+      : "";
 
   return (
     <main className="bg-ff-cream text-ff-black">

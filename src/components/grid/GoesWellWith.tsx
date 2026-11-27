@@ -23,7 +23,12 @@ export function GoesWellWith({
   sim: boolean;
 }) {
   const rule = teaser?.goes_well_with?.find((r) => r.product_types.includes(productType));
-  const sale = teaser?.state === "sale";
+  // Sale-time extras off (bf_settings.sale_extras_enabled): same as before 10:00.
+  const sale = teaser?.state === "sale" && teaser?.sale_extras === true;
+  const badgeLabel =
+    teaser?.state === "preview" || (teaser?.state === "sale" && !sale)
+      ? (teaser?.copy.sale_label_preview ?? null)
+      : null;
   const { data } = useQuery({
     queryKey: ["bf-goes-well", rule?.main, rule?.sub, preview ?? "", sim ? "sim" : ""],
     queryFn: () =>
@@ -53,9 +58,7 @@ export function GoesWellWith({
             item={item}
             threshold={0}
             lowStockMax={sale ? (teaser?.low_stock_max ?? 5) : null}
-            preSaleLabel={
-              teaser?.state === "preview" ? (teaser.copy.sale_label_preview ?? null) : null
-            }
+            preSaleLabel={badgeLabel}
           />
         ))}
       </div>

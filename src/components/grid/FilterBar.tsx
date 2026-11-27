@@ -14,6 +14,7 @@ import {
   type SortKey,
 } from "@/lib/catalog";
 import { usePreview, useSim } from "@/lib/preview";
+import { teaserQueryOptions } from "@/lib/teaser";
 import { cn } from "@/lib/utils";
 
 /**
@@ -33,7 +34,9 @@ export function FilterBar({
   filters: CatalogFilters;
   onChange: (patch: Partial<CatalogFilters>) => void;
 }) {
-  const sale = facets.state === "sale";
+  // Discount filter and "Biggest discount" sort only with the sale-time extras on.
+  const { data: teaser } = useQuery(teaserQueryOptions(usePreview()));
+  const sale = facets.state === "sale" && teaser?.sale_extras === true;
   const [open, setOpen] = useState(false);
   const band = facets.bands.find((b) => b.index === filters.band);
   const tags: Array<{ label: string; clear: Partial<CatalogFilters> }> = [];

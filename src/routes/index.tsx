@@ -136,6 +136,13 @@ function Storefront() {
   const items = (data?.pages ?? []).flatMap((page) => page.items);
   const state = facets?.state ?? data?.pages[0]?.state ?? "preview";
   const sale = state === "sale";
+  // Sale-time extras (Up to X% off, countdown, quick links, top deals, "Up to"
+  // under the circles, Only X left). Off by default: from 10:00 the page keeps
+  // the look it had before (bf_settings.sale_extras_enabled).
+  const extras = sale && teaser?.sale_extras === true;
+  // Badge label ("off") before the sale, and during it while extras are off.
+  const badgeLabel =
+    state === "preview" || (sale && !extras) ? (teaser?.copy.sale_label_preview ?? null) : null;
   // Before and during the sale: the burgundy hero (logo, bottles, gift card, free
   // gift progress) replaces the small logo banner. After the sale: the banner.
   const showHero = state !== "ended" && !!teaser && teaser.state !== "ended";
@@ -262,12 +269,12 @@ function Storefront() {
                 />
               </div>
             )}
-            {sale && facets?.headline_upto ? (
+            {extras && facets?.headline_upto ? (
               <p className="ff-headline text-3xl text-ff-red uppercase md:text-5xl">
                 Up to {facets.headline_upto}% off
               </p>
             ) : null}
-            {sale && teaser?.sale_end && (
+            {extras && teaser?.sale_end && (
               <SaleEndCountdown
                 end={teaser.sale_end}
                 label={teaser.copy.sale_end_label ?? "Ends at midnight"}
@@ -279,7 +286,7 @@ function Storefront() {
                 <CatalogSearch value={filters.q} onSearch={(q) => setFilters({ q })} />
               </div>
             )}
-            {sale && teaser?.quick_links && (
+            {extras && teaser?.quick_links && (
               <div className="w-full">
                 <QuickLinks
                   links={teaser.quick_links}
@@ -306,7 +313,7 @@ function Storefront() {
           ) : (
             <>
               <YourUsual threshold={threshold} preview={preview} />
-              {sale && facets && <TopDeals items={facets.top_deals} threshold={threshold} />}
+              {extras && facets && <TopDeals items={facets.top_deals} threshold={threshold} />}
 
               {/* "shop": where the header sections (The Cellar...) and the hero button land. */}
               <div
@@ -320,7 +327,7 @@ function Storefront() {
                   <CategoryCircles
                     mains={groupMains(facets, filters.group)}
                     active={filters.main}
-                    sale={sale}
+                    sale={extras}
                     allUpto={facets.headline_upto}
                     layout="row"
                     onPick={(main) => setFilters({ main, sub: undefined })}
@@ -355,10 +362,8 @@ function Storefront() {
                           item={item}
                           threshold={threshold}
                           eager={i < 4}
-                          lowStockMax={sale ? (teaser?.low_stock_max ?? 5) : null}
-                          preSaleLabel={
-                            state === "preview" ? (teaser?.copy.sale_label_preview ?? null) : null
-                          }
+                          lowStockMax={extras ? (teaser?.low_stock_max ?? 5) : null}
+                          preSaleLabel={badgeLabel}
                         />
                       </Fragment>
                     );

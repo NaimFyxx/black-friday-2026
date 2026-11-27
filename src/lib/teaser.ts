@@ -43,6 +43,8 @@ export interface TeaserInfo {
   low_stock_max?: number;
   /** "Last piece" label when only one is left (bf_settings.last_piece_enabled). */
   last_piece?: boolean;
+  /** Sale-time extras from 10:00 (bf_settings.sale_extras_enabled; off = the page keeps its look). */
+  sale_extras?: boolean;
   /** "Up to 4 free bottles" bar settings; null when switched off (src/lib/free-bottles.ts). */
   free_bottles?: import("@/lib/free-bottles").FreeBottlesConfig | null;
   /** After the sale: title, button text and link. */

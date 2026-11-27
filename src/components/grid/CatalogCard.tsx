@@ -185,6 +185,7 @@ export const CatalogCard = memo(function CatalogCard({
           {badge && !soldOut && (
             <span className="ff-num absolute top-2 left-2 rounded-full bg-ff-red px-2.5 py-1 text-[11px] text-ff-cream">
               {badge}
+              {preSaleLabel && <span className="ff-subline"> {preSaleLabel}</span>}
             </span>
           )}
           {soldOut && (
