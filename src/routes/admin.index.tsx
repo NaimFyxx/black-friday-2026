@@ -913,6 +913,10 @@ function CartsSection() {
   const rows = data?.rows ?? [];
   const total = rows.reduce((a, r) => a + r.value_full, 0);
   const totalFriday = rows.reduce((a, r) => a + r.value_friday, 0);
+  const sum = (k: "margin_full" | "net_full" | "margin_friday" | "net_friday") =>
+    rows.reduce((a, r) => a + r[k], 0);
+  const marginSub = (m: number, net: number) =>
+    net > 0 ? `Margin ${formatJod(m)} (${marginPct(m, net)}) if all of it sold` : undefined;
   return (
     <Section
       title="Carts"
@@ -934,8 +938,16 @@ function CartsSection() {
               label="Went to checkout"
               value={String(rows.filter((r) => r.checkout).length)}
             />
-            <StatCard label="Total, full price" value={formatJod(total)} />
-            <StatCard label="Total, Friday prices" value={formatJod(totalFriday)} />
+            <StatCard
+              label="Total, full price"
+              value={formatJod(total)}
+              sub={marginSub(sum("margin_full"), sum("net_full"))}
+            />
+            <StatCard
+              label="Total, Friday prices"
+              value={formatJod(totalFriday)}
+              sub={marginSub(sum("margin_friday"), sum("net_friday"))}
+            />
           </div>
           <Panel className="overflow-x-auto p-0">
             <table className="w-full text-sm">

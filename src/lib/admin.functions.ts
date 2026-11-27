@@ -841,6 +841,11 @@ export type CartRow = {
   units: number;
   value_full: number;
   value_friday: number;
+  /** Cart margin (Zeid's formula, Odoo costs) and its sales without tax, at both prices. */
+  margin_full: number;
+  net_full: number;
+  margin_friday: number;
+  net_friday: number;
   items: Array<{ title: string; qty: number }>;
   first_at: string;
   last_at: string;
@@ -862,6 +867,10 @@ export const getCarts = createServerFn({ method: "GET" }).handler(async () => {
     units: n(r.units),
     value_full: n(r.value_full),
     value_friday: n(r.value_friday),
+    margin_full: n(r.margin_full),
+    net_full: n(r.net_full),
+    margin_friday: n(r.margin_friday),
+    net_friday: n(r.net_friday),
     items: (r.items ?? []).map((i) => ({ title: String(i.title ?? ""), qty: n(i.qty) })),
   }));
   rows.sort((a, b) => Date.parse(b.last_at) - Date.parse(a.last_at));
