@@ -169,6 +169,7 @@ export function sectionId(title: string): string {
 export function JumpNav({ items }: { items: { title: string; label: string }[] }) {
   const [active, setActive] = useState<string | null>(null);
   const barRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const onScroll = () => {
@@ -178,7 +179,7 @@ export function JumpNav({ items }: { items: { title: string; label: string }[] }
       for (const it of items) {
         const el = document.getElementById(sectionId(it.title));
         const top = el?.getBoundingClientRect().top;
-        if (top != null && top <= 90 && top > best) {
+        if (top != null && top <= (navRef.current?.offsetHeight ?? 48) + 40 && top > best) {
           best = top;
           current = sectionId(it.title);
         }
@@ -196,18 +197,20 @@ export function JumpNav({ items }: { items: { title: string; label: string }[] }
     const link = barRef.current.querySelector<HTMLElement>(`[data-jump="${active}"]`);
     if (!link) return;
     const bar = barRef.current;
+    if (bar.scrollWidth <= bar.clientWidth) return; // Wraps on wider screens: nothing to scroll.
     const left = link.offsetLeft - bar.clientWidth / 2 + link.clientWidth / 2;
     bar.scrollTo({ left, behavior: "smooth" });
   }, [active]);
 
   return (
     <nav
+      ref={navRef}
       aria-label="Jump to a section"
       className="sticky top-0 z-20 -mx-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur print:hidden"
     >
       <div
         ref={barRef}
-        className="flex items-center gap-1 overflow-x-auto text-xs whitespace-nowrap"
+        className="flex items-center gap-1 overflow-x-auto text-xs whitespace-nowrap [scrollbar-width:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
       >
         <span className="mr-1 text-muted-foreground">Jump to</span>
         {items.map((it) => {
@@ -225,11 +228,15 @@ export function JumpNav({ items }: { items: { title: string; label: string }[] }
                   toast("That section is still loading or not shown right now.");
                   return;
                 }
-                el.scrollIntoView({ behavior: "smooth", block: "start" });
+                const barH = navRef.current?.offsetHeight ?? 48;
+                window.scrollTo({
+                  top: el.getBoundingClientRect().top + window.scrollY - barH - 12,
+                  behavior: "smooth",
+                });
                 history.replaceState(null, "", `#${id}`);
               }}
               className={cn(
-                "rounded-full border px-3 py-1.5 transition-colors",
+                "rounded-full border px-3 py-1.5 transition-colors lg:px-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 on
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border text-muted-foreground hover:text-foreground",
@@ -246,7 +253,7 @@ export function JumpNav({ items }: { items: { title: string; label: string }[] }
             window.scrollTo({ top: 0, behavior: "smooth" });
             history.replaceState(null, "", location.pathname + location.search);
           }}
-          className="ml-1 rounded-full px-3 py-1.5 text-muted-foreground hover:text-foreground"
+          className="ml-1 rounded-full px-3 py-1.5 text-muted-foreground lg:px-2 hover:text-foreground"
         >
           Top ↑
         </a>
