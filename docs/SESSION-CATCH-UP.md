@@ -875,3 +875,4 @@ Owner approved the bf_events change.
 ## 2026-11-27 03:40: wording "level up"
 - ticker_preview and ticker_sale: "FYXX FRIDAY IS LIVE | FYXX FRIDAY IS LIVE" (Naim). Note: says "live" before 10:00 too.
 - rewards_text: headline "Spend more, level up your free gift", upgrade "a free gift level up ({level})", done "Your free gift is fully leveled up". After-add message: "Free gift unlocked" at level 1, then "Leveled up! Your free gift is now Level 3". Code defaults updated to match.
+- 00:05 (27 Nov): milestones neatened. Bar is a 2px hairline; every milestone is Andrea's starburst as one solid shape over a base in the background colour (no outlines, no rings), one size (20px phones, 24px desktop). Hero: reached red, next cream, ahead cream 25%. Red blocks: reached cream, next burgundy, ahead black 25%. More room under the line for the amounts. STAR_PATH exported from RewardStar.tsx.
