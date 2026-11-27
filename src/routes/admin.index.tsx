@@ -520,6 +520,17 @@ function SalesForecastSection() {
                   <p className="text-xs text-muted-foreground">
                     {data.thisYear.orders} orders since 00:00, every channel.
                   </p>
+                  <p className="text-sm">
+                    Without in-store{" "}
+                    <span className="tabular-nums">
+                      {formatJod(data.thisYear.total - data.thisYear.channels.inStore.total)}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {data.thisYear.orders - data.thisYear.channels.inStore.orders} orders:
+                      website, app and staff orders. In-store = Odoo POS sales the Odoo Connector
+                      has sent to Shopify so far.
+                    </span>
+                  </p>
                   {data.record && data.record.total > 0 && (
                     <p className="text-sm">
                       {data.thisYear.total >= data.record.total ? (
@@ -715,6 +726,12 @@ function ChannelCompare({
     pick: (d: DaySales) => Bucket;
   }> = [
     { label: "Total", strong: true, pick: (d) => d },
+    {
+      label: "Total without in-store",
+      strong: true,
+      pick: (d) =>
+        sumBuckets(d.channels.website, d.channels.app, d.channels.staff, d.channels.other),
+    },
     { label: "Digital (website + app)", strong: true, pick: digital },
     {
       label: "Website (myfyxx.com and Fyxx Friday site)",
