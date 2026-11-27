@@ -322,7 +322,10 @@ function Storefront() {
 
               {/* Product count and sort live in the filter bar; this marks the top of the grid. */}
               <div ref={gridTop} className="flex h-4 items-center justify-center">
-                {isFetching && !isFetchingNextPage && (
+                {/* After mount only: on a slow phone the first browser render can
+                    already count as "refreshing" while the server HTML had no
+                    spinner, which made React redo the page (#418, 27 Nov). */}
+                {mounted && isFetching && !isFetchingNextPage && (
                   <Loader2 className="h-3 w-3 animate-spin text-ff-black/50" />
                 )}
               </div>
