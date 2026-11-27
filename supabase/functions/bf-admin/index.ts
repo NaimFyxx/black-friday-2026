@@ -13,7 +13,8 @@
 //       range (every channel), count and total, split into in store (Point of
 //       Sale) and online (everything else). Cancelled and test orders left out.
 //       Also margin (Zeid's formula, Odoo costs by SKU from bf_cost_odoo_products;
-//       totals only) and orders by signed-in Rewards members (_ff_member).
+//       totals only), orders by signed-in Rewards members (_ff_member) and new
+//       customers (the order is the customer's first ever order).
 //   { key, action: "usual", kx }                  -> Shopify product IDs this
 //       shopper ordered most ("Your usual" shelf). kx = Klaviyo's _kx link
 //       parameter from one of our emails; resolved with the Klaviyo private
@@ -208,10 +209,11 @@ const DAY_SALES_QUERY = `
     orders(first: 50, after: $after, query: $q, sortKey: CREATED_AT) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        createdAt cancelledAt test sourceName
+        id createdAt cancelledAt test sourceName
         app { name }
         totalPriceSet { shopMoney { amount } }
         customAttributes { key value }
+        customer { id orders(first: 1, sortKey: CREATED_AT) { nodes { id } } }
         lineItems(first: 60) {
           nodes {
             quantity isGiftCard sku
@@ -276,8 +278,14 @@ type Bucket = {
   /** Orders placed by a signed-in Fyxx Rewards member on the Friday site. */
   memberOrders: number;
   memberTotal: number;
+  /** Orders that were the customer's first ever order (a new customer). */
+  newCustomers: number;
+  /** Orders with no customer attached (common in store), so new/returning is unknown. */
+  noCustomer: number;
 };
 const bucket = (): Bucket => ({
+  newCustomers: 0,
+  noCustomer: 0,
   orders: 0,
   total: 0,
   margin: 0,
@@ -361,6 +369,9 @@ async function daySales(since: string, until: string) {
         one.memberOrders = 1;
         one.memberTotal = one.total;
       }
+      // New customer: this order is the first order on their Shopify customer.
+      if (!o.customer) one.noCustomer = 1;
+      else if (o.customer.orders?.nodes?.[0]?.id === o.id) one.newCustomers = 1;
       for (const li of o.lineItems?.nodes ?? []) {
         const gross = Number(li.originalTotalSet?.shopMoney?.amount) || 0;
         const off = (li.discountAllocations ?? []).reduce(
