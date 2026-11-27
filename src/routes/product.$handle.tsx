@@ -289,6 +289,22 @@ function ProductPage() {
     }
   };
 
+  // Planned Friday % for the selected size, before 10:00 only.
+  const plannedVariant = selected?.id ?? null;
+  const { data: plannedPct } = useQuery({
+    queryKey: ["bf-planned-percent", plannedVariant],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "bf_planned_percent" as never,
+        { p_variant: plannedVariant } as never,
+      );
+      if (error) return null;
+      const n: unknown = data;
+      return typeof n === "number" && n > 0 ? n : null;
+    },
+    staleTime: 60_000,
+    enabled: !!plannedVariant && teaser?.state === "preview",
+  });
   const price = selected?.price ?? product.priceRange.minVariantPrice;
   const was = selected?.compareAtPrice;
   // After the sale: no crossed-out price or badge, whatever Shopify still says.
@@ -298,6 +314,11 @@ function ProductPage() {
     ? Math.floor(((Number(was!.amount) - Number(price.amount)) / Number(was!.amount)) * 100)
     : 0;
   const meta = metaLine(product, variants.length > 1 ? selected : (variants[0] ?? null));
+  // Before 10:00: the planned Friday % for this size (bf_planned_percent; null when
+  // the /admin switch is off or the size has no planned discount).
+  const beforeSale = teaser?.state === "preview";
+  const badgePct = beforeSale ? (plannedPct ?? (discounted ? pct : 0)) : pct;
+  const badgeLabel = beforeSale ? (teaser?.copy.sale_label_preview ?? "off") : "";
 
   return (
     <main className="bg-ff-cream text-ff-black">
@@ -323,9 +344,9 @@ function ProductPage() {
           {/* Photo */}
           <div className="md:sticky md:top-[112px] md:self-start">
             <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-ff-black/10 bg-ff-cream">
-              {teaser?.state === "sale" && pct > 0 && (
+              {(teaser?.state === "sale" || beforeSale) && badgePct > 0 && (
                 <span className="ff-num absolute top-3 left-3 z-10 rounded-full bg-ff-red px-3 py-1 text-sm text-ff-cream">
-                  -{pct}%
+                  -{badgePct}%{badgeLabel && <span className="ff-subline"> {badgeLabel}</span>}
                 </span>
               )}
               {image ? (

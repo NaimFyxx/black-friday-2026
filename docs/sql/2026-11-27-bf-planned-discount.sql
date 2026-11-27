@@ -8,3 +8,7 @@
 --   Only the percent leaves the database (no sale price, no cost).
 --   Execute revoked from anon/authenticated; called only inside SECURITY DEFINER
 --   functions (bf_catalog, bf_catalog_facets, bf_pairings, bf_usual_items).
+-- Migration bf_planned_percent_variant: bf_planned_percent(p_variant text) ->
+-- int, SECURITY DEFINER, granted to anon. Planned Friday % for one variant
+-- (percent only), only while state = preview and show_planned_discount is on.
+-- Used by the product page badge.
