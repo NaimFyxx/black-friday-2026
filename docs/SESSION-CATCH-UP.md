@@ -948,3 +948,4 @@ Owner approved the bf_events change.
 - bf_settings.forecast_last_year now has 2025 margins (worked out with this year's costs): total JOD 2,652 (26.7% of costed sales); website 31.0%, app 26.0%, in store 40.7% (half its sales have no known cost), staff 21.0%.
 - New "Fyxx Rewards" section on /admin (RPC bf_rewards_funnel, service role only): tiers opened, Log in / Join taps, sign-ins, new accounts by place, and orders by signed-in members (cart attribute _ff_member set at checkout when signed in).
 - AGENTS.md rule updated: query cache hand-over is router-level now.
+- 09:50 Amman: first #418s with the new component stack (Android, 3 in 15 min) all pointed at the loading spinner above the product grid (index.tsx gridTop): on slow phones the first browser render already counted as refreshing while the server HTML had no spinner. Now shown only after mount. The other #418s since Publish came from tabs still on old code (no component stack). Needs Publish.
