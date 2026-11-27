@@ -14,6 +14,7 @@ import {
   fmtNum,
   fmtPct,
   fmtRange,
+  JumpNav,
   KindTag,
   Loading,
   Note,
@@ -79,6 +80,22 @@ function useLeaving(range: Range) {
   });
 }
 
+/** The "Jump to" bar, in page order. Titles must match the Section titles. */
+const JUMP_LINKS = [
+  { title: "The main numbers", label: "Main numbers" },
+  { title: "All orders", label: "Orders" },
+  { title: "Paid ads or free", label: "Paid or free" },
+  { title: "Where visitors came from", label: "Where from" },
+  { title: "Visitors who came back", label: "Came back" },
+  { title: "Sales forecast", label: "Forecast" },
+  { title: "Fyxx Rewards", label: "Rewards" },
+  { title: "Carts", label: "Carts" },
+  { title: "Most added to cart", label: "Most added" },
+  { title: "After visiting this site", label: "After visiting" },
+  { title: "Offers on the site", label: "Offers" },
+  { title: "Free bottles bar", label: "Free bottles" },
+];
+
 function OverviewPage() {
   const [rangeKey, setRangeKey] = useState<RangeKey>("campaign");
   const range = rangeFor(rangeKey);
@@ -101,6 +118,8 @@ function OverviewPage() {
         How the Fyxx Friday site is doing: how many people came, what they put in their cart and
         what they ordered. Main numbers first, details further down.
       </PageHeader>
+
+      <JumpNav items={JUMP_LINKS} />
 
       <OffersSection />
       <FreeBottlesAdmin />

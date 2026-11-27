@@ -1,6 +1,7 @@
 // Small shared pieces for the /admin pages (same look as the Fyxx Cup admin).
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 
 import { CAMPAIGN_END, CAMPAIGN_START } from "@/lib/campaign-config";
 import { describeSource, KIND_LABEL, type SourceKind, type SourceLabel } from "@/lib/source-labels";
@@ -125,15 +126,21 @@ export function Section({
   actions,
   children,
   className,
+  id,
 }: {
   title: string;
   intro: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** Anchor for the "Jump to" bar. Defaults to the title, e.g. "all-orders". */
+  id?: string;
 }) {
   return (
-    <section className={cn("mt-10 space-y-3 first:mt-0", className)}>
+    <section
+      id={id ?? sectionId(title)}
+      className={cn("mt-10 scroll-mt-16 space-y-3 first:mt-0", className)}
+    >
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
         <div className="min-w-0 space-y-0.5">
           <h2 className="text-lg font-semibold">{title}</h2>
@@ -143,6 +150,108 @@ export function Section({
       </div>
       {children}
     </section>
+  );
+}
+
+/** "All orders" -> "all-orders": the anchor each Section gets from its title. */
+export function sectionId(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
+/**
+ * Sticky "Jump to" bar of links to the sections on a page. Scrolls sideways on
+ * phones. The section on screen is highlighted; sections that are not on the
+ * page (still loading, or switched off) are skipped when clicked.
+ */
+export function JumpNav({ items }: { items: { title: string; label: string }[] }) {
+  const [active, setActive] = useState<string | null>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onScroll = () => {
+      // The section whose heading most recently passed under the bar.
+      let current: string | null = null;
+      let best = -Infinity;
+      for (const it of items) {
+        const el = document.getElementById(sectionId(it.title));
+        const top = el?.getBoundingClientRect().top;
+        if (top != null && top <= 90 && top > best) {
+          best = top;
+          current = sectionId(it.title);
+        }
+      }
+      setActive(current);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [items]);
+
+  // Keep the highlighted link visible in the sideways-scrolling bar on phones.
+  useEffect(() => {
+    if (!active || !barRef.current) return;
+    const link = barRef.current.querySelector<HTMLElement>(`[data-jump="${active}"]`);
+    if (!link) return;
+    const bar = barRef.current;
+    const left = link.offsetLeft - bar.clientWidth / 2 + link.clientWidth / 2;
+    bar.scrollTo({ left, behavior: "smooth" });
+  }, [active]);
+
+  return (
+    <nav
+      aria-label="Jump to a section"
+      className="sticky top-0 z-20 -mx-4 border-b border-border bg-background/95 px-4 py-2 backdrop-blur print:hidden"
+    >
+      <div
+        ref={barRef}
+        className="flex items-center gap-1 overflow-x-auto text-xs whitespace-nowrap"
+      >
+        <span className="mr-1 text-muted-foreground">Jump to</span>
+        {items.map((it) => {
+          const id = sectionId(it.title);
+          const on = active === id;
+          return (
+            <a
+              key={id}
+              href={`#${id}`}
+              data-jump={id}
+              onClick={(e) => {
+                const el = document.getElementById(id);
+                e.preventDefault();
+                if (!el) {
+                  toast("That section is still loading or not shown right now.");
+                  return;
+                }
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+                history.replaceState(null, "", `#${id}`);
+              }}
+              className={cn(
+                "rounded-full border px-3 py-1.5 transition-colors",
+                on
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {it.label}
+            </a>
+          );
+        })}
+        <a
+          href="#top"
+          onClick={(e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            history.replaceState(null, "", location.pathname + location.search);
+          }}
+          className="ml-1 rounded-full px-3 py-1.5 text-muted-foreground hover:text-foreground"
+        >
+          Top ↑
+        </a>
+      </div>
+    </nav>
   );
 }
 
