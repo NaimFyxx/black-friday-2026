@@ -746,11 +746,12 @@ function ChannelCompare({
     { label: "of which Fyxx Friday site", sub: true, pick: (d) => d.channels.fridaySite },
     { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
     {
-      label: "In-store",
+      label: "Shop (in-store + Dine-In)",
       strong: true,
-      pick: (d) => d.channels.inStore,
+      pick: (d) => sumBuckets(d.channels.inStore, d.channels.dineIn),
     },
-    { label: "Dine-In", strong: true, pick: (d) => d.channels.dineIn },
+    { label: "In-store (Retail till)", sub: true, pick: (d) => d.channels.inStore },
+    { label: "Dine-In", sub: true, pick: (d) => d.channels.dineIn },
     { label: "Staff and other orders (draft, phone)", strong: true, pick: staff },
   ];
   const num = (v: number) =>
