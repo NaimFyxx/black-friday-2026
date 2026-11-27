@@ -14,7 +14,8 @@
 //       Sale) and online (everything else). Cancelled and test orders left out.
 //       Also margin (Zeid's formula, Odoo costs by SKU from bf_cost_odoo_products;
 //       totals only), orders by signed-in Rewards members (_ff_member) and new
-//       customers (the order is the customer's first ever order).
+//       customers (the order is the customer's first ever order). From 2026,
+//       in-store comes from Odoo POS directly (read only), not from Shopify.
 //   { key, action: "usual", kx }                  -> Shopify product IDs this
 //       shopper ordered most ("Your usual" shelf). kx = Klaviyo's _kx link
 //       parameter from one of our emails; resolved with the Klaviyo private
@@ -297,6 +298,122 @@ const bucket = (): Bucket => ({
 });
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
 
+// ── Odoo POS (read only): the shop's till since the move from Shopify POS ──
+// Same Odoo access as Pulse (ODOO_URL / ODOO_DB / ODOO_USERNAME / ODOO_API_KEY),
+// search_read / read_group only. Never writes to Odoo.
+const ODOO_URL = (Deno.env.get("ODOO_URL") ?? "").replace(/\/+$/, "");
+const ODOO_DB = (Deno.env.get("ODOO_DB") ?? "").trim();
+const ODOO_USER = (Deno.env.get("ODOO_USERNAME") ?? "").trim();
+const ODOO_KEY = (Deno.env.get("ODOO_API_KEY") ?? "").trim();
+// Odoo POS replaced Shopify POS for the shop; from this date in-store sales come from Odoo.
+const ODOO_POS_FROM = "2026-01-01T00:00:00Z";
+
+async function odooRpc(service: string, method: string, args: unknown[]) {
+  const res = await fetch(`${ODOO_URL}/jsonrpc`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "call",
+      params: { service, method, args },
+      id: 1,
+    }),
+  });
+  const j = await res.json();
+  if (j.error) throw new Error(`Odoo: ${j.error.data?.message ?? j.error.message}`.slice(0, 300));
+  return j.result;
+}
+
+/** Odoo datetime string ("YYYY-MM-DD HH:MM:SS", UTC) from an ISO time. */
+const odooTime = (iso: string) => new Date(iso).toISOString().slice(0, 19).replace("T", " ");
+
+/**
+ * Paid Odoo POS orders in the range, as one Bucket: sales (incl. tax), margin
+ * (line subtotal without tax minus Odoo cost by SKU, the same costs as online),
+ * new customers (customer with no earlier POS order) and orders with no customer.
+ */
+async function odooPos(since: string, until: string, bySku: Map<string, number> | null) {
+  if (!ODOO_URL || !ODOO_DB || !ODOO_USER || !ODOO_KEY) throw new Error("Odoo not configured");
+  const uid = await odooRpc("common", "authenticate", [ODOO_DB, ODOO_USER, ODOO_KEY, {}]);
+  if (!uid) throw new Error("Odoo sign-in failed");
+  const call = (model: string, method: string, args: unknown[], kw: Record<string, unknown> = {}) =>
+    odooRpc("object", "execute_kw", [ODOO_DB, uid, ODOO_KEY, model, method, args, kw]);
+  const domain = [
+    ["date_order", ">=", odooTime(since)],
+    ["date_order", "<", odooTime(until)],
+    ["state", "in", ["paid", "done", "invoiced"]],
+  ];
+  // deno-lint-ignore no-explicit-any
+  const orders: any[] = await call("pos.order", "search_read", [domain], {
+    fields: ["id", "amount_total", "partner_id"],
+    limit: 5000,
+  });
+  const b = bucket();
+  if (!orders.length) return b;
+  for (const o of orders) {
+    b.orders += 1;
+    b.total += Number(o.amount_total) || 0;
+    if (!o.partner_id) b.noCustomer += 1;
+  }
+  // New customers: partners in these orders with no POS order before `since`.
+  const partners = [...new Set(orders.filter((o) => o.partner_id).map((o) => o.partner_id[0]))];
+  if (partners.length) {
+    // deno-lint-ignore no-explicit-any
+    const before: any[] = await call(
+      "pos.order",
+      "read_group",
+      [
+        [
+          ["partner_id", "in", partners],
+          ["date_order", "<", odooTime(since)],
+        ],
+        ["partner_id"],
+        ["partner_id"],
+      ],
+      { lazy: false },
+    );
+    const seen = new Set(
+      before.map((g) => (Array.isArray(g.partner_id) ? g.partner_id[0] : g.partner_id)),
+    );
+    for (const o of orders) if (o.partner_id && !seen.has(o.partner_id[0])) b.newCustomers += 1;
+  }
+  // Margin from the order lines (subtotal without tax), cost by the product's SKU.
+  // deno-lint-ignore no-explicit-any
+  const lines: any[] = await call(
+    "pos.order.line",
+    "search_read",
+    [[["order_id", "in", orders.map((o) => o.id)]]],
+    { fields: ["product_id", "qty", "price_subtotal"], limit: 50000 },
+  );
+  const productIds = [...new Set(lines.filter((l) => l.product_id).map((l) => l.product_id[0]))];
+  const skuOf = new Map<number, string>();
+  for (let i = 0; i < productIds.length; i += 500) {
+    // deno-lint-ignore no-explicit-any
+    const ps: any[] = await call("product.product", "read", [productIds.slice(i, i + 500)], {
+      fields: ["default_code"],
+      context: { active_test: false },
+    });
+    for (const p of ps) if (p.default_code) skuOf.set(p.id, String(p.default_code).trim());
+  }
+  for (const l of lines) {
+    const net = Number(l.price_subtotal) || 0;
+    const sku = l.product_id ? skuOf.get(l.product_id[0]) : undefined;
+    const cost = sku ? bySku?.get(sku) : undefined;
+    if (cost === undefined) {
+      b.uncosted += net * SALES_TAX;
+      continue;
+    }
+    b.costedNet += net;
+    b.margin += net - cost * (Number(l.qty) || 0);
+  }
+  return b;
+}
+
+/** An Odoo POS sale copied into Shopify by the "Odoo Connector" app. */
+function isOdooConnector(o: { app?: { name?: string } | null }) {
+  return (o.app?.name ?? "").toLowerCase().includes("odoo connector");
+}
+
 /** Which channel an order belongs to, from the Shopify app that created it. */
 /** Placed on the Fyxx Friday site (friday.myfyxx.com): it checks out through the "Lovable" app. */
 function isFridaySite(o: { app?: { name?: string } | null; customAttributes?: unknown }) {
@@ -352,6 +469,23 @@ async function daySales(since: string, until: string) {
   const add = (b: Bucket, x: Bucket) => {
     for (const k of Object.keys(b) as Array<keyof Bucket>) b[k] += x[k];
   };
+  // In-store from Odoo POS itself for days after the move to Odoo; if Odoo
+  // can't be read, fall back to the Odoo Connector's copies in Shopify.
+  let odoo: Bucket | null = null;
+  let odooError: string | null = null;
+  if (since >= ODOO_POS_FROM) {
+    try {
+      odoo = await odooPos(since, until, costs?.bySku ?? null);
+    } catch (e) {
+      odooError = String((e as Error).message).slice(0, 200);
+      console.error("[bf-admin] odoo", odooError);
+    }
+  }
+  const useOdoo = odoo !== null;
+  if (odoo) {
+    add(channels.inStore, odoo);
+    add(sum, odoo);
+  }
   let after: string | null = null;
   for (let p = 0; p < MAX_PAGES * 5; p++) {
     // deno-lint-ignore no-explicit-any
@@ -396,6 +530,9 @@ async function daySales(since: string, until: string) {
         one.costedNet += net;
         one.margin += net - cost * (Number(li.quantity) || 0);
       }
+      // With Odoo POS read directly, the copies the Odoo Connector puts in
+      // Shopify are left out (they would count the same till sales twice).
+      if (useOdoo && isOdooConnector(o)) continue;
       add(channels[channelOf(o)], one);
       if (isFridaySite(o)) add(fridaySite, one);
       add(sum, one);
@@ -414,6 +551,8 @@ async function daySales(since: string, until: string) {
   return {
     status: "ok",
     costsLoaded: costs !== null,
+    inStoreSource: useOdoo ? "odoo_pos" : "shopify",
+    odooError,
     ...round(sum),
     online: round(online),
     inStore: channels.inStore,
