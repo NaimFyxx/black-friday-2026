@@ -784,6 +784,33 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Read-only check: Odoo POS orders in a range by till and state (counts and totals).
+  if (body.action === "odoo_pos_states") {
+    if (!isIso(body.since) || !isIso(body.until)) return json({ error: "Bad range" }, 400);
+    try {
+      const uid = await odooRpc("common", "authenticate", [ODOO_DB, ODOO_USER, ODOO_KEY, {}]);
+      const groups = await odooRpc("object", "execute_kw", [
+        ODOO_DB,
+        uid,
+        ODOO_KEY,
+        "pos.order",
+        "read_group",
+        [
+          [
+            ["date_order", ">=", odooTime(body.since)],
+            ["date_order", "<", odooTime(body.until)],
+          ],
+          ["amount_total:sum"],
+          ["config_id", "state"],
+        ],
+        { lazy: false },
+      ]);
+      return json({ status: "ok", groups });
+    } catch (e) {
+      return json({ status: "error", message: String((e as Error).message).slice(0, 300) });
+    }
+  }
+
   if (body.action === "probe") {
     return json({
       meta_token: !!Deno.env.get("BLACK_FRIDAY_META_TOKEN"),
