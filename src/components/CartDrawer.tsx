@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { Loader2, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,9 +89,19 @@ export function CartDrawer() {
     if (user?.email && cartId) void prefillCheckout(cartId);
   }, [user?.email, cartId]);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     const checkoutUrl = getCheckoutUrl();
     if (checkoutUrl) {
+      // One last check: if the cart is already completed (a previous order),
+      // Shopify has deleted it, so don't send the shopper to a dead checkout.
+      // syncCart clears a gone cart and returns "empty"; a network error ("error")
+      // must not block a legitimate checkout.
+      setGoingToCheckout(true);
+      if ((await syncCart()) === "empty") {
+        setGoingToCheckout(false);
+        toast.success("Your last order went through. Your cart is now empty.");
+        return;
+      }
       const tracked = trackBeginCheckout(
         items.map((item) => ({
           id: item.variantId,
@@ -106,8 +117,8 @@ export function CartDrawer() {
       const normal = withStoredUtm(checkoutUrl);
       // Checkout opens in this tab. It goes to the checkout page directly so
       // the Fyxx app does not take over (see checkout-handoff.functions.ts),
-      // and falls back to the normal link.
-      setGoingToCheckout(true);
+      // and falls back to the normal link. (The spinner is already on from the
+      // pre-check above.)
       const go = (url: string) => {
         window.location.href = url;
       };
@@ -161,7 +172,6 @@ export function CartDrawer() {
               ? "Nothing in here yet"
               : `${totalItems} item${totalItems !== 1 ? "s" : ""}`}
           </SheetDescription>
-          <TeaserCartNote />
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col px-6">
@@ -293,25 +303,6 @@ export function CartDrawer() {
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-/** Teaser phase only: tells shoppers the prices drop on the day (text from bf_settings). */
-function TeaserCartNote() {
-  const { data } = useQuery(teaserQueryOptions(usePreview()));
-  // Before the sale: the teaser note + "Prices drop automatically. No code
-  // needed." During the sale: the Friday note. After the sale: nothing.
-  const text =
-    data?.state === "preview"
-      ? [data.copy.teaser_cart_note, data.copy.no_code_note].filter(Boolean).join(" ")
-      : data?.state === "sale"
-        ? (data.copy.sale_cart_note ?? "")
-        : "";
-  if (!text) return null;
-  return (
-    <p className="ff-small mt-2 rounded-md bg-ff-warm-cream px-3 py-2 text-xs text-ff-burgundy">
-      {text}
-    </p>
   );
 }
 

@@ -1,14 +1,14 @@
 import { useEffect } from "react";
 
 import { GiftCardSticker } from "@/components/hero/GiftCardSticker";
-import { HeroFreeBottles } from "@/components/rewards/FreeBottlesStrip";
+import { FreeBottlesStrip } from "@/components/rewards/FreeBottlesStrip";
 import type { TeaserInfo } from "@/lib/teaser";
 
 /**
- * The opening block of the home page (before and during the sale): burgundy,
- * like Andrea's Post-01. The cream "fyxx Friday" logo with the four campaign
- * bottles, the floating gift card, and the free gift progress folded in below
- * (no separate section). Replaced the teaser hero (headline, countdown,
+ * The opening block of the home page (before and during the sale): cream, the
+ * small red "fyxx Friday" logo with the four campaign bottles, the floating gift
+ * card, and the free gift progress in the same red box as the cart. A thin
+ * line separates it from the products. Replaced the teaser hero (headline, countdown,
  * reminder, button) on 27 Nov.
  */
 export function FridayHero({
@@ -28,36 +28,39 @@ export function FridayHero({
   }, [info.state, info.sale_start, onSaleStarted]);
 
   return (
-    <section aria-label="Fyxx Friday" className="relative bg-ff-burgundy text-ff-cream">
+    <section
+      aria-label="Fyxx Friday"
+      className="relative border-b border-ff-black/10 bg-ff-cream text-ff-black"
+    >
       <GiftCardSticker />
-      <div className="mx-auto max-w-[1100px] px-5 pt-6 pb-7 md:px-10 md:pt-10 md:pb-10">
+      <div className="mx-auto max-w-[1100px] px-4 pt-3 pb-4 md:px-10 md:pt-6 md:pb-7">
+        {/* Small red logo with the four bottles (Andrea's pairing for cream). */}
         <div className="flex items-end justify-center">
           <img
-            src="/brand/fyxx-friday-logo-cream.svg"
+            src="/brand/fyxx-friday-logo-red.svg"
             alt="Fyxx Friday"
             width={2587}
             height={1446}
             fetchPriority="high"
-            className="h-auto w-[50vw] max-w-[420px]"
+            className="h-auto w-[24vw] max-w-[220px]"
           />
           <img
             src="/brand/fyxx-friday-bottles-360.webp"
-            srcSet="/brand/fyxx-friday-bottles-360.webp 360w, /brand/fyxx-friday-bottles-600.webp 600w"
-            sizes="(min-width: 768px) 260px, 30vw"
             alt=""
             aria-hidden="true"
             width={360}
             height={459}
             fetchPriority="high"
-            className="-ml-[3vw] h-auto w-[30vw] max-w-[260px] md:-ml-6"
+            className="-ml-[1vw] h-auto w-[11vw] max-w-[110px] md:-ml-3"
           />
         </div>
         {info.updating && (
-          <p className="ff-subline mt-4 text-center text-sm text-ff-cream" role="status">
+          <p className="ff-subline mt-3 text-center text-sm" role="status">
             {info.copy.teaser_updating_note || "Prices are updating, refresh in a few minutes"}
           </p>
         )}
-        <HeroFreeBottles className="mt-5 md:mt-7" />
+        {/* The free gift progress: the same red box as in the cart. */}
+        <FreeBottlesStrip className="mx-auto mt-3 max-w-md md:mt-4" />
       </div>
     </section>
   );

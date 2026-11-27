@@ -64,6 +64,47 @@ and Pulse sets them.
 
 ## Log
 
+### 27 Nov 2026: cart now clears after a completed Shopify checkout
+
+- Problem: after a real order the cart drawer still showed the old items, the
+  total, the savings line and the free bottles bar. Checkout opens in the same
+  tab, so shoppers come back with the browser back button, which restores the
+  page from the back-forward cache (bfcache). The cart sync only ran on mount
+  and on `visibilitychange`, and neither of those fires on a bfcache restore,
+  so the stale cart from localStorage was shown and never re-checked against
+  Shopify.
+- Shopify deletes a cart when its order is created, so `cart(id)` then returns
+  a null cart (confirmed against the live Storefront API: HTTP 200,
+  `{ data: { cart: null } }`, no error). `syncCart` already cleared on a
+  null/empty cart, so the detection was fine; the gap was the trigger.
+- Fix (no prices, checkout handoff params, pixel/bf_events, free bottles logic
+  or teaser/sale states touched):
+  - `src/hooks/useCartSync.ts`: now also listens for `pageshow` (bfcache
+    restore and normal load) and `focus`, on top of mount and
+    `visibilitychange`. The cart is re-read whenever the tab or app webview
+    comes back into view, including the back button from Shopify's thank-you
+    page.
+  - `src/lib/shopify-cart.ts` `fetchCartLines`: a null cart is still treated as
+    gone; now a GraphQL error that says the cart is not found / already
+    completed / invalid is also treated as gone (clear), while a real network
+    or server error still returns `null` so the cart is kept (offline must not
+    wipe the cart).
+  - `src/stores/cartStore.ts` `syncCart`: returns `"ok" | "empty" | "error"`.
+    `"empty"` means the cart was gone and has been cleared (cartId, items and
+    checkoutUrl reset, so the badge, total, savings line and free bottles bar
+    reset with it).
+  - `src/components/CartDrawer.tsx` `handleCheckout`: re-checks the cart before
+    leaving. If it is already completed it clears the cart and shows "Your last
+    order went through. Your cart is now empty." instead of opening a dead
+    checkout. A network error does not block a legitimate checkout.
+- Tests: `src/test/cart-sync.test.ts` and `src/test/fetch-cart-lines.test.ts`
+  (clear on gone, keep on network error, apply live prices, null-cart vs
+  completed-error vs network classification). Full suite 48 pass, tsc clean,
+  production build clean. The bfcache path itself (back button) is not
+  reproducible headlessly; it is covered by the unit tests plus the live
+  Storefront probe above.
+
+
 ### 22 Nov 2026: product pages like myfyxx.com
 
 - `src/routes/product.$handle.tsx` rebuilt in the Fyxx Friday look, laid out
@@ -870,3 +911,12 @@ Owner approved the bf_events change.
 - The teaser hero is gone (headline, countdown, "Remind me at 10:00", "Add to calendar", "Fill your cart" button). TeaserHero.tsx and HeroReminder.tsx deleted. New FridayHero (src/components/hero/FridayHero.tsx), shown before AND during the sale: burgundy, cream logo + the four bottles, the floating gift card sticker, and the free gift progress folded in (HeroFreeBottles, no separate red section). A hidden timer still refreshes the page at sale_start (the countdown used to do that). The catalog's small logo banner now only shows after the sale.
 - No more reminder sign-ups from the hero (the cart reminder form is unchanged); people already on the Klaviyo list still get the 10:00 email.
 - Free gift: never shows what the gifts are. Reward cards removed (RewardCards.tsx deleted); bar popovers show level + amount only. Hero has a quiet level row (LevelChips): passed levels crossed out and faded, current filled, upcoming with amount. Cart and product page: bar + "Your free gift: Level 2" pill only. Bar amounts only for levels still ahead. New text key rewards_text.current ("Your free gift: {level}"), editable in admin. Burgundy tone for bar/stars in the hero.
+- 03:20: phones only (desktop unchanged): logo 31vw + bottles 15vw, gift card sticker 70px, free gift part as a soft panel (cream/6% fill, thin ring) with a small cream eyebrow headline, 12px away line, slimmer bar (dense: 18px stars, 8px amounts), level pills hidden (md and up only); catalog top padding pt-4 on phones. Search bar starts at 60% of the first screen on iPhone 13, 46% on Pixel 7, 73% on iPhone SE (was 88%, 71%, 107%).
+
+## 2026-11-27 03:40: wording "level up"
+- ticker_preview and ticker_sale: "FYXX FRIDAY IS LIVE | FYXX FRIDAY IS LIVE" (Naim). Note: says "live" before 10:00 too.
+- rewards_text: headline "Spend more, level up your free gift", upgrade "a free gift level up ({level})", done "Your free gift is fully leveled up". After-add message: "Free gift unlocked" at level 1, then "Leveled up! Your free gift is now Level 3". Code defaults updated to match.
+- 00:05 (27 Nov): milestones neatened. Bar is a 2px hairline; every milestone is Andrea's starburst as one solid shape over a base in the background colour (no outlines, no rings), one size (20px phones, 24px desktop). Hero: reached red, next cream, ahead cream 25%. Red blocks: reached cream, next burgundy, ahead black 25%. More room under the line for the amounts. STAR_PATH exported from RewardStar.tsx.
+- 00:20 (27 Nov): opening block now cream (bg-ff-cream) with a thin bottom line, small RED logo (24vw, max 220px) + bottles (11vw, max 110px), gift card sticker kept, and the free gift progress as the same red box as the cart (FreeBottlesStrip, max-w-md). HeroFreeBottles and LevelChips removed. Stars are now EQUALLY spaced on every bar (progress(): pos = (i+1)/n; fill interpolates between neighbouring stars by amount). Wording: upgrade "leveling up your free gift", card "Add {amount} more to level up your free gift". Search bar at 64% (iPhone 13), 61% (desktop), 76% (iPhone SE).
+- 00:35: product pages now show the planned % on the photo before 10:00 ("-30% off", label from sale_label_preview), from RPC bf_planned_percent(variant) for the selected size; falls back to Shopify's own markdown % if the size has none. From 10:00 the Shopify % shows as before. Not visible in local dev (local product pages have no variants); verified the RPC as anon (Chopin Wheat = 30).
+- 00:45: cart note removed ("Your cart updates at 10:00 ... No code needed." before the sale, sale_cart_note during it): TeaserCartNote deleted from CartDrawer.tsx. The settings are kept (no_code_note still shows under the price on product pages).
