@@ -704,7 +704,7 @@ function ChannelCompare({
     { label: "of which Fyxx Friday site", sub: true, pick: (d) => d.channels.fridaySite },
     { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
     {
-      label: "In store (Shopify POS 2025, Odoo POS 2026)",
+      label: "In-store",
       strong: true,
       pick: (d) => d.channels.inStore,
     },
