@@ -959,3 +959,4 @@ Owner approved the bf_events change.
 - Every `Section` now gets an anchor from its title (`sectionId`, e.g. "All orders" -> `#all-orders`), so links like /admin#all-orders work. `JumpNav` lives in `src/components/admin/AdminUi.tsx` and can be reused on other admin pages.
 - If you rename a section title on the Overview, update `JUMP_LINKS` in `src/routes/admin.index.tsx` to match.
 - 10:50 Amman: Carts page: margin under "Total, full price" and "Total, Friday prices" (small text, "if all of it sold"). bf_carts_list (migration bf_carts_list_margin) returns per-cart margin_full / net_full / margin_friday / net_friday, Odoo cost by SKU then the sale list's cost. At the time: full price 33.7%, Friday prices 20.8% (JOD 8,580 on JOD 47,900). Needs Publish.
+- 11:00 Amman: rewards_text.first changed to "a free gift picked for you" (was "...for your cart"); bar now reads "You're JOD 60.000 away from a free gift picked for you". Settings only, live without Publish.
