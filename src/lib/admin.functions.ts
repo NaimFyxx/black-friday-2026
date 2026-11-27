@@ -677,6 +677,14 @@ export type Channels = {
   dineIn: Bucket;
 };
 export type DaySales = Bucket & { channels: Channels };
+export type HourCount = { orders: number; total: number };
+function toHours(raw: unknown): HourCount[] | null {
+  if (!Array.isArray(raw) || raw.length !== 24) return null;
+  return raw.map((h) => {
+    const r = (h ?? {}) as Record<string, unknown>;
+    return { orders: n(r["orders"]), total: n(r["total"]) };
+  });
+}
 export type SalesForecast = {
   mode: "before" | "friday" | "after";
   now: string;
@@ -695,6 +703,8 @@ export type SalesForecast = {
   thisYearError: string | null;
   pace: number | null;
   tooEarlyBefore: number;
+  /** Orders and sales per Amman hour (0 to 23): today and last year's Fyxx Friday. */
+  hours: { thisYear: HourCount[] | null; lastYear: HourCount[] | null };
   /** Best Black Friday so far (bf_settings.forecast_record), e.g. 29 Nov 2024. */
   record: { day: string; label: string; total: number; orders: number } | null;
 };
@@ -802,6 +812,7 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
     }
 
     let thisYear: DaySales | null = null;
+    let thisYearHours: HourCount[] | null = null;
     let thisYearError: string | null = null;
     let pace: number | null = null;
     if (mode !== "before") {
@@ -816,6 +827,7 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
         }>({ action: "day_sales", since: dayStart.toISOString(), until: until.toISOString() });
         if (r.status === "ok") {
           thisYear = { ...toBucket(r), channels: toChannels(r.channels) };
+          thisYearHours = toHours(r["byHour"]);
           if (mode === "friday" && ly?.share_by_hour) {
             pace = paceByMidnight({
               soFar: thisYear.total,
@@ -842,6 +854,10 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
         }
       : null;
     return {
+      hours: {
+        thisYear: thisYearHours,
+        lastYear: toHours((ly as Record<string, unknown> | undefined)?.["by_hour"]),
+      },
       record,
       mode,
       now: now.toISOString(),

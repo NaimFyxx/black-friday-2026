@@ -6,6 +6,16 @@ import { FreeBottlesAdmin } from "@/components/admin/FreeBottlesAdmin";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import {
   ErrorBox,
@@ -47,6 +57,7 @@ import {
   getTopAdded,
   type Bucket,
   type DaySales,
+  type HourCount,
   type SourceRow,
   getOrdersList,
   getVisitors,
@@ -608,6 +619,13 @@ function SalesForecastSection() {
               before={data.mode === "before"}
             />
           )}
+          {data.hours.lastYear && (
+            <HoursChart
+              thisYear={data.hours.thisYear}
+              lastYear={data.hours.lastYear}
+              nowHour={data.mode === "friday" ? ammanNowHour(data.now) : null}
+            />
+          )}
         </div>
       )}
     </Section>
@@ -716,6 +734,82 @@ function RewardsSection() {
         </div>
       )}
     </Section>
+  );
+}
+
+/** Hour of the day in Amman (UTC+3) for an ISO time. */
+const ammanNowHour = (iso: string) => new Date(Date.parse(iso) + 3 * 3_600_000).getUTCHours();
+
+/** Orders per hour (Amman time), today against last year's Fyxx Friday, every channel. */
+function HoursChart({
+  thisYear,
+  lastYear,
+  nowHour,
+}: {
+  thisYear: HourCount[] | null;
+  lastYear: HourCount[];
+  nowHour: number | null;
+}) {
+  const rows = lastYear.map((ly, h) => ({
+    hour: `${String(h).padStart(2, "0")}:00`,
+    // Hours still to come today stay empty rather than showing 0.
+    y2026: thisYear && (nowHour === null || h <= nowHour) ? thisYear[h]!.orders : null,
+    y2025: ly.orders,
+    s2026: thisYear ? thisYear[h]!.total : null,
+    s2025: ly.total,
+  }));
+  const busiest = thisYear
+    ? thisYear.reduce((best, x, h) => (x.orders > thisYear[best]!.orders ? h : best), 0)
+    : null;
+  return (
+    <Panel className="lg:col-span-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+          Orders per hour
+        </p>
+        {busiest !== null && thisYear && thisYear[busiest]!.orders > 0 && (
+          <p className="text-xs text-muted-foreground">
+            Busiest hour today: {String(busiest).padStart(2, "0")}:00 with{" "}
+            {thisYear[busiest]!.orders} orders ({formatJod(thisYear[busiest]!.total)})
+          </p>
+        )}
+      </div>
+      <div className="mt-3 h-56">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={rows} margin={{ top: 4, right: 8, bottom: 0, left: -20 }} barGap={1}>
+            <CartesianGrid vertical={false} stroke="currentColor" strokeOpacity={0.08} />
+            <XAxis dataKey="hour" tick={{ fontSize: 10 }} interval={1} tickLine={false} />
+            <YAxis
+              allowDecimals={false}
+              tick={{ fontSize: 10 }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip
+              cursor={{ fillOpacity: 0.06 }}
+              formatter={(v, name, item) => {
+                const p = item?.payload as (typeof rows)[number] | undefined;
+                const sales = name === "2026 (today)" ? p?.s2026 : p?.s2025;
+                return [`${v} orders${sales != null ? `, ${formatJod(sales)}` : ""}`, name];
+              }}
+            />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <Bar
+              dataKey="y2025"
+              name="2025"
+              fill="var(--ff-burgundy)"
+              fillOpacity={0.25}
+              radius={[2, 2, 0, 0]}
+            />
+            <Bar dataKey="y2026" name="2026 (today)" fill="var(--ff-red)" radius={[2, 2, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Amman time, every channel (online, app, staff orders and both Odoo tills). Grey: Fyxx Friday
+        2025 (28 Nov 2025). Hover a bar for the sales.
+      </p>
+    </Panel>
   );
 }
 
