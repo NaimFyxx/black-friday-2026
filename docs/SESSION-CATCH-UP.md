@@ -933,3 +933,4 @@ Owner approved the bf_events change.
 ## 2026-11-27 02:00: "Top deals" menu item
 - New nav group "Top deals" (second in the menu, after Home): all categories, only products 30% off or more, biggest discount first, categories taking turns, same circles and filters as the other groups. 184 products now.
 - Settings only (bf_settings.nav_groups, key min_discount = 30); live without Publish. bf_catalog, bf_catalog_facets and bf_visible updated (docs/sql/2026-11-27-bf-top-deals-nav.sql). No code change: SiteHeader reads nav_groups.
+- 02:15: Naim: keep only the countdown from the sale-time extras. "Ends at midnight 13h 59m 59s" now sits in the opening block right under the free gift progress box, during the sale only (FridayHero.tsx), whatever sale_extras_enabled says. Removed from the catalog header in index.tsx. All other extras stay off. Needs Publish.

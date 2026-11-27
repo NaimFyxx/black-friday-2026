@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 
+import { SaleEndCountdown } from "@/components/hero/SaleEndCountdown";
 import { GiftCardSticker } from "@/components/hero/GiftCardSticker";
 import { FreeBottlesStrip } from "@/components/rewards/FreeBottlesStrip";
 import type { TeaserInfo } from "@/lib/teaser";
@@ -61,6 +62,16 @@ export function FridayHero({
         )}
         {/* The free gift progress: the same red box as in the cart. */}
         <FreeBottlesStrip className="mx-auto mt-3 max-w-md md:mt-4" />
+        {/* During the sale: "Ends at midnight 13h 59m 59s", right under the progress box. */}
+        {info.state === "sale" && info.sale_end && (
+          <div className="mt-2 text-center md:mt-3">
+            <SaleEndCountdown
+              end={info.sale_end}
+              label={info.copy.sale_end_label ?? "Ends at midnight"}
+              onDone={onSaleStarted}
+            />
+          </div>
+        )}
       </div>
     </section>
   );

@@ -13,7 +13,6 @@ import { YourUsual } from "@/components/grid/YourUsual";
 import { MembersRewards } from "@/components/members/MembersRewards";
 import { FridayHero } from "@/components/hero/FridayHero";
 import { QuickLinks } from "@/components/grid/QuickLinks";
-import { SaleEndCountdown } from "@/components/hero/SaleEndCountdown";
 import { usePreview, useSim } from "@/lib/preview";
 import { cn } from "@/lib/utils";
 import { SpinWidget } from "@/components/spin/SpinWidget";
@@ -274,13 +273,6 @@ function Storefront() {
                 Up to {facets.headline_upto}% off
               </p>
             ) : null}
-            {extras && teaser?.sale_end && (
-              <SaleEndCountdown
-                end={teaser.sale_end}
-                label={teaser.copy.sale_end_label ?? "Ends at midnight"}
-                onDone={() => queryClient.invalidateQueries()}
-              />
-            )}
             {state !== "ended" && (
               <div className="w-full max-w-sm">
                 <CatalogSearch value={filters.q} onSearch={(q) => setFilters({ q })} />
