@@ -21,7 +21,6 @@ import { RewardsCartSheet } from "@/components/members/RewardsCartSheet";
 import { formatJod, formatPrice } from "@/lib/shopify";
 import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
-import { ReminderForm } from "@/components/reminder/ReminderForm";
 import { useRewardsAuth } from "@/hooks/useRewardsAuth";
 import { prefillCheckout } from "@/lib/rewards-auth";
 import { refreshCartAttributes, setCartBuyerEmail, type CartItem } from "@/lib/shopify-cart";
@@ -266,7 +265,6 @@ export function CartDrawer() {
                   ))}
                 </ul>
                 {!ended && <CartRecommendations items={items} />}
-                <CartReminder />
               </div>
 
               <div className="shrink-0 border-t border-border py-3">
@@ -303,17 +301,6 @@ export function CartDrawer() {
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-/** Before the sale, under the items: "Send me my cart at 10:00 on Friday". */
-function CartReminder() {
-  const { data } = useQuery(teaserQueryOptions(usePreview()));
-  if (data?.state !== "preview" || !data.reminder) return null;
-  return (
-    <div className="shrink-0 border-t border-border py-4">
-      <ReminderForm copy={data.reminder} source="cart" />
-    </div>
   );
 }
 
