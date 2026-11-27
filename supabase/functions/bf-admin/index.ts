@@ -324,6 +324,11 @@ async function odooRpc(service: string, method: string, args: unknown[]) {
   return j.result;
 }
 
+/** Hour of the day in Amman (UTC+3 all year) for a UTC time. */
+const ammanHourOf = (t: number) => new Date(t + 3 * 3_600_000).getUTCHours();
+type Hour = { orders: number; total: number };
+const emptyHours = (): Hour[] => Array.from({ length: 24 }, () => ({ orders: 0, total: 0 }));
+
 /** Odoo datetime string ("YYYY-MM-DD HH:MM:SS", UTC) from an ISO time. */
 const odooTime = (iso: string) => new Date(iso).toISOString().slice(0, 19).replace("T", " ");
 
@@ -345,7 +350,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
   ];
   // deno-lint-ignore no-explicit-any
   const orders: any[] = await call("pos.order", "search_read", [domain], {
-    fields: ["id", "amount_total", "partner_id", "config_id"],
+    fields: ["id", "amount_total", "partner_id", "config_id", "date_order"],
     limit: 5000,
   });
   // Two tills: "Retail" (the shop, counted as In-store) and "Dine-In" (own row).
@@ -355,6 +360,16 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     Array.isArray(o.config_id) ? String(o.config_id[1]) : "unknown";
   const pick = (name: string) => (/dine/i.test(name) ? dineIn : retail);
   const bucketOf = new Map<number, Bucket>();
+  // Orders and sales per Amman hour (date_order is UTC "YYYY-MM-DD HH:MM:SS").
+  const hours = emptyHours();
+  for (const o of orders) {
+    const t = Date.parse(String(o.date_order).replace(" ", "T") + "Z");
+    if (Number.isFinite(t)) {
+      const h = hours[ammanHourOf(t)];
+      h.orders += 1;
+      h.total = r3(h.total + (Number(o.amount_total) || 0));
+    }
+  }
   // Orders and sales per till (POS config), so the dashboard can show what's included.
   const tills: Record<string, { orders: number; total: number }> = {};
   for (const o of orders) {
@@ -368,7 +383,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     b.total += Number(o.amount_total) || 0;
     if (!o.partner_id) b.noCustomer += 1;
   }
-  if (!orders.length) return { retail, dineIn, tills };
+  if (!orders.length) return { retail, dineIn, tills, hours };
   // New customers: partners in these orders with no POS order before `since`.
   const partners = [...new Set(orders.filter((o) => o.partner_id).map((o) => o.partner_id[0]))];
   if (partners.length) {
@@ -422,7 +437,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     b.costedNet += net;
     b.margin += net - cost * (Number(l.qty) || 0);
   }
-  return { retail, dineIn, tills };
+  return { retail, dineIn, tills, hours };
 }
 
 /** An Odoo POS sale copied into Shopify by the "Odoo Connector" app. */
@@ -490,12 +505,18 @@ async function daySales(since: string, until: string) {
   // In-store from Odoo POS itself for days after the move to Odoo; if Odoo
   // can't be read, fall back to the Odoo Connector's copies in Shopify.
   let odoo: { retail: Bucket; dineIn: Bucket } | null = null;
+  // Orders and sales per Amman hour, every channel (the forecast's hourly chart).
+  const byHour = emptyHours();
   let odooTills: Record<string, { orders: number; total: number }> = {};
   let odooError: string | null = null;
   if (since >= ODOO_POS_FROM) {
     try {
       const r = await odooPos(since, until, costs?.bySku ?? null);
       odoo = { retail: r.retail, dineIn: r.dineIn };
+      r.hours.forEach((h, i) => {
+        byHour[i].orders += h.orders;
+        byHour[i].total = r3(byHour[i].total + h.total);
+      });
       odooTills = r.tills;
     } catch (e) {
       odooError = String((e as Error).message).slice(0, 200);
@@ -559,6 +580,9 @@ async function daySales(since: string, until: string) {
       add(channels[channelOf(o)], one);
       if (isFridaySite(o)) add(fridaySite, one);
       add(sum, one);
+      const hr = byHour[ammanHourOf(Date.parse(o.createdAt))];
+      hr.orders += 1;
+      hr.total = r3(hr.total + one.total);
     }
     if (!d.orders.pageInfo.hasNextPage) break;
     after = d.orders.pageInfo.endCursor;
@@ -576,6 +600,7 @@ async function daySales(since: string, until: string) {
     costsLoaded: costs !== null,
     inStoreSource: useOdoo ? "odoo_pos" : "shopify",
     odooTills,
+    byHour,
     odooError,
     ...round(sum),
     online: round(online),
