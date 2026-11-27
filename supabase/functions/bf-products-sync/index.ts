@@ -55,6 +55,8 @@ type Sub = {
 type Main = {
   name: string;
   product_types?: string[];
+  /** Product types starting with one of these also join (e.g. "Bundle" for "Bundle | Wine"). */
+  product_type_prefixes?: string[];
   require_tags?: string[];
   handles?: string[];
   catch_all_types?: string[];
@@ -207,7 +209,9 @@ function classify(
     if (has(m.handles, p.handle)) return pick(m);
   }
   for (const m of map) {
-    const typeOk = has(m.product_types, type);
+    const typeOk =
+      has(m.product_types, type) ||
+      (m.product_type_prefixes ?? []).some((pre) => type.startsWith(pre));
     if (typeOk && (!m.require_tags?.length || anyTag(m.require_tags, p.tags))) return pick(m);
   }
   const catchAll = map.find((m) => has(m.catch_all_types, type));
