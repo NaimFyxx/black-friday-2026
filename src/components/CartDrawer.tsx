@@ -165,9 +165,10 @@ export function CartDrawer() {
         </Button>
       </SheetTrigger>
       <SheetContent className="flex h-full w-full flex-col gap-0 border-border bg-background sm:max-w-md">
-        <SheetHeader className="border-b border-border px-6 py-5">
-          <SheetTitle className="font-display text-2xl">Your cart</SheetTitle>
-          <SheetDescription className="text-xs tracking-[0.18em] uppercase">
+        {/* Slim header: title and item count on one line, so the middle gets the room. */}
+        <SheetHeader className="flex-row items-baseline gap-2.5 space-y-0 border-b border-border px-6 py-2.5 pr-12 text-left">
+          <SheetTitle className="font-display text-lg">Your cart</SheetTitle>
+          <SheetDescription className="text-[10px] tracking-[0.18em] uppercase">
             {totalItems === 0
               ? "Nothing in here yet"
               : `${totalItems} item${totalItems !== 1 ? "s" : ""}`}
@@ -268,27 +269,26 @@ export function CartDrawer() {
                 <CartReminder />
               </div>
 
-              <div className="shrink-0 border-t border-border py-5">
+              <div className="shrink-0 border-t border-border py-3">
                 <div className="flex items-baseline justify-between">
-                  <span className="text-xs tracking-[0.18em] text-muted-foreground uppercase">
+                  <span className="text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
                     Total
                   </span>
-                  <span className="font-display text-2xl tabular-nums">
+                  <span className="font-display text-lg tabular-nums">
                     {formatJod(totalPrice, currency)}
                   </span>
                 </div>
                 {totalSaved > 0 && !ended && (
-                  <p className="ff-num mt-1 text-right text-sm text-ff-red">
+                  <p className="ff-num text-right text-xs text-ff-red">
                     You're saving {formatJod(totalSaved, currency)}
                   </p>
                 )}
                 {/* Fyxx Rewards 2x points: one line, opens the tiers sheet.
                     Sale state (and ?preview=friday) only; null otherwise. */}
-                <RewardsCartSheet className="mt-3" />
+                <RewardsCartSheet className="mt-2" />
                 <Button
                   onClick={handleCheckout}
-                  size="lg"
-                  className="mt-4 w-full rounded-full"
+                  className="mt-2.5 h-11 w-full rounded-full"
                   disabled={items.length === 0 || isLoading || isSyncing || goingToCheckout}
                 >
                   {isLoading || isSyncing || goingToCheckout ? (
