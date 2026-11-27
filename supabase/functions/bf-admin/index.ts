@@ -348,21 +348,27 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     fields: ["id", "amount_total", "partner_id", "config_id"],
     limit: 5000,
   });
-  const b = bucket();
-  if (!orders.length) return { b, tills: {} };
+  // Two tills: "Retail" (the shop, counted as In-store) and "Dine-In" (own row).
+  const retail = bucket();
+  const dineIn = bucket();
+  const tillName = (o: { config_id?: unknown }) =>
+    Array.isArray(o.config_id) ? String(o.config_id[1]) : "unknown";
+  const pick = (name: string) => (/dine/i.test(name) ? dineIn : retail);
+  const bucketOf = new Map<number, Bucket>();
   // Orders and sales per till (POS config), so the dashboard can show what's included.
   const tills: Record<string, { orders: number; total: number }> = {};
   for (const o of orders) {
-    const t = Array.isArray(o.config_id) ? String(o.config_id[1]) : "unknown";
+    const t = tillName(o);
     tills[t] ??= { orders: 0, total: 0 };
     tills[t].orders += 1;
     tills[t].total = r3(tills[t].total + (Number(o.amount_total) || 0));
-  }
-  for (const o of orders) {
+    const b = pick(t);
+    bucketOf.set(o.id, b);
     b.orders += 1;
     b.total += Number(o.amount_total) || 0;
     if (!o.partner_id) b.noCustomer += 1;
   }
+  if (!orders.length) return { retail, dineIn, tills };
   // New customers: partners in these orders with no POS order before `since`.
   const partners = [...new Set(orders.filter((o) => o.partner_id).map((o) => o.partner_id[0]))];
   if (partners.length) {
@@ -383,7 +389,8 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     const seen = new Set(
       before.map((g) => (Array.isArray(g.partner_id) ? g.partner_id[0] : g.partner_id)),
     );
-    for (const o of orders) if (o.partner_id && !seen.has(o.partner_id[0])) b.newCustomers += 1;
+    for (const o of orders)
+      if (o.partner_id && !seen.has(o.partner_id[0])) bucketOf.get(o.id)!.newCustomers += 1;
   }
   // Margin from the order lines (subtotal without tax), cost by the product's SKU.
   // deno-lint-ignore no-explicit-any
@@ -391,7 +398,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     "pos.order.line",
     "search_read",
     [[["order_id", "in", orders.map((o) => o.id)]]],
-    { fields: ["product_id", "qty", "price_subtotal"], limit: 50000 },
+    { fields: ["order_id", "product_id", "qty", "price_subtotal"], limit: 50000 },
   );
   const productIds = [...new Set(lines.filter((l) => l.product_id).map((l) => l.product_id[0]))];
   const skuOf = new Map<number, string>();
@@ -404,6 +411,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     for (const p of ps) if (p.default_code) skuOf.set(p.id, String(p.default_code).trim());
   }
   for (const l of lines) {
+    const b = (Array.isArray(l.order_id) && bucketOf.get(l.order_id[0])) || retail;
     const net = Number(l.price_subtotal) || 0;
     const sku = l.product_id ? skuOf.get(l.product_id[0]) : undefined;
     const cost = sku ? bySku?.get(sku) : undefined;
@@ -414,7 +422,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     b.costedNet += net;
     b.margin += net - cost * (Number(l.qty) || 0);
   }
-  return { b, tills };
+  return { retail, dineIn, tills };
 }
 
 /** An Odoo POS sale copied into Shopify by the "Odoo Connector" app. */
@@ -464,6 +472,8 @@ async function daySales(since: string, until: string) {
     inStore: bucket(),
     staff: bucket(),
     other: bucket(),
+    // Odoo POS "Dine-In" till (from 2026).
+    dineIn: bucket(),
   };
   // Part of "website": orders on the Fyxx Friday site only.
   const fridaySite = bucket();
@@ -479,13 +489,13 @@ async function daySales(since: string, until: string) {
   };
   // In-store from Odoo POS itself for days after the move to Odoo; if Odoo
   // can't be read, fall back to the Odoo Connector's copies in Shopify.
-  let odoo: Bucket | null = null;
+  let odoo: { retail: Bucket; dineIn: Bucket } | null = null;
   let odooTills: Record<string, { orders: number; total: number }> = {};
   let odooError: string | null = null;
   if (since >= ODOO_POS_FROM) {
     try {
       const r = await odooPos(since, until, costs?.bySku ?? null);
-      odoo = r.b;
+      odoo = { retail: r.retail, dineIn: r.dineIn };
       odooTills = r.tills;
     } catch (e) {
       odooError = String((e as Error).message).slice(0, 200);
@@ -494,8 +504,10 @@ async function daySales(since: string, until: string) {
   }
   const useOdoo = odoo !== null;
   if (odoo) {
-    add(channels.inStore, odoo);
-    add(sum, odoo);
+    add(channels.inStore, odoo.retail);
+    add(channels.dineIn, odoo.dineIn);
+    add(sum, odoo.retail);
+    add(sum, odoo.dineIn);
   }
   let after: string | null = null;
   for (let p = 0; p < MAX_PAGES * 5; p++) {

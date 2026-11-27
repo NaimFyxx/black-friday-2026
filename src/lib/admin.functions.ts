@@ -673,6 +673,8 @@ export type Channels = {
   other: Bucket;
   /** Part of website: orders on the Fyxx Friday site (from 27 Nov 2026). */
   fridaySite: Bucket;
+  /** Odoo POS "Dine-In" till (from 2026; in-store is the "Retail" till). */
+  dineIn: Bucket;
 };
 export type DaySales = Bucket & { channels: Channels };
 export type SalesForecast = {
@@ -723,6 +725,7 @@ function toChannels(raw: unknown): Channels {
     staff: b("staff"),
     other: b("other"),
     fridaySite: b("fridaySite"),
+    dineIn: b("dineIn"),
   };
 }
 

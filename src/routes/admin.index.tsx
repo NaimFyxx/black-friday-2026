@@ -521,14 +521,19 @@ function SalesForecastSection() {
                     {data.thisYear.orders} orders since 00:00, every channel.
                   </p>
                   <p className="text-sm">
-                    Without in-store{" "}
+                    Without in-store and Dine-In{" "}
                     <span className="tabular-nums">
-                      {formatJod(data.thisYear.total - data.thisYear.channels.inStore.total)}
+                      {formatJod(
+                        data.thisYear.total -
+                          data.thisYear.channels.inStore.total -
+                          data.thisYear.channels.dineIn.total,
+                      )}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {data.thisYear.orders - data.thisYear.channels.inStore.orders} orders:
-                      website, app and staff orders. In-store = Odoo POS sales the Odoo Connector
-                      has sent to Shopify so far.
+                      {data.thisYear.orders -
+                        data.thisYear.channels.inStore.orders -
+                        data.thisYear.channels.dineIn.orders}{" "}
+                      orders: website, app and staff orders.
                     </span>
                   </p>
                   {data.record && data.record.total > 0 && (
@@ -727,7 +732,7 @@ function ChannelCompare({
   }> = [
     { label: "Total", strong: true, pick: (d) => d },
     {
-      label: "Total without in-store",
+      label: "Total without in-store and Dine-In",
       strong: true,
       pick: (d) =>
         sumBuckets(d.channels.website, d.channels.app, d.channels.staff, d.channels.other),
@@ -745,6 +750,7 @@ function ChannelCompare({
       strong: true,
       pick: (d) => d.channels.inStore,
     },
+    { label: "Dine-In", strong: true, pick: (d) => d.channels.dineIn },
     { label: "Staff and other orders (draft, phone)", strong: true, pick: staff },
   ];
   const num = (v: number) =>
@@ -884,8 +890,8 @@ function ChannelCompare({
         customer attached, common in store, can&apos;t be counted). Margin as in Zeid&apos;s sale
         sheet: price after discounts without the 16% sales tax, minus cost, on items with a known
         cost; free gifts count as cost, gift cards left out. 2025 margin uses this year&apos;s
-        costs. In-store sales in 2026 are the Odoo POS orders Shopify receives through the Odoo
-        Connector.
+        costs. In 2026 in-store (the Retail till) and Dine-In are read straight from Odoo POS; in
+        2025 in-store was Shopify POS.
       </p>
     </Panel>
   );
