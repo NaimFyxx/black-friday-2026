@@ -756,13 +756,18 @@ function ChannelCompare({
       );
     return (
       <>
-        <span className="tabular-nums">
+        {/* 2026: dark and a little larger. */}
+        <span className="font-medium text-foreground tabular-nums">
           {now === null ? "–" : show(now)}
-          {nowNote && <span className="text-xs text-muted-foreground"> {nowNote}</span>}
+          {nowNote && <span className="text-xs font-normal"> {nowNote}</span>}
         </span>
         {now !== null && <Change now={now} was={was} />}
-        <span className="block text-xs text-muted-foreground tabular-nums">
-          2025 {was === null || was === 0 ? "–" : show(was)}
+        {/* 2025: small, light grey, with a "2025" tag, so it reads as the reference. */}
+        <span className="mt-1 block text-[11px] text-foreground/40 tabular-nums">
+          <span className="mr-1 rounded bg-foreground/5 px-1 py-px text-[9px] tracking-wider">
+            2025
+          </span>
+          {was === null || was === 0 ? "–" : show(was)}
           {was ? (wasNote ? ` ${wasNote}` : "") : ""}
         </span>
       </>
@@ -773,7 +778,12 @@ function ChannelCompare({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left">
-            <th className={TH}>By channel</th>
+            <th className={TH}>
+              By channel
+              <span className="mt-0.5 block text-[10px] font-normal text-foreground/40">
+                Dark: 2026 so far. Grey: 2025.
+              </span>
+            </th>
             <th className={THR}>Sales (JOD)</th>
             <th className={THR}>Orders</th>
             <th className={THR}>Average order</th>
