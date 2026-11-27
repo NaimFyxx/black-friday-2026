@@ -464,7 +464,7 @@ function SalesForecastSection() {
       ) : isLoading || !data ? (
         <Loading />
       ) : (
-        <div className="grid gap-3 lg:grid-cols-2">
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
           {data.mode === "before" && data.carts ? (
             <Panel className="space-y-2">
               <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
@@ -706,79 +706,124 @@ function ChannelCompare({
     { label: "In store (Point of Sale)", strong: true, pick: (d) => d.channels.inStore },
     { label: "Staff and other orders (draft, phone, Odoo)", strong: true, pick: staff },
   ];
-  /** "+12.3%" / "-4.0%" against last year (green up, red down); nothing when last year was 0. */
-  const delta = (now: number, before: number | undefined) => {
-    if (before === undefined || !(before > 0)) return null;
-    const pct = ((now - before) / before) * 100;
+  const num = (v: number) =>
+    v.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+  const avg = (b: Bucket) => (b.orders > 0 ? b.total / b.orders : null);
+  const mPct = (b: Bucket) => (b.costedNet > 0 ? marginPct(b.margin, b.costedNet) : "");
+  /** Change against 2025 as a small pill: green up, red down; nothing when 2025 was 0. */
+  const Change = ({ now, was }: { now: number; was: number | null }) => {
+    if (was === null || !(was > 0)) return null;
+    const pct = Math.round(((now - was) / was) * 100);
     const up = pct >= 0;
     return (
-      <span className={`ml-1 text-xs ${up ? "text-emerald-700" : "text-red-700"}`}>
+      <span
+        className={`ml-1.5 inline-block rounded-full px-1.5 py-px text-[10px] font-medium ${
+          up ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+        }`}
+      >
         {up ? "+" : ""}
-        {pct.toFixed(1)}%
+        {pct}%
       </span>
     );
   };
-  // `prev`: the same row last year, for the 2026 column's change against 2025.
-  const cell = (b: Bucket | null, prev?: Bucket) =>
-    b ? (
-      <>
-        {formatJod(b.total)}
-        {prev && delta(b.total, prev.total)}
-        <span className="block text-xs text-muted-foreground">
-          {b.orders} orders{prev && delta(b.orders, prev.orders)}
+  /**
+   * One number: 2026 on top with its change, 2025 underneath in grey. Before
+   * the sale (no 2026 yet) just the 2025 number.
+   */
+  const Metric = ({
+    now,
+    was,
+    show,
+    nowNote,
+    wasNote,
+  }: {
+    now: number | null | undefined;
+    was: number | null;
+    show: (v: number) => string;
+    nowNote?: string | undefined;
+    wasNote?: string | undefined;
+  }) => {
+    if (now === undefined)
+      return (
+        <span className="tabular-nums">
+          {was === null ? "–" : show(was)}
+          {wasNote && <span className="text-xs text-muted-foreground"> {wasNote}</span>}
         </span>
-        {b.orders > 0 && (
-          <span className="block text-xs text-muted-foreground">
-            Average order {formatJod(b.total / b.orders)}
-            {prev && prev.orders > 0 && delta(b.total / b.orders, prev.total / prev.orders)}
-          </span>
-        )}
-        {b.costedNet > 0 && (
-          <span className="block text-xs text-muted-foreground">
-            Margin {formatJod(b.margin)} ({marginPct(b.margin, b.costedNet)})
-            {prev && delta(b.margin, prev.margin)}
-          </span>
-        )}
+      );
+    return (
+      <>
+        <span className="tabular-nums">
+          {now === null ? "–" : show(now)}
+          {nowNote && <span className="text-xs text-muted-foreground"> {nowNote}</span>}
+        </span>
+        {now !== null && <Change now={now} was={was} />}
+        <span className="block text-xs text-muted-foreground tabular-nums">
+          2025 {was === null || was === 0 ? "–" : show(was)}
+          {was ? (wasNote ? ` ${wasNote}` : "") : ""}
+        </span>
       </>
-    ) : (
-      <span className="text-muted-foreground">–</span>
     );
+  };
   return (
     <Panel className="overflow-x-auto p-0">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border text-left">
             <th className={TH}>By channel</th>
-            <th className={THR}>Fyxx Friday 2025</th>
-            <th className={THR}>Fyxx Friday 2026</th>
+            <th className={THR}>Sales (JOD)</th>
+            <th className={THR}>Orders</th>
+            <th className={THR}>Average order</th>
+            <th className={THR}>Margin (JOD)</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r) => (
-            <tr key={r.label} className={TR}>
-              <td className={TD}>
-                <span
-                  className={
-                    r.sub ? "block pl-4 text-muted-foreground" : r.strong ? "font-medium" : ""
-                  }
-                >
-                  {r.label}
-                </span>
-              </td>
-              <td className={TDR}>{cell(r.pick(lastYear))}</td>
-              <td className={TDR}>{cell(thisYear ? r.pick(thisYear) : null, r.pick(lastYear))}</td>
-            </tr>
-          ))}
+          {rows.map((r) => {
+            const was = r.pick(lastYear);
+            const now = thisYear ? r.pick(thisYear) : null;
+            const has = now !== null;
+            return (
+              <tr key={r.label} className={`${TR} ${r.strong ? "" : "text-[13px]"}`}>
+                <td className={TD}>
+                  <span
+                    className={
+                      r.sub ? "block pl-4 text-muted-foreground" : r.strong ? "font-medium" : ""
+                    }
+                  >
+                    {r.label}
+                  </span>
+                </td>
+                <td className={TDR}>
+                  <Metric now={has ? now.total : undefined} was={was.total} show={num} />
+                </td>
+                <td className={TDR}>
+                  <Metric now={has ? now.orders : undefined} was={was.orders} show={String} />
+                </td>
+                <td className={TDR}>
+                  <Metric now={has ? avg(now) : undefined} was={avg(was)} show={num} />
+                </td>
+                <td className={TDR}>
+                  <Metric
+                    now={has ? (now.costedNet > 0 ? now.margin : null) : undefined}
+                    was={was.costedNet > 0 ? was.margin : null}
+                    show={num}
+                    nowNote={has ? mPct(now) : undefined}
+                    wasNote={mPct(was)}
+                  />
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
       <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground sm:px-4">
-        Whole day, 00:00 to midnight Amman time: 28 Nov 2025 and Fri 27 Nov 2026
-        {before ? " (fills in from Friday)" : " (so far)"}. Shopify orders, cancelled ones left out.
-        Average order = sales divided by orders. Fyxx Friday site orders (Shopify shows them as the
-        "Lovable" app) count as website. Margin as in Zeid&apos;s sale sheet: price after discounts
-        without the 16% sales tax, minus cost, on items with a known cost; free gifts count as cost,
-        gift cards are left out. 2025 margin is worked out with this year&apos;s costs. In-store
-        sales from Odoo come later.
+        {before
+          ? "Fyxx Friday 2025 (28 Nov 2025); 2026 fills in from Friday. "
+          : "Fyxx Friday 2026 so far on top, the whole of 2025 (28 Nov 2025) underneath in grey; the pill is the change. "}
+        Whole day, 00:00 to midnight Amman time. Shopify orders, cancelled ones left out. Fyxx
+        Friday site orders (Shopify shows them as the &quot;Lovable&quot; app) count as website.
+        Margin as in Zeid&apos;s sale sheet: price after discounts without the 16% sales tax, minus
+        cost, on items with a known cost; free gifts count as cost, gift cards left out. 2025 margin
+        uses this year&apos;s costs. In-store sales from Odoo come later.
       </p>
     </Panel>
   );
