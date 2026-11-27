@@ -345,11 +345,19 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
   ];
   // deno-lint-ignore no-explicit-any
   const orders: any[] = await call("pos.order", "search_read", [domain], {
-    fields: ["id", "amount_total", "partner_id"],
+    fields: ["id", "amount_total", "partner_id", "config_id"],
     limit: 5000,
   });
   const b = bucket();
-  if (!orders.length) return b;
+  if (!orders.length) return { b, tills: {} };
+  // Orders and sales per till (POS config), so the dashboard can show what's included.
+  const tills: Record<string, { orders: number; total: number }> = {};
+  for (const o of orders) {
+    const t = Array.isArray(o.config_id) ? String(o.config_id[1]) : "unknown";
+    tills[t] ??= { orders: 0, total: 0 };
+    tills[t].orders += 1;
+    tills[t].total = r3(tills[t].total + (Number(o.amount_total) || 0));
+  }
   for (const o of orders) {
     b.orders += 1;
     b.total += Number(o.amount_total) || 0;
@@ -406,7 +414,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     b.costedNet += net;
     b.margin += net - cost * (Number(l.qty) || 0);
   }
-  return b;
+  return { b, tills };
 }
 
 /** An Odoo POS sale copied into Shopify by the "Odoo Connector" app. */
@@ -472,10 +480,13 @@ async function daySales(since: string, until: string) {
   // In-store from Odoo POS itself for days after the move to Odoo; if Odoo
   // can't be read, fall back to the Odoo Connector's copies in Shopify.
   let odoo: Bucket | null = null;
+  let odooTills: Record<string, { orders: number; total: number }> = {};
   let odooError: string | null = null;
   if (since >= ODOO_POS_FROM) {
     try {
-      odoo = await odooPos(since, until, costs?.bySku ?? null);
+      const r = await odooPos(since, until, costs?.bySku ?? null);
+      odoo = r.b;
+      odooTills = r.tills;
     } catch (e) {
       odooError = String((e as Error).message).slice(0, 200);
       console.error("[bf-admin] odoo", odooError);
@@ -552,6 +563,7 @@ async function daySales(since: string, until: string) {
     status: "ok",
     costsLoaded: costs !== null,
     inStoreSource: useOdoo ? "odoo_pos" : "shopify",
+    odooTills,
     odooError,
     ...round(sum),
     online: round(online),
