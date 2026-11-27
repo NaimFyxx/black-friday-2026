@@ -422,6 +422,13 @@ function LeavingSection({ range }: { range: Range }) {
 const marginPct = (margin: number, net: number) =>
   net > 0 ? `${((margin / net) * 100).toFixed(1)}%` : "";
 
+/** One bucket minus a part of it (e.g. website minus the Fyxx Friday site). */
+function minusBucket(all: Bucket, part: Bucket): Bucket {
+  const out = { ...all };
+  for (const k of Object.keys(out) as Array<keyof Bucket>) out[k] = all[k] - part[k];
+  return out;
+}
+
 /** Add buckets together (Digital = website + app; staff = staff + other). */
 function sumBuckets(...bs: Bucket[]): Bucket {
   const out: Bucket = {
@@ -738,12 +745,14 @@ function ChannelCompare({
         sumBuckets(d.channels.website, d.channels.app, d.channels.staff, d.channels.other),
     },
     { label: "Digital (website + app)", strong: true, pick: digital },
+    // Website split by the Shopify sales channel: "Online Store" = myfyxx.com,
+    // "Lovable" = the Fyxx Friday site.
     {
-      label: "Website (myfyxx.com and Fyxx Friday site)",
+      label: "Online Store",
       sub: true,
-      pick: (d) => d.channels.website,
+      pick: (d) => minusBucket(d.channels.website, d.channels.fridaySite),
     },
-    { label: "of which Fyxx Friday site", sub: true, pick: (d) => d.channels.fridaySite },
+    { label: "Lovable", sub: true, pick: (d) => d.channels.fridaySite },
     { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
     {
       label: "Shop (in-store + Dine-In)",
@@ -885,14 +894,14 @@ function ChannelCompare({
         {before
           ? "Fyxx Friday 2025 (28 Nov 2025); 2026 fills in from Friday. "
           : "Fyxx Friday 2026 so far on top, the whole of 2025 (28 Nov 2025) underneath in grey; the pill is the change. "}
-        Whole day, 00:00 to midnight Amman time. Shopify orders, cancelled ones left out. Fyxx
-        Friday site orders (Shopify shows them as the &quot;Lovable&quot; app) count as website. New
-        customers: orders that were the shopper&apos;s first ever Fyxx order (orders with no
-        customer attached, common in store, can&apos;t be counted). Margin as in Zeid&apos;s sale
-        sheet: price after discounts without the 16% sales tax, minus cost, on items with a known
-        cost; free gifts count as cost, gift cards left out. 2025 margin uses this year&apos;s
-        costs. In 2026 in-store (the Retail till) and Dine-In are read straight from Odoo POS; in
-        2025 in-store was Shopify POS.
+        Whole day, 00:00 to midnight Amman time. Shopify orders, cancelled ones left out. Online
+        Store = myfyxx.com; Lovable = the Fyxx Friday site (friday.myfyxx.com). New customers:
+        orders that were the shopper&apos;s first ever Fyxx order (orders with no customer attached,
+        common in store, can&apos;t be counted). Margin as in Zeid&apos;s sale sheet: price after
+        discounts without the 16% sales tax, minus cost, on items with a known cost; free gifts
+        count as cost, gift cards left out. 2025 margin uses this year&apos;s costs. In 2026
+        in-store (the Retail till) and Dine-In are read straight from Odoo POS; in 2025 in-store was
+        Shopify POS.
       </p>
     </Panel>
   );
