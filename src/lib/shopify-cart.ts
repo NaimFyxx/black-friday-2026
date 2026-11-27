@@ -163,6 +163,24 @@ function isCartNotFoundError(userErrors: UserError[]): boolean {
   );
 }
 
+/**
+ * A thrown Storefront message that means the cart is gone: a completed order
+ * (Shopify deletes the cart on order creation), an expired cart, or an invalid
+ * cart id. These mean "ordered -> clear", as opposed to a transient network or
+ * server failure, where we keep the cart.
+ */
+function isCartGoneMessage(message: string): boolean {
+  const m = message.toLowerCase();
+  return (
+    m.includes("cart not found") ||
+    m.includes("not found") ||
+    m.includes("does not exist") ||
+    m.includes("completed") ||
+    m.includes("invalid id") ||
+    m.includes("invalid global id")
+  );
+}
+
 export async function createShopifyCart(
   item: CartItem,
 ): Promise<{ cartId: string; checkoutUrl: string; lineId: string } | null> {
@@ -296,13 +314,19 @@ export interface LiveCartLine {
 /**
  * The cart as Shopify holds it now: quantity and the current price and
  * compare-at price of every line (so prices that dropped since the item was
- * added show in the cart). null = API error (keep the local cart); a cart that
- * no longer exists (checked out or expired) comes back with totalQuantity 0.
+ * added show in the cart).
+ *
+ * Returns `null` on a transient failure (network, 402, server error) so the
+ * caller KEEPS the local cart. Returns `totalQuantity: 0` with no lines when
+ * the cart is gone, meaning the shopper has ordered (Shopify deletes a cart on
+ * order creation) or the cart expired: this comes back either as a null `cart`
+ * or as a GraphQL error saying the cart is not found / already completed. The
+ * caller treats `totalQuantity: 0` as "ordered -> clear".
  */
 export async function fetchCartLines(
   cartId: string,
 ): Promise<{ totalQuantity: number; lines: LiveCartLine[] } | null> {
-  const data = await storefrontApiRequest<{
+  type CartLinesData = {
     cart?: {
       totalQuantity: number;
       lines: {
@@ -314,7 +338,19 @@ export async function fetchCartLines(
         }>;
       };
     } | null;
-  }>(CART_LINES_QUERY, { id: cartId });
+  };
+  let data: { data?: CartLinesData } | null;
+  try {
+    data = await storefrontApiRequest<CartLinesData>(CART_LINES_QUERY, { id: cartId });
+  } catch (err) {
+    // A completed (then deleted), expired or invalid cart can come back as a
+    // GraphQL error instead of a null cart: treat that as gone so the caller
+    // clears it. Any other error is transient -> keep the cart.
+    if (err instanceof Error && isCartGoneMessage(err.message)) {
+      return { totalQuantity: 0, lines: [] };
+    }
+    return null;
+  }
   if (!data) return null;
   const cart = data.data?.cart;
   if (!cart) return { totalQuantity: 0, lines: [] };

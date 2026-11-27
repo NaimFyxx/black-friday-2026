@@ -64,6 +64,47 @@ and Pulse sets them.
 
 ## Log
 
+### 27 Nov 2026: cart now clears after a completed Shopify checkout
+
+- Problem: after a real order the cart drawer still showed the old items, the
+  total, the savings line and the free bottles bar. Checkout opens in the same
+  tab, so shoppers come back with the browser back button, which restores the
+  page from the back-forward cache (bfcache). The cart sync only ran on mount
+  and on `visibilitychange`, and neither of those fires on a bfcache restore,
+  so the stale cart from localStorage was shown and never re-checked against
+  Shopify.
+- Shopify deletes a cart when its order is created, so `cart(id)` then returns
+  a null cart (confirmed against the live Storefront API: HTTP 200,
+  `{ data: { cart: null } }`, no error). `syncCart` already cleared on a
+  null/empty cart, so the detection was fine; the gap was the trigger.
+- Fix (no prices, checkout handoff params, pixel/bf_events, free bottles logic
+  or teaser/sale states touched):
+  - `src/hooks/useCartSync.ts`: now also listens for `pageshow` (bfcache
+    restore and normal load) and `focus`, on top of mount and
+    `visibilitychange`. The cart is re-read whenever the tab or app webview
+    comes back into view, including the back button from Shopify's thank-you
+    page.
+  - `src/lib/shopify-cart.ts` `fetchCartLines`: a null cart is still treated as
+    gone; now a GraphQL error that says the cart is not found / already
+    completed / invalid is also treated as gone (clear), while a real network
+    or server error still returns `null` so the cart is kept (offline must not
+    wipe the cart).
+  - `src/stores/cartStore.ts` `syncCart`: returns `"ok" | "empty" | "error"`.
+    `"empty"` means the cart was gone and has been cleared (cartId, items and
+    checkoutUrl reset, so the badge, total, savings line and free bottles bar
+    reset with it).
+  - `src/components/CartDrawer.tsx` `handleCheckout`: re-checks the cart before
+    leaving. If it is already completed it clears the cart and shows "Your last
+    order went through. Your cart is now empty." instead of opening a dead
+    checkout. A network error does not block a legitimate checkout.
+- Tests: `src/test/cart-sync.test.ts` and `src/test/fetch-cart-lines.test.ts`
+  (clear on gone, keep on network error, apply live prices, null-cart vs
+  completed-error vs network classification). Full suite 48 pass, tsc clean,
+  production build clean. The bfcache path itself (back button) is not
+  reproducible headlessly; it is covered by the unit tests plus the live
+  Storefront probe above.
+
+
 ### 22 Nov 2026: product pages like myfyxx.com
 
 - `src/routes/product.$handle.tsx` rebuilt in the Fyxx Friday look, laid out

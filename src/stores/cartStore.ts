@@ -20,7 +20,12 @@ interface CartStore {
   updateQuantity: (variantId: string, quantity: number) => Promise<void>;
   removeItem: (variantId: string) => Promise<void>;
   clearCart: () => void;
-  syncCart: () => Promise<void>;
+  /**
+   * Re-read the cart from Shopify. "empty" = the cart is gone (ordered or
+   * expired) and has been cleared; "error" = a transient failure, cart kept;
+   * "ok" = the live cart was applied.
+   */
+  syncCart: () => Promise<"ok" | "empty" | "error">;
   getCheckoutUrl: () => string | null;
 }
 
@@ -144,15 +149,18 @@ export const useCartStore = create<CartStore>()(
 
       syncCart: async () => {
         const { cartId, isSyncing, clearCart } = get();
-        if (!cartId || isSyncing) return;
+        if (!cartId) return "empty";
+        if (isSyncing) return "ok";
 
         set({ isSyncing: true });
         try {
           const live = await fetchCartLines(cartId);
-          if (live === null) return; // API error: keep the local cart
+          if (live === null) return "error"; // network/transient: keep the local cart
           if (live.totalQuantity === 0) {
+            // The cart is gone: a completed order (Shopify deletes the cart) or
+            // an expired cart. Start fresh and empty.
             clearCart();
-            return;
+            return "empty";
           }
           // Take the current price, compare-at price and quantity from Shopify,
           // so a price that drops after an item was added (e.g. when the sale
@@ -178,8 +186,10 @@ export const useCartStore = create<CartStore>()(
             })
             .filter((i): i is NonNullable<typeof i> => i !== null);
           set({ items: updated });
+          return "ok";
         } catch (error) {
           console.error("Failed to sync cart with Shopify:", error);
+          return "error";
         } finally {
           set({ isSyncing: false });
         }
