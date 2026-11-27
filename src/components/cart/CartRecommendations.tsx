@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
+import { supabase } from "@/integrations/supabase/client";
 import { trackAddToCart } from "@/lib/analytics";
-import { RECS_DEFAULT, RECS_MAX, recsFor } from "@/lib/cart-recs";
 import {
   formatPrice,
   getProductByHandle,
@@ -15,77 +15,66 @@ import {
 import type { CartItem } from "@/lib/shopify-cart";
 import { useCartStore } from "@/stores/cartStore";
 
-type Rec = { node: ShopifyProductNode; variant: ShopifyVariant; upsell: boolean };
+type Rec = { node: ShopifyProductNode; variant: ShopifyVariant; pct: number };
+type Pick = { handle: string; variant_id: string; pct: number };
 
-const cheapestAvailable = (node: ShopifyProductNode): ShopifyVariant | undefined =>
-  node.variants.edges
-    .map((e) => e.node)
-    .filter((v) => v.availableForSale)
-    .sort((a, b) => Number(a.price.amount) - Number(b.price.amount))[0];
-
-/** A larger or higher-priced version of something already in the cart. */
-function findUpsell(items: CartItem[]): Rec | null {
-  const inCart = new Set(items.map((i) => i.variantId));
-  for (const item of items) {
-    const node = item.product.node;
-    const now = Number(item.price.amount) || 0;
-    const bigger = node.variants.edges
-      .map((e) => e.node)
-      .filter((v) => v.availableForSale && !inCart.has(v.id) && Number(v.price.amount) > now)
-      .sort((a, b) => Number(a.price.amount) - Number(b.price.amount))[0];
-    if (bigger) return { node, variant: bigger, upsell: true };
-  }
-  return null;
-}
+/** How many suggestions to show. */
+const RECS_MAX = 4;
 
 /**
- * "You might also like" in the cart: one upsell (a bigger version of something
- * in the cart) and cross-sells for the product types in the cart, from the
- * hard-coded lists in src/lib/cart-recs.ts.
+ * "You might also like" in the cart: discounted Fyxx Friday products related
+ * to the cart (bf_cart_recs): same categories first, a similar budget, closest
+ * price first, categories taking turns. Only products with a discount (the
+ * planned Friday % before 10:00, the live one after). Prices come from Shopify.
  */
 export function CartRecommendations({ items }: { items: CartItem[] }) {
   const addItem = useCartStore((s) => s.addItem);
   const [pending, setPending] = useState<string | null>(null);
 
-  const handles = useMemo(() => {
-    const inCart = new Set(items.map((i) => i.product.node.handle));
-    // Take turns between the product types in the cart (1st gin pick, 1st
-    // cigar pick, 2nd gin pick...), so every kind of item gets a suggestion.
-    const lists = [...new Set(items.map((i) => i.product.node.productType))].map((t) => recsFor(t));
-    const out: string[] = [];
-    for (let k = 0; k < 4; k++) {
-      for (const list of lists) {
-        const h = list[k];
-        if (h && !inCart.has(h) && !out.includes(h)) out.push(h);
-      }
-    }
-    if (out.length === 0) for (const h of RECS_DEFAULT) if (!inCart.has(h)) out.push(h);
-    return out.slice(0, RECS_MAX + 2);
-  }, [items]);
+  const cartHandles = useMemo(
+    () => [...new Set(items.map((i) => i.product.node.handle))].sort(),
+    [items],
+  );
+  const { data: picks = [] } = useQuery({
+    queryKey: ["cart-recs", cartHandles],
+    queryFn: async (): Promise<Pick[]> => {
+      const { data, error } = await supabase.rpc(
+        "bf_cart_recs" as never,
+        { p_handles: cartHandles, p_limit: RECS_MAX + 2 } as never,
+      );
+      if (error) return [];
+      const list: unknown = data;
+      return Array.isArray(list) ? (list as Pick[]) : [];
+    },
+    staleTime: 60_000,
+    enabled: cartHandles.length > 0,
+  });
 
   const results = useQueries({
-    queries: handles.map((h) => ({
-      queryKey: ["rec-product", h],
-      queryFn: () => getProductByHandle(h),
+    queries: picks.map((p) => ({
+      queryKey: ["rec-product", p.handle],
+      queryFn: () => getProductByHandle(p.handle),
       staleTime: 10 * 60_000,
     })),
   });
 
   const recs = useMemo(() => {
+    const inCart = new Set(items.map((i) => i.variantId));
     const list: Rec[] = [];
-    const upsell = findUpsell(items);
-    if (upsell) list.push(upsell);
-    for (const r of results) {
-      const node = r.data;
-      const v = node ? cheapestAvailable(node) : undefined;
-      if (node && v && !list.some((x) => x.node.handle === node.handle)) {
-        list.push({ node, variant: v, upsell: false });
-      }
-    }
+    picks.forEach((p, i) => {
+      const node = results[i]?.data;
+      if (!node) return;
+      const variants = node.variants.edges.map((e) => e.node);
+      // The discounted size from the sale list; any in-stock size if Shopify differs.
+      const v =
+        variants.find((x) => x.id === p.variant_id && x.availableForSale) ??
+        variants.find((x) => x.availableForSale);
+      if (v && !inCart.has(v.id)) list.push({ node, variant: v, pct: Number(p.pct) || 0 });
+    });
     return list.slice(0, RECS_MAX);
     // results changes identity every render; its data is what matters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, results.map((r) => r.data?.id ?? "").join(",")]);
+  }, [items, picks, results.map((r) => r.data?.id ?? "").join(",")]);
 
   if (recs.length < 2) return null;
 
@@ -140,9 +129,9 @@ export function CartRecommendations({ items }: { items: CartItem[] }) {
                     className="h-[85%] w-[85%] object-contain mix-blend-multiply"
                   />
                 )}
-                {r.upsell && (
-                  <span className="absolute top-1.5 left-1.5 rounded-full bg-ff-black px-2 py-0.5 text-[10px] text-ff-cream">
-                    Go bigger
+                {r.pct > 0 && (
+                  <span className="ff-num absolute top-1.5 left-1.5 rounded-full bg-ff-red px-2 py-0.5 text-[10px] text-ff-cream">
+                    -{r.pct}% off
                   </span>
                 )}
               </div>

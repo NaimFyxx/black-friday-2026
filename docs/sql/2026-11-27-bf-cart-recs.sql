@@ -1,0 +1,8 @@
+-- 2026-11-27: "You might also like" in the cart (applied as migration bf_cart_recs).
+-- bf_cart_recs(p_handles text[], p_limit int default 6) -> jsonb
+--   [{handle, variant_id, pct}], SECURITY DEFINER, granted to anon.
+-- Candidates: bf_visible(current state) rows that are on the sale list, in stock,
+-- not in the cart, with a discount (planned % from bf_sale_list before the sale,
+-- live discount_percent during it). Order: same main category as the cart first,
+-- then within 0.5x-1.6x of the average cart item price, categories taking turns,
+-- closest price first. Only handle/variant/percent leave the database.
