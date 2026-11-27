@@ -47,12 +47,12 @@ export const REWARD_COUNT = 5;
 export const DEFAULT_TEXT = {
   headline: "Spend more, level up your free gift",
   away: "You're {amount} away from {reward}",
-  card: "Add {amount} more for {reward}",
+  card: "Add {amount} more to level up your free gift",
   done: "Your free gift is fully leveled up",
   soon: "Revealed soon",
   // One free bottle that gets better at each level (not a new bottle each time).
   first: "your free gift",
-  upgrade: "a free gift level up ({level})",
+  upgrade: "leveling up your free gift",
   current: "Your free gift: {level}",
   // [0] = free delivery (only shown when its amount is above 0), then one per star.
   labels: ["Free delivery", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5"],
@@ -122,14 +122,29 @@ export function progress(total: number, cfg: FreeBottlesConfig) {
       .slice(0, REWARD_COUNT)
       .map((a, i) => ({ index: i + 1, amount: Number(a) || 0 })),
   ].filter((m) => m.amount > 0);
-  const max = Math.max(...list.map((m) => m.amount), 1);
-  const milestones: Milestone[] = list.map(({ index, amount }) => ({
+  // Equal gaps: milestone i of n sits at (i + 1) / n of the bar, whatever its amount.
+  const n = Math.max(list.length, 1);
+  const milestones: Milestone[] = list.map(({ index, amount }, i) => ({
     index,
     amount,
     label: labels[index] || DEFAULT_TEXT.labels[index] || "",
     reached: total + 1e-9 >= amount,
-    pos: Math.min(100, (amount / max) * 100),
+    pos: ((i + 1) / n) * 100,
   }));
+  // The fill moves evenly between two stars, by how far the total is between their amounts.
+  let fill = 0;
+  for (let i = 0; i < milestones.length; i++) {
+    const m = milestones[i]!;
+    const prevAmount = i === 0 ? 0 : milestones[i - 1]!.amount;
+    const prevPos = i === 0 ? 0 : milestones[i - 1]!.pos;
+    if (total >= m.amount) {
+      fill = m.pos;
+      continue;
+    }
+    const span = m.amount - prevAmount;
+    fill = prevPos + (span > 0 ? ((total - prevAmount) / span) * (m.pos - prevPos) : 0);
+    break;
+  }
   const next = milestones.find((m) => !m.reached) ?? null;
   const bottles = milestones.filter((m) => m.index > 0 && m.reached).length;
   return {
@@ -137,7 +152,7 @@ export function progress(total: number, cfg: FreeBottlesConfig) {
     next,
     bottles,
     left: next ? round3(next.amount - total) : 0,
-    fill: Math.min(100, Math.max(0, (total / max) * 100)),
+    fill: Math.min(100, Math.max(0, fill)),
   };
 }
 
