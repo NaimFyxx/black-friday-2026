@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { trackTierPointsOpen } from "@/lib/analytics";
@@ -57,10 +57,10 @@ export function RewardsCartSheet({ className }: { className?: string }) {
         <button
           type="button"
           className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-xl border px-3 py-2 text-left transition-opacity hover:opacity-90",
+            "flex w-full items-center gap-2 rounded-xl border px-3 py-2.5 text-left shadow-[0_1px_2px_rgba(35,31,32,0.06)] transition-colors hover:bg-white",
             className,
           )}
-          style={{ background: CREAM, borderColor: "rgba(35,31,32,0.12)", color: INK }}
+          style={{ background: CREAM, borderColor: "rgba(35,31,32,0.18)", color: INK }}
         >
           <img
             src="/brand/fyxx-rewards-logo-black.svg"
@@ -70,8 +70,12 @@ export function RewardsCartSheet({ className }: { className?: string }) {
             loading="lazy"
             className="h-5 w-auto shrink-0"
           />
-          <span style={SERIF} className="min-w-0 text-[13px] leading-tight">
+          <span style={SERIF} className="min-w-0 flex-1 text-[13px] leading-tight">
             Members earn up to 2x points on this order
+          </span>
+          <span className="flex shrink-0 items-center gap-0.5 text-[11px] font-semibold underline underline-offset-2">
+            See tiers
+            <ChevronRight className="h-3.5 w-3.5" />
           </span>
         </button>
       </DialogPrimitive.Trigger>
