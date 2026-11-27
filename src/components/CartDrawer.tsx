@@ -172,7 +172,6 @@ export function CartDrawer() {
               ? "Nothing in here yet"
               : `${totalItems} item${totalItems !== 1 ? "s" : ""}`}
           </SheetDescription>
-          <TeaserCartNote />
         </SheetHeader>
 
         <div className="flex min-h-0 flex-1 flex-col px-6">
@@ -304,25 +303,6 @@ export function CartDrawer() {
         </div>
       </SheetContent>
     </Sheet>
-  );
-}
-
-/** Teaser phase only: tells shoppers the prices drop on the day (text from bf_settings). */
-function TeaserCartNote() {
-  const { data } = useQuery(teaserQueryOptions(usePreview()));
-  // Before the sale: the teaser note + "Prices drop automatically. No code
-  // needed." During the sale: the Friday note. After the sale: nothing.
-  const text =
-    data?.state === "preview"
-      ? [data.copy.teaser_cart_note, data.copy.no_code_note].filter(Boolean).join(" ")
-      : data?.state === "sale"
-        ? (data.copy.sale_cart_note ?? "")
-        : "";
-  if (!text) return null;
-  return (
-    <p className="ff-small mt-2 rounded-md bg-ff-warm-cream px-3 py-2 text-xs text-ff-burgundy">
-      {text}
-    </p>
   );
 }
 
