@@ -929,3 +929,7 @@ Owner approved the bf_events change.
 - While off, sale mode looks like the pre-sale page: no "Up to X% off" headline, no "ends at midnight" countdown, no quick links, no Top deals row, no "Up to X%" under the circles, no discount filter / "Biggest discount" sort, no "Only X left" (Last piece stays). Badges keep "-25% off" (label after the live %), on cards, Goes well with and product pages.
 - Still changes at 10:00 by necessity: badge % switches from the planned sale list to Shopify's live compare-at (a few round 1 point differently, e.g. 15% -> 14%); listing = discounted products only (all 999 already marked down, gift card exempt); open pages refresh once. At midnight the site switches to the "ended" page (ticker_ended) as before.
 - Checked locally: /?preview=off vs /?preview=friday render the same (screenshots docs/screenshots/freeze-now.png, freeze-at-10.png).
+
+## 2026-11-27 02:00: "Top deals" menu item
+- New nav group "Top deals" (second in the menu, after Home): all categories, only products 30% off or more, biggest discount first, categories taking turns, same circles and filters as the other groups. 184 products now.
+- Settings only (bf_settings.nav_groups, key min_discount = 30); live without Publish. bf_catalog, bf_catalog_facets and bf_visible updated (docs/sql/2026-11-27-bf-top-deals-nav.sql). No code change: SiteHeader reads nav_groups.

@@ -1,0 +1,10 @@
+-- 2026-11-27: "Top deals" menu item (migration bf_top_deals_nav, applied live).
+-- 1. bf_settings.nav_groups: new first group
+--    {"name":"Top deals","mains":[all mains except Gift Card],"min_discount":30}
+--    A nav group may now carry min_discount (whole %). Edit it in nav_groups.
+-- 2. bf_catalog / bf_catalog_facets: v_deal = the selected group's min_discount.
+--    When set, only products with discount_percent >= v_deal are listed and the
+--    default order is biggest discount first (categories still take turns).
+-- 3. bf_visible: the discount floor (p_disc) now applies in any state, not only
+--    during the sale:  and (p_disc is null or b.discount_percent >= p_disc)
+-- Checked 27 Nov: Top deals = 184 products (facets 184), Home 1000, The Bar 560.
