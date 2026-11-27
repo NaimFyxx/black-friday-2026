@@ -12,7 +12,7 @@ import { storefrontApiRequest, type ShopifyProduct } from "@/lib/shopify";
 import { getFirstReferrer, getStoredUtm } from "@/lib/utm-attribution";
 
 /** Session + last-touch UTMs and fbclid as Shopify cart attributes (empty values dropped). */
-function campaignCartAttributes(): Array<{ key: string; value: string }> {
+function campaignCartAttributes(member = false): Array<{ key: string; value: string }> {
   // Tracking switched off (in /admin): leave test orders out of the reports.
   if (trackingOff()) return [];
   const utm = getStoredUtm() ?? {};
@@ -28,6 +28,8 @@ function campaignCartAttributes(): Array<{ key: string; value: string }> {
     // Untagged visitors: where they came from, so their orders match their
     // visits on the Sources page.
     [CART_ATTR.referrer, utm.utm_source ? undefined : getFirstReferrer()],
+    // Signed in to Fyxx Rewards at checkout: lets /admin count members' orders.
+    ["_ff_member", member ? "1" : undefined],
   ];
   return pairs.filter((p): p is [string, string] => !!p[1]).map(([key, value]) => ({ key, value }));
 }
@@ -45,11 +47,14 @@ const CART_ATTRIBUTES_UPDATE_MUTATION = `
  * cart may have been made on an earlier visit from another ad; Shopify
  * replaces all attributes with this list, so stale values don't linger.
  */
-export async function refreshCartAttributes(cartId: string): Promise<void> {
+export async function refreshCartAttributes(cartId: string, member = false): Promise<void> {
   if (trackingOff()) return;
   const data = await storefrontApiRequest<{
     cartAttributesUpdate?: { userErrors?: Array<{ message: string }> };
-  }>(CART_ATTRIBUTES_UPDATE_MUTATION, { cartId, attributes: campaignCartAttributes() });
+  }>(CART_ATTRIBUTES_UPDATE_MUTATION, {
+    cartId,
+    attributes: campaignCartAttributes(member),
+  });
   const errors = data?.data?.cartAttributesUpdate?.userErrors ?? [];
   if (errors.length) console.error("Cart attributes update failed:", errors);
 }

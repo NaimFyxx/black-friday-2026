@@ -160,7 +160,10 @@ export function CartDrawer() {
       let fallback = normal;
       const prepared = (
         cartId
-          ? Promise.all([refreshCartAttributes(cartId).catch(() => {}), prefill().catch(() => {})])
+          ? Promise.all([
+              refreshCartAttributes(cartId, !!user?.email).catch(() => {}),
+              prefill().catch(() => {}),
+            ])
               .then(() => fetchFreshCheckoutUrl(cartId))
               .then((fresh) => (fresh ? withPlace(fresh) : normal))
           : Promise.resolve(normal)

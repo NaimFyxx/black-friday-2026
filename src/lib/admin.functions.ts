@@ -641,7 +641,26 @@ export const getLeaving = createServerFn({ method: "GET" })
 
 // ── Sales forecast (box above "Most added to cart") ────────────────────
 
-export type Bucket = { orders: number; total: number };
+/**
+ * Orders and sales, plus margin the way Zeid's sale sheet works it out: price
+ * without the 16% sales tax minus cost, on items with a known cost. Totals
+ * only: no product cost ever reaches the browser.
+ */
+export type Bucket = {
+  orders: number;
+  total: number;
+  /** Margin in JOD (items with a known cost). */
+  margin: number;
+  /** Those items' sales without the 16% tax: margin % = margin / costedNet. */
+  costedNet: number;
+  /** Sales of items with no known cost (left out of the margin). */
+  uncosted: number;
+  /** Gift card sales (left out of the margin). */
+  giftCards: number;
+  /** Orders by signed-in Fyxx Rewards members (from 27 Nov 2026). */
+  memberOrders: number;
+  memberTotal: number;
+};
 export type Channels = {
   website: Bucket;
   app: Bucket;
@@ -649,24 +668,44 @@ export type Channels = {
   staff: Bucket;
   other: Bucket;
 };
-export type DaySales = { orders: number; total: number; channels: Channels };
+export type DaySales = Bucket & { channels: Channels };
 export type SalesForecast = {
   mode: "before" | "friday" | "after";
   now: string;
   dayStart: string;
   lastYear: (DaySales & { day: string }) | null;
-  carts: { value: number; carts: number; units: number; rates: number[] } | null;
+  carts: {
+    value: number;
+    carts: number;
+    units: number;
+    rates: number[];
+    margin: number;
+    costedNet: number;
+    uncosted: number;
+  } | null;
   thisYear: DaySales | null;
   thisYearError: string | null;
   pace: number | null;
   tooEarlyBefore: number;
 };
 
-const emptyBucket = (): Bucket => ({ orders: 0, total: 0 });
+const emptyBucket = (): Bucket => toBucket({});
+function toBucket(raw: unknown): Bucket {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  return {
+    orders: n(r["orders"]),
+    total: n(r["total"]),
+    margin: n(r["margin"]),
+    costedNet: n(r["costedNet"]),
+    uncosted: n(r["uncosted"]),
+    giftCards: n(r["giftCards"]),
+    memberOrders: n(r["memberOrders"]),
+    memberTotal: n(r["memberTotal"]),
+  };
+}
 function toChannels(raw: unknown): Channels {
-  const r = (raw ?? {}) as Partial<Record<keyof Channels, { orders?: unknown; total?: unknown }>>;
-  const b = (k: keyof Channels): Bucket =>
-    r[k] ? { orders: n(r[k]?.orders), total: n(r[k]?.total) } : emptyBucket();
+  const r = (raw ?? {}) as Partial<Record<keyof Channels, unknown>>;
+  const b = (k: keyof Channels): Bucket => (r[k] ? toBucket(r[k]) : emptyBucket());
   return {
     website: b("website"),
     app: b("app"),
@@ -725,12 +764,7 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
         }
       | undefined;
     const lastYear = ly
-      ? {
-          day: String(ly.day ?? ""),
-          orders: n(ly.orders),
-          total: n(ly.total),
-          channels: toChannels(ly.channels),
-        }
+      ? { day: String(ly.day ?? ""), ...toBucket(ly), channels: toChannels(ly.channels) }
       : null;
 
     const now = new Date();
@@ -740,8 +774,16 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
     if (mode === "before") {
       const { data: c, error: cErr } = await client.rpc("bf_cart_forecast");
       if (cErr) throw new Error(cErr.message);
-      const v = (c ?? {}) as { value?: unknown; carts?: unknown; units?: unknown };
-      carts = { value: n(v.value), carts: n(v.carts), units: n(v.units), rates };
+      const v = (c ?? {}) as Record<string, unknown>;
+      carts = {
+        value: n(v["value"]),
+        carts: n(v["carts"]),
+        units: n(v["units"]),
+        rates,
+        margin: n(v["margin"]),
+        costedNet: n(v["costed_net"]),
+        uncosted: n(v["uncosted"]),
+      };
     }
 
     let thisYear: DaySales | null = null;
@@ -754,12 +796,11 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
         const r = await callBfAdmin<{
           status: string;
           message?: string;
-          orders?: unknown;
-          total?: unknown;
           channels?: unknown;
+          [k: string]: unknown;
         }>({ action: "day_sales", since: dayStart.toISOString(), until: until.toISOString() });
         if (r.status === "ok") {
-          thisYear = { orders: n(r.orders), total: n(r.total), channels: toChannels(r.channels) };
+          thisYear = { ...toBucket(r), channels: toChannels(r.channels) };
           if (mode === "friday" && ly?.share_by_hour) {
             pace = paceByMidnight({
               soFar: thisYear.total,
@@ -1376,3 +1417,22 @@ export const getLinks = createServerFn({ method: "GET" })
       },
     };
   });
+
+// ── Fyxx Rewards on the landing page ──────────────────────────────────
+
+export type RewardsFunnelRow = { event: string; place: string; n: number; people: number };
+
+/** Taps on the Rewards tiers, Log in / Join, and finished sign-ins / sign-ups, by place. */
+export const getRewardsFunnel = createServerFn({ method: "GET" }).handler(async () => {
+  const { assertAdmin } = await import("./admin-session.server");
+  await assertAdmin();
+  const client = await db();
+  const { data, error } = await client.rpc("bf_rewards_funnel");
+  if (error) throw new Error(error.message);
+  return ((data as RewardsFunnelRow[] | null) ?? []).map((r) => ({
+    event: String(r.event),
+    place: String(r.place),
+    n: n(r.n),
+    people: n(r.people),
+  }));
+});

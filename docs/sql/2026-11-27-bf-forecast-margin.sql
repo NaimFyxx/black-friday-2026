@@ -1,0 +1,7 @@
+-- 2026-11-27 (migration bf_forecast_margin, applied live)
+-- bf_cart_forecast(): adds margin, costed_net, uncosted (Zeid's formula:
+--   unit / 1.16 - cost, cost from bf_sale_list then bf_review_list).
+-- bf_settings.forecast_last_year: 2025 margin per channel (bf-admin day_sales
+--   for 28 Nov 2025 with this year's costs).
+-- bf_rewards_funnel(): Rewards taps / sign-ins / sign-ups by place from
+--   bf_events; execute revoked from public, anon, authenticated.

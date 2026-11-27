@@ -12,6 +12,8 @@
 //   { key, action: "day_sales", since, until }    -> all Shopify orders in the
 //       range (every channel), count and total, split into in store (Point of
 //       Sale) and online (everything else). Cancelled and test orders left out.
+//       Also margin (Zeid's formula, costs from bf_sale_list / bf_review_list;
+//       totals only) and orders by signed-in Rewards members (_ff_member).
 //   { key, action: "usual", kx }                  -> Shopify product IDs this
 //       shopper ordered most ("Your usual" shelf). kx = Klaviyo's _kx link
 //       parameter from one of our emails; resolved with the Klaviyo private
@@ -203,19 +205,77 @@ async function siteOrders(since: string, until: string) {
 
 const DAY_SALES_QUERY = `
   query bfDaySales($q: String!, $after: String) {
-    orders(first: 250, after: $after, query: $q, sortKey: CREATED_AT) {
+    orders(first: 50, after: $after, query: $q, sortKey: CREATED_AT) {
       pageInfo { hasNextPage endCursor }
       nodes {
         createdAt cancelledAt test sourceName
         app { name }
         totalPriceSet { shopMoney { amount } }
+        customAttributes { key value }
+        lineItems(first: 60) {
+          nodes {
+            quantity isGiftCard
+            variant { legacyResourceId }
+            originalTotalSet { shopMoney { amount } }
+            discountAllocations { allocatedAmountSet { shopMoney { amount } } }
+          }
+        }
       }
     }
   }
 `;
 
-type Bucket = { orders: number; total: number };
-const bucket = (): Bucket => ({ orders: 0, total: 0 });
+// Margin the way Zeid's sale sheet works it out: prices include 16% sales
+// tax, cost does not. margin = price / 1.16 - cost; margin % = margin / (price / 1.16).
+const SALES_TAX = 1.16;
+
+/** Unit cost per Shopify variant ID (number), from Zeid's sale list, then the review list. */
+async function variantCosts(): Promise<Map<string, number>> {
+  const costs = new Map<string, number>();
+  for (const table of ["bf_review_list", "bf_sale_list"]) {
+    for (let from = 0; from < 20000; from += 1000) {
+      const { data, error } = await db
+        .from(table)
+        .select("variant_id, cost")
+        .range(from, from + 999);
+      if (error) throw new Error(`${table}: ${error.message}`);
+      for (const r of data ?? []) {
+        const c = Number(r.cost);
+        // bf_sale_list is read last, so Zeid's sheet wins where both have a cost.
+        if (r.variant_id != null && c > 0) costs.set(String(r.variant_id), c);
+      }
+      if ((data ?? []).length < 1000) break;
+    }
+  }
+  return costs;
+}
+
+type Bucket = {
+  orders: number;
+  total: number;
+  /** Margin in JOD on the items with a known cost (Zeid's formula). */
+  margin: number;
+  /** Those items' sales without the 16% tax (margin % = margin / this). */
+  costedNet: number;
+  /** Sales of items with no known cost (left out of the margin), gift cards apart. */
+  uncosted: number;
+  /** Gift card sales (no product cost: left out of the margin). */
+  giftCards: number;
+  /** Orders placed by a signed-in Fyxx Rewards member on the Friday site. */
+  memberOrders: number;
+  memberTotal: number;
+};
+const bucket = (): Bucket => ({
+  orders: 0,
+  total: 0,
+  margin: 0,
+  costedNet: 0,
+  uncosted: 0,
+  giftCards: 0,
+  memberOrders: 0,
+  memberTotal: 0,
+});
+const r3 = (x: number) => Math.round(x * 1000) / 1000;
 
 /** Which channel an order belongs to, from the Shopify app that created it. */
 function channelOf(o: { sourceName?: string | null; app?: { name?: string } | null }) {
@@ -244,28 +304,75 @@ async function daySales(since: string, until: string) {
     staff: bucket(),
     other: bucket(),
   };
+  // Costs: if they can't be read, sales still work (margin shows as unknown).
+  let costs: Map<string, number> | null = null;
+  try {
+    costs = await variantCosts();
+  } catch (e) {
+    console.error("[bf-admin] costs", String((e as Error).message).slice(0, 200));
+  }
+  const add = (b: Bucket, x: Bucket) => {
+    for (const k of Object.keys(b) as Array<keyof Bucket>) b[k] += x[k];
+  };
   let after: string | null = null;
-  for (let p = 0; p < MAX_PAGES; p++) {
+  for (let p = 0; p < MAX_PAGES * 5; p++) {
     // deno-lint-ignore no-explicit-any
     const d: any = await gql(DAY_SALES_QUERY, { q, after });
     for (const o of d.orders.nodes) {
       if (o.cancelledAt || o.test) continue;
-      const amount = Number(o.totalPriceSet.shopMoney.amount) || 0;
-      const c = channels[channelOf(o)];
-      c.orders += 1;
-      c.total += amount;
-      sum.orders += 1;
-      sum.total += amount;
+      const one = bucket();
+      one.orders = 1;
+      one.total = Number(o.totalPriceSet.shopMoney.amount) || 0;
+      // deno-lint-ignore no-explicit-any
+      const member = (o.customAttributes ?? []).some(
+        (a: any) => a.key === "_ff_member" && a.value === "1",
+      );
+      if (member) {
+        one.memberOrders = 1;
+        one.memberTotal = one.total;
+      }
+      for (const li of o.lineItems?.nodes ?? []) {
+        const gross = Number(li.originalTotalSet?.shopMoney?.amount) || 0;
+        const off = (li.discountAllocations ?? []).reduce(
+          // deno-lint-ignore no-explicit-any
+          (t: number, a: any) => t + (Number(a.allocatedAmountSet?.shopMoney?.amount) || 0),
+          0,
+        );
+        const paid = Math.max(0, gross - off); // after every discount, incl. free gifts
+        if (li.isGiftCard) {
+          one.giftCards += paid;
+          continue;
+        }
+        const cost = costs?.get(String(li.variant?.legacyResourceId ?? ""));
+        if (cost === undefined) {
+          one.uncosted += paid;
+          continue;
+        }
+        const net = paid / SALES_TAX;
+        one.costedNet += net;
+        one.margin += net - cost * (Number(li.quantity) || 0);
+      }
+      add(channels[channelOf(o)], one);
+      add(sum, one);
     }
     if (!d.orders.pageInfo.hasNextPage) break;
     after = d.orders.pageInfo.endCursor;
   }
   const online = bucket();
-  for (const k of ["website", "app", "staff", "other"]) {
-    online.orders += channels[k].orders;
-    online.total += channels[k].total;
-  }
-  return { status: "ok", ...sum, online, inStore: channels.inStore, channels };
+  for (const k of ["website", "app", "staff", "other"]) add(online, channels[k]);
+  const round = (b: Bucket) => {
+    for (const k of Object.keys(b) as Array<keyof Bucket>) b[k] = r3(b[k]);
+    return b;
+  };
+  for (const k of Object.keys(channels)) round(channels[k]);
+  return {
+    status: "ok",
+    costsLoaded: costs !== null,
+    ...round(sum),
+    online: round(online),
+    inStore: channels.inStore,
+    channels,
+  };
 }
 
 // ── "Your usual": Klaviyo (read only) ──

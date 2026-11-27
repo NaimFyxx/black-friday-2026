@@ -40,6 +40,7 @@ import {
   setOfferSwitch,
   type OfferKey,
   getLeaving,
+  getRewardsFunnel,
   getSalesForecast,
   getSources,
   getTopAdded,
@@ -157,6 +158,7 @@ function OverviewPage() {
       <VisitorsSection range={range} />
 
       <SalesForecastSection />
+      <RewardsSection />
 
       <CartsSection />
 
@@ -397,6 +399,44 @@ function LeavingSection({ range }: { range: Range }) {
   );
 }
 
+/** Margin % as in Zeid's sheet: margin / sales without the 16% tax. */
+const marginPct = (margin: number, net: number) =>
+  net > 0 ? `${((margin / net) * 100).toFixed(1)}%` : "";
+
+/** "Margin JOD 1,234.500 (21.3%)" in the small text style. */
+function MarginLine({
+  margin,
+  net,
+  prefix = "Margin",
+}: {
+  margin: number;
+  net: number;
+  prefix?: string;
+}) {
+  if (!(net > 0)) return null;
+  return (
+    <span className="block text-xs text-muted-foreground">
+      {prefix} {formatJod(margin)} ({marginPct(margin, net)})
+    </span>
+  );
+}
+
+/** Add buckets together (Digital = website + app; staff = staff + other). */
+function sumBuckets(...bs: Bucket[]): Bucket {
+  const out: Bucket = {
+    orders: 0,
+    total: 0,
+    margin: 0,
+    costedNet: 0,
+    uncosted: 0,
+    giftCards: 0,
+    memberOrders: 0,
+    memberTotal: 0,
+  };
+  for (const b of bs) for (const k of Object.keys(out) as Array<keyof Bucket>) out[k] += b[k];
+  return out;
+}
+
 /** "Most added to cart": adds, visits, full value, top first-touch source. */
 /** "Sales forecast": carts at Friday prices before the sale, live sales and pace on the
  *  day, and this year vs last year by channel. */
@@ -433,16 +473,35 @@ function SalesForecastSection() {
               <p className="text-xs text-muted-foreground">
                 In {data.carts.carts} carts right now, at Friday prices.
               </p>
+              {data.carts.costedNet > 0 && (
+                <p className="text-sm">
+                  Margin{" "}
+                  <span className="tabular-nums">
+                    {formatJod(data.carts.margin)} (
+                    {marginPct(data.carts.margin, data.carts.costedNet)})
+                  </span>
+                </p>
+              )}
               <ul className="space-y-1 pt-1 text-sm">
                 {data.carts.rates.map((r) => (
                   <li key={r} className="flex justify-between gap-3">
                     <span>If {Math.round(r * 100)}% of carts buy</span>
-                    <span className="tabular-nums">{formatJod((data.carts?.value ?? 0) * r)}</span>
+                    <span className="text-right tabular-nums">
+                      {formatJod((data.carts?.value ?? 0) * r)}
+                      {data.carts && data.carts.costedNet > 0 && (
+                        <span className="block text-xs text-muted-foreground">
+                          Margin {formatJod(data.carts.margin * r)}
+                        </span>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ul>
               <p className="pt-1 text-xs text-muted-foreground">
-                Items taken out of a cart are still counted, so this runs a little high.
+                Items taken out of a cart are still counted, so this runs a little high. Margin as
+                in Zeid&apos;s sale sheet: price without the 16% sales tax, minus cost.
+                {data.carts.uncosted > 0 &&
+                  ` ${formatJod(data.carts.uncosted)} with no known cost (gift cards and the like) is left out of the margin.`}
               </p>
             </Panel>
           ) : (
@@ -458,6 +517,15 @@ function SalesForecastSection() {
                   <p className="text-xs text-muted-foreground">
                     {data.thisYear.orders} orders since 00:00, every channel.
                   </p>
+                  {data.thisYear.costedNet > 0 && (
+                    <p className="text-sm">
+                      Margin{" "}
+                      <span className="tabular-nums">
+                        {formatJod(data.thisYear.margin)} (
+                        {marginPct(data.thisYear.margin, data.thisYear.costedNet)})
+                      </span>
+                    </p>
+                  )}
                 </>
               ) : (
                 <p className="text-sm text-muted-foreground">
@@ -472,6 +540,14 @@ function SalesForecastSection() {
                   <p className="font-display text-2xl tabular-nums">
                     {data.pace !== null ? formatJod(data.pace) : "Too early to tell"}
                   </p>
+                  {data.pace !== null && data.thisYear && data.thisYear.total > 0 && (
+                    <p className="text-sm">
+                      Margin about{" "}
+                      <span className="tabular-nums">
+                        {formatJod((data.pace * data.thisYear.margin) / data.thisYear.total)}
+                      </span>
+                    </p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     {data.pace !== null
                       ? "Based on last year's hour-by-hour pattern."
@@ -494,6 +570,111 @@ function SalesForecastSection() {
   );
 }
 
+/** Fyxx Rewards on this site: tiers opened, Log in / Join taps, sign-ins, new accounts, member orders. */
+function RewardsSection() {
+  const fn = useServerFn(getRewardsFunnel);
+  const salesFn = useServerFn(getSalesForecast);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-rewards-funnel"],
+    queryFn: () => fn(),
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    retry: 1,
+  });
+  // Member orders come with the day's sales (same data as the sales forecast).
+  const { data: sales } = useQuery({
+    queryKey: ["admin-sales-forecast"],
+    queryFn: () => salesFn(),
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+    retry: 1,
+  });
+  const places = [
+    { key: "home", label: "Home" },
+    { key: "cart", label: "Cart" },
+    { key: "product", label: "Product page" },
+  ];
+  const steps = [
+    { event: "tier_points_open", label: "Opened the Rewards tiers" },
+    { event: "tier_points_login_tap", label: "Tapped Log in" },
+    { event: "tier_points_join_tap", label: "Tapped Join" },
+    { event: "rewards_signin", label: "Signed in (already a member)", strong: true },
+    { event: "rewards_signup", label: "Created an account (new member)", strong: true },
+  ];
+  const count = (event: string, place?: string) =>
+    (data ?? [])
+      .filter((r) => r.event === event && (!place || r.place === place))
+      .reduce((t, r) => t + r.people, 0);
+  const members = sales?.thisYear ?? null;
+  return (
+    <Section
+      title="Fyxx Rewards"
+      intro="People who looked at Fyxx Rewards on this site, signed in or created an account. Counted once per visit; team visits left out."
+    >
+      {error ? (
+        <ErrorBox error={error} />
+      ) : isLoading || !data ? (
+        <Loading />
+      ) : (
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Panel className="overflow-x-auto p-0">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  <th className={TH}>Step</th>
+                  {places.map((p) => (
+                    <th key={p.key} className={THR}>
+                      {p.label}
+                    </th>
+                  ))}
+                  <th className={THR}>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {steps.map((st) => (
+                  <tr key={st.event} className={TR}>
+                    <td className={TD}>
+                      <span className={st.strong ? "font-medium" : ""}>{st.label}</span>
+                    </td>
+                    {places.map((p) => (
+                      <td key={p.key} className={TDR}>
+                        {count(st.event, p.key) || "–"}
+                      </td>
+                    ))}
+                    <td className={`${TDR} ${st.strong ? "font-medium" : ""}`}>
+                      {count(st.event)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Panel>
+          <Panel className="space-y-2">
+            <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+              Orders by signed-in members
+            </p>
+            {members ? (
+              <>
+                <p className="font-display text-2xl tabular-nums">{members.memberOrders}</p>
+                <p className="text-xs text-muted-foreground">
+                  {formatJod(members.memberTotal)} in orders since 00:00 Friday.
+                </p>
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Counted from Friday 00:00.</p>
+            )}
+            <p className="pt-1 text-xs text-muted-foreground">
+              Orders where the shopper was signed in to Fyxx Rewards on this site at checkout (their
+              email and address are filled in for them, so the order earns their points). Counted
+              from carts made after the 27 Nov update.
+            </p>
+          </Panel>
+        </div>
+      )}
+    </Section>
+  );
+}
+
 /** This year vs last year: total, Digital (website + app), in store, staff orders. */
 function ChannelCompare({
   lastYear,
@@ -504,21 +685,15 @@ function ChannelCompare({
   thisYear: DaySales | null;
   before: boolean;
 }) {
-  const digital = (d: DaySales) => ({
-    orders: d.channels.website.orders + d.channels.app.orders,
-    total: d.channels.website.total + d.channels.app.total,
-  });
-  const staff = (d: DaySales) => ({
-    orders: d.channels.staff.orders + d.channels.other.orders,
-    total: d.channels.staff.total + d.channels.other.total,
-  });
+  const digital = (d: DaySales) => sumBuckets(d.channels.website, d.channels.app);
+  const staff = (d: DaySales) => sumBuckets(d.channels.staff, d.channels.other);
   const rows: Array<{
     label: string;
     sub?: boolean;
     strong?: boolean;
     pick: (d: DaySales) => Bucket;
   }> = [
-    { label: "Total", strong: true, pick: (d) => ({ orders: d.orders, total: d.total }) },
+    { label: "Total", strong: true, pick: (d) => d },
     { label: "Digital (website + app)", strong: true, pick: digital },
     { label: "Website", sub: true, pick: (d) => d.channels.website },
     { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
@@ -535,6 +710,7 @@ function ChannelCompare({
             Average order {formatJod(b.total / b.orders)}
           </span>
         )}
+        <MarginLine margin={b.margin} net={b.costedNet} />
       </>
     ) : (
       <span className="text-muted-foreground">–</span>
@@ -570,7 +746,10 @@ function ChannelCompare({
       <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground sm:px-4">
         Whole day, 00:00 to midnight Amman time: 28 Nov 2025 and Fri 27 Nov 2026
         {before ? " (fills in from Friday)" : " (so far)"}. Shopify orders, cancelled ones left out.
-        Average order = sales divided by orders. In-store sales from Odoo come later.
+        Average order = sales divided by orders. Margin as in Zeid&apos;s sale sheet: price after
+        discounts without the 16% sales tax, minus cost, on items with a known cost; free gifts
+        count as cost, gift cards are left out. 2025 margin is worked out with this year&apos;s
+        costs. In-store sales from Odoo come later.
       </p>
     </Panel>
   );

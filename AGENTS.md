@@ -36,7 +36,8 @@ use the editor.
   mock products, and never build a checkout URL by hand: it comes from the
   Storefront API cart response and opens in the same tab (owner's decision,
   22 Nov 2026; UTMs and fbclid are added to it).
-- A route loader that primes the TanStack Query cache returns
-  `dehydrate(queryClient)` and the route component calls `hydrate` on it before
-  reading, so the server render and the first client render match and the
-  browser does not refetch what the server already loaded.
+- Route loaders prime the TanStack Query cache; the router hands the whole
+  cache to the browser before anything renders (`dehydrate` / `hydrate` in
+  `src/router.tsx`, 27 Nov 2026), so the server render and the first client
+  render match and the browser does not refetch what the server already
+  loaded. Loaders don't need to return `dehydrate(queryClient)` themselves.
