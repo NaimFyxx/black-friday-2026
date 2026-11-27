@@ -12,7 +12,7 @@
 //   { key, action: "day_sales", since, until }    -> all Shopify orders in the
 //       range (every channel), count and total, split into in store (Point of
 //       Sale) and online (everything else). Cancelled and test orders left out.
-//       Also margin (Zeid's formula, costs from bf_sale_list / bf_review_list;
+//       Also margin (Zeid's formula, Odoo costs by SKU from bf_cost_odoo_products;
 //       totals only) and orders by signed-in Rewards members (_ff_member).
 //   { key, action: "usual", kx }                  -> Shopify product IDs this
 //       shopper ordered most ("Your usual" shelf). kx = Klaviyo's _kx link
@@ -214,8 +214,8 @@ const DAY_SALES_QUERY = `
         customAttributes { key value }
         lineItems(first: 60) {
           nodes {
-            quantity isGiftCard
-            variant { legacyResourceId }
+            quantity isGiftCard sku
+            variant { legacyResourceId sku }
             originalTotalSet { shopMoney { amount } }
             discountAllocations { allocatedAmountSet { shopMoney { amount } } }
           }
@@ -229,25 +229,37 @@ const DAY_SALES_QUERY = `
 // tax, cost does not. margin = price / 1.16 - cost; margin % = margin / (price / 1.16).
 const SALES_TAX = 1.16;
 
-/** Unit cost per Shopify variant ID (number), from Zeid's sale list, then the review list. */
-async function variantCosts(): Promise<Map<string, number>> {
-  const costs = new Map<string, number>();
-  for (const table of ["bf_review_list", "bf_sale_list"]) {
-    for (let from = 0; from < 20000; from += 1000) {
+/**
+ * Unit cost per SKU from Odoo (bf_cost_odoo_products.standard_price, the same
+ * costs Zeid's sheet uses), with Zeid's sale list by variant ID as a backup.
+ */
+async function loadCosts(): Promise<{
+  bySku: Map<string, number>;
+  byVariant: Map<string, number>;
+}> {
+  const bySku = new Map<string, number>();
+  const byVariant = new Map<string, number>();
+  const pages = async (table: string, cols: string, each: (r: Record<string, unknown>) => void) => {
+    for (let from = 0; from < 50000; from += 1000) {
       const { data, error } = await db
         .from(table)
-        .select("variant_id, cost")
+        .select(cols)
         .range(from, from + 999);
       if (error) throw new Error(`${table}: ${error.message}`);
-      for (const r of data ?? []) {
-        const c = Number(r.cost);
-        // bf_sale_list is read last, so Zeid's sheet wins where both have a cost.
-        if (r.variant_id != null && c > 0) costs.set(String(r.variant_id), c);
-      }
+      for (const r of (data ?? []) as Record<string, unknown>[]) each(r);
       if ((data ?? []).length < 1000) break;
     }
-  }
-  return costs;
+  };
+  await pages("bf_cost_odoo_products", "sku, standard_price", (r) => {
+    const c = Number(r.standard_price);
+    const sku = String(r.sku ?? "").trim();
+    if (sku && c > 0) bySku.set(sku, c);
+  });
+  await pages("bf_sale_list", "variant_id, cost", (r) => {
+    const c = Number(r.cost);
+    if (r.variant_id != null && c > 0) byVariant.set(String(r.variant_id), c);
+  });
+  return { bySku, byVariant };
 }
 
 type Bucket = {
@@ -305,9 +317,9 @@ async function daySales(since: string, until: string) {
     other: bucket(),
   };
   // Costs: if they can't be read, sales still work (margin shows as unknown).
-  let costs: Map<string, number> | null = null;
+  let costs: Awaited<ReturnType<typeof loadCosts>> | null = null;
   try {
-    costs = await variantCosts();
+    costs = await loadCosts();
   } catch (e) {
     console.error("[bf-admin] costs", String((e as Error).message).slice(0, 200));
   }
@@ -343,7 +355,10 @@ async function daySales(since: string, until: string) {
           one.giftCards += paid;
           continue;
         }
-        const cost = costs?.get(String(li.variant?.legacyResourceId ?? ""));
+        const sku = String(li.sku ?? li.variant?.sku ?? "").trim();
+        const cost =
+          (sku ? costs?.bySku.get(sku) : undefined) ??
+          costs?.byVariant.get(String(li.variant?.legacyResourceId ?? ""));
         if (cost === undefined) {
           one.uncosted += paid;
           continue;
