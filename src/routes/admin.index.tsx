@@ -422,24 +422,6 @@ function LeavingSection({ range }: { range: Range }) {
 const marginPct = (margin: number, net: number) =>
   net > 0 ? `${((margin / net) * 100).toFixed(1)}%` : "";
 
-/** "Margin JOD 1,234.500 (21.3%)" in the small text style. */
-function MarginLine({
-  margin,
-  net,
-  prefix = "Margin",
-}: {
-  margin: number;
-  net: number;
-  prefix?: string;
-}) {
-  if (!(net > 0)) return null;
-  return (
-    <span className="block text-xs text-muted-foreground">
-      {prefix} {formatJod(margin)} ({marginPct(margin, net)})
-    </span>
-  );
-}
-
 /** Add buckets together (Digital = website + app; staff = staff + other). */
 function sumBuckets(...bs: Bucket[]): Bucket {
   const out: Bucket = {
@@ -724,17 +706,39 @@ function ChannelCompare({
     { label: "In store (Point of Sale)", strong: true, pick: (d) => d.channels.inStore },
     { label: "Staff and other orders (draft, phone, Odoo)", strong: true, pick: staff },
   ];
-  const cell = (b: Bucket | null) =>
+  /** "+12.3%" / "-4.0%" against last year (green up, red down); nothing when last year was 0. */
+  const delta = (now: number, before: number | undefined) => {
+    if (before === undefined || !(before > 0)) return null;
+    const pct = ((now - before) / before) * 100;
+    const up = pct >= 0;
+    return (
+      <span className={`ml-1 text-xs ${up ? "text-emerald-700" : "text-red-700"}`}>
+        {up ? "+" : ""}
+        {pct.toFixed(1)}%
+      </span>
+    );
+  };
+  // `prev`: the same row last year, for the 2026 column's change against 2025.
+  const cell = (b: Bucket | null, prev?: Bucket) =>
     b ? (
       <>
         {formatJod(b.total)}
-        <span className="block text-xs text-muted-foreground">{b.orders} orders</span>
+        {prev && delta(b.total, prev.total)}
+        <span className="block text-xs text-muted-foreground">
+          {b.orders} orders{prev && delta(b.orders, prev.orders)}
+        </span>
         {b.orders > 0 && (
           <span className="block text-xs text-muted-foreground">
             Average order {formatJod(b.total / b.orders)}
+            {prev && prev.orders > 0 && delta(b.total / b.orders, prev.total / prev.orders)}
           </span>
         )}
-        <MarginLine margin={b.margin} net={b.costedNet} />
+        {b.costedNet > 0 && (
+          <span className="block text-xs text-muted-foreground">
+            Margin {formatJod(b.margin)} ({marginPct(b.margin, b.costedNet)})
+            {prev && delta(b.margin, prev.margin)}
+          </span>
+        )}
       </>
     ) : (
       <span className="text-muted-foreground">–</span>
@@ -762,7 +766,7 @@ function ChannelCompare({
                 </span>
               </td>
               <td className={TDR}>{cell(r.pick(lastYear))}</td>
-              <td className={TDR}>{cell(thisYear ? r.pick(thisYear) : null)}</td>
+              <td className={TDR}>{cell(thisYear ? r.pick(thisYear) : null, r.pick(lastYear))}</td>
             </tr>
           ))}
         </tbody>
