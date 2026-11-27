@@ -433,6 +433,8 @@ function sumBuckets(...bs: Bucket[]): Bucket {
     giftCards: 0,
     memberOrders: 0,
     memberTotal: 0,
+    newCustomers: 0,
+    noCustomer: 0,
   };
   for (const b of bs) for (const k of Object.keys(out) as Array<keyof Bucket>) out[k] += b[k];
   return out;
@@ -518,6 +520,24 @@ function SalesForecastSection() {
                   <p className="text-xs text-muted-foreground">
                     {data.thisYear.orders} orders since 00:00, every channel.
                   </p>
+                  {data.record && data.record.total > 0 && (
+                    <p className="text-sm">
+                      {data.thisYear.total >= data.record.total ? (
+                        <span className="font-medium text-emerald-700">
+                          New record! Beats {data.record.label} ({formatJod(data.record.total)})
+                        </span>
+                      ) : (
+                        <>
+                          Record to beat: {data.record.label}{" "}
+                          <span className="tabular-nums">{formatJod(data.record.total)}</span>
+                          <span className="block text-xs text-muted-foreground tabular-nums">
+                            {formatJod(data.record.total - data.thisYear.total)} to go (
+                            {Math.round((data.thisYear.total / data.record.total) * 100)}% there)
+                          </span>
+                        </>
+                      )}
+                    </p>
+                  )}
                   {data.thisYear.costedNet > 0 && (
                     <p className="text-sm">
                       Margin{" "}
@@ -787,6 +807,7 @@ function ChannelCompare({
             <th className={THR}>Sales (JOD)</th>
             <th className={THR}>Orders</th>
             <th className={THR}>Average order</th>
+            <th className={THR}>New customers</th>
             <th className={THR}>Margin (JOD)</th>
           </tr>
         </thead>
@@ -817,6 +838,13 @@ function ChannelCompare({
                 </td>
                 <td className={TDR}>
                   <Metric
+                    now={has ? now.newCustomers : undefined}
+                    was={was.newCustomers}
+                    show={String}
+                  />
+                </td>
+                <td className={TDR}>
+                  <Metric
                     now={has ? (now.costedNet > 0 ? now.margin : null) : undefined}
                     was={was.costedNet > 0 ? was.margin : null}
                     show={num}
@@ -834,11 +862,13 @@ function ChannelCompare({
           ? "Fyxx Friday 2025 (28 Nov 2025); 2026 fills in from Friday. "
           : "Fyxx Friday 2026 so far on top, the whole of 2025 (28 Nov 2025) underneath in grey; the pill is the change. "}
         Whole day, 00:00 to midnight Amman time. Shopify orders, cancelled ones left out. Fyxx
-        Friday site orders (Shopify shows them as the &quot;Lovable&quot; app) count as website.
-        Margin as in Zeid&apos;s sale sheet: price after discounts without the 16% sales tax, minus
-        cost, on items with a known cost; free gifts count as cost, gift cards left out. 2025 margin
-        uses this year&apos;s costs. In-store sales in 2026 are the Odoo POS orders Shopify receives
-        through the Odoo Connector.
+        Friday site orders (Shopify shows them as the &quot;Lovable&quot; app) count as website. New
+        customers: orders that were the shopper&apos;s first ever Fyxx order (orders with no
+        customer attached, common in store, can&apos;t be counted). Margin as in Zeid&apos;s sale
+        sheet: price after discounts without the 16% sales tax, minus cost, on items with a known
+        cost; free gifts count as cost, gift cards left out. 2025 margin uses this year&apos;s
+        costs. In-store sales in 2026 are the Odoo POS orders Shopify receives through the Odoo
+        Connector.
       </p>
     </Panel>
   );

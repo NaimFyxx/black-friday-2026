@@ -660,6 +660,10 @@ export type Bucket = {
   /** Orders by signed-in Fyxx Rewards members (from 27 Nov 2026). */
   memberOrders: number;
   memberTotal: number;
+  /** Orders that were the customer's first ever order. */
+  newCustomers: number;
+  /** Orders with no customer attached (new or returning unknown). */
+  noCustomer: number;
 };
 export type Channels = {
   website: Bucket;
@@ -689,6 +693,8 @@ export type SalesForecast = {
   thisYearError: string | null;
   pace: number | null;
   tooEarlyBefore: number;
+  /** Best Black Friday so far (bf_settings.forecast_record), e.g. 29 Nov 2024. */
+  record: { day: string; label: string; total: number; orders: number } | null;
 };
 
 const emptyBucket = (): Bucket => toBucket({});
@@ -703,6 +709,8 @@ function toBucket(raw: unknown): Bucket {
     giftCards: n(r["giftCards"]),
     memberOrders: n(r["memberOrders"]),
     memberTotal: n(r["memberTotal"]),
+    newCustomers: n(r["newCustomers"]),
+    noCustomer: n(r["noCustomer"]),
   };
 }
 function toChannels(raw: unknown): Channels {
@@ -737,6 +745,7 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
       "forecast_last_year",
       "forecast_too_early_before_hour",
       "forecast_buy_rates",
+      "forecast_record",
     ];
     const { data: rows, error } = await client
       .from("bf_settings")
@@ -820,7 +829,17 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
       }
     }
 
+    const rec = cfg.get("forecast_record") as Record<string, unknown> | undefined;
+    const record = rec
+      ? {
+          day: String(rec["day"] ?? ""),
+          label: String(rec["label"] ?? ""),
+          total: n(rec["total"]),
+          orders: n(rec["orders"]),
+        }
+      : null;
     return {
+      record,
       mode,
       now: now.toISOString(),
       dayStart: dayStart.toISOString(),
