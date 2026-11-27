@@ -374,3 +374,28 @@ export async function fetchCartQuantity(cartId: string): Promise<number | null> 
   if (!data) return null;
   return data.data?.cart?.totalQuantity ?? 0;
 }
+
+const CART_CHECKOUT_URL_QUERY = `
+  query cartCheckoutUrl($id: ID!) {
+    cart(id: $id) { checkoutUrl buyerIdentity { email } }
+  }
+`;
+
+/**
+ * The cart's current checkout link, read fresh right before checkout. Shopify
+ * gives the cart a new link after its buyer details change (the signed-in
+ * member's email and address), so checkout uses that one rather than the link
+ * saved when the cart was made. Null on any failure (the saved link is used).
+ */
+export async function fetchFreshCheckoutUrl(cartId: string): Promise<string | null> {
+  try {
+    const data = await storefrontApiRequest<{ cart?: { checkoutUrl?: string } | null }>(
+      CART_CHECKOUT_URL_QUERY,
+      { id: cartId },
+    );
+    const url = data?.data?.cart?.checkoutUrl;
+    return url ? formatCheckoutUrl(url) : null;
+  } catch {
+    return null;
+  }
+}

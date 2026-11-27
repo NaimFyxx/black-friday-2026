@@ -259,9 +259,14 @@ function GiftCardList({ onAdded }: { onAdded: () => void }) {
           );
         })}
       </ul>
-      {ON && !shopifyReduced && (
-        <p className="ff-small mt-3 text-xs text-ff-black/60">The {PCT}% comes off at checkout.</p>
-      )}
+      <div className="mt-3 space-y-1">
+        {ON && !shopifyReduced && (
+          <p className="ff-small text-xs text-ff-black/60">The {PCT}% comes off at checkout.</p>
+        )}
+        <p className="ff-small text-xs text-ff-black/60">
+          Gift cards don't count towards the free gift.
+        </p>
+      </div>
     </>
   );
 }

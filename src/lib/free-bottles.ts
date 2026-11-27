@@ -84,9 +84,16 @@ export function useFreeBottles(): FreeBottlesConfig | null {
   return cfg;
 }
 
-/** Cart total that counts toward the rewards (sale prices, before delivery). */
+/** Gift cards never count toward the free gift (the gift engine ignores them too). */
+export function isGiftCardItem(i: CartItem): boolean {
+  const n = i.product?.node;
+  return /gift[\s-]?card/i.test(n?.handle ?? "") || /gift[\s-]?card/i.test(n?.productType ?? "");
+}
+
+/** Cart total that counts toward the rewards (sale prices, before delivery, no gift cards). */
 export function rewardTotal(items: CartItem[], countDiscounted: boolean): number {
   return items.reduce((sum, i) => {
+    if (isGiftCardItem(i)) return sum;
     const price = Number(i.price.amount);
     const compare = i.compareAtPrice ? Number(i.compareAtPrice.amount) : 0;
     if (!countDiscounted && compare > price) return sum;

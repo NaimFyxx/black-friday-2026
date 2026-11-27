@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
-import { dehydrate, hydrate, useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2, Search } from "lucide-react";
 
@@ -51,8 +51,9 @@ export const Route = createFileRoute("/")({
     };
   },
   loaderDeps: ({ search }) => search,
-  // Prime the cache, then hand it to the browser so the first client render
-  // matches the server instead of refetching from empty.
+  // Prime the cache. The router hands the whole cache to the browser before
+  // anything renders there (src/router.tsx), so the first client render
+  // matches the server (no React #418).
   loader: async ({ context, deps }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(facetsQueryOptions(deps, context.preview, context.sim)),
@@ -61,7 +62,6 @@ export const Route = createFileRoute("/")({
         catalogQueryOptions(deps, context.preview, context.sim),
       ),
     ]);
-    return dehydrate(context.queryClient);
   },
   // Link preview (WhatsApp, Instagram, Facebook): image public/brand/og-fyxx-friday.jpg
   // (1200 x 630, option A chosen 21 Nov). Shared links need the full address.
@@ -111,14 +111,6 @@ function Storefront() {
   const filters = Route.useSearch();
   const navigate = useNavigate();
   const { queryClient } = Route.useRouteContext();
-  const dehydratedState = Route.useLoaderData();
-  const hasHydrated = useRef(false);
-
-  if (!hasHydrated.current) {
-    hasHydrated.current = true;
-    hydrate(queryClient, dehydratedState);
-  }
-
   const preview = usePreview();
   const sim = useSim();
   const { data: facets } = useQuery(facetsQueryOptions(filters, preview, sim));

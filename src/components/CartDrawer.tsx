@@ -23,7 +23,12 @@ import { usePreview } from "@/lib/preview";
 import { teaserQueryOptions } from "@/lib/teaser";
 import { useRewardsAuth } from "@/hooks/useRewardsAuth";
 import { prefillCheckout } from "@/lib/rewards-auth";
-import { refreshCartAttributes, setCartBuyerEmail, type CartItem } from "@/lib/shopify-cart";
+import {
+  fetchFreshCheckoutUrl,
+  refreshCartAttributes,
+  setCartBuyerEmail,
+  type CartItem,
+} from "@/lib/shopify-cart";
 import { withStoredUtm } from "@/lib/utm-attribution";
 import { prepareCheckout } from "@/lib/checkout-handoff.functions";
 import { selectCartCount, useCartStore } from "@/stores/cartStore";
@@ -112,8 +117,23 @@ export function CartDrawer() {
           quantity: item.quantity,
         })),
       );
-      // Carry the latest campaign (UTMs + fbclid) onto checkout.
-      const normal = withStoredUtm(checkoutUrl);
+      // Carry the latest campaign (UTMs + fbclid) onto checkout, with
+      // utm_content saying where Checkout was clicked (the cart drawer on a
+      // product page, or anywhere else). The cart's own campaign attributes
+      // (what orders are credited to) are left as they are.
+      const clickedFrom = window.location.pathname.startsWith("/product")
+        ? "product-page"
+        : "cart-drawer";
+      const withPlace = (url: string) => {
+        try {
+          const u = new URL(withStoredUtm(url));
+          u.searchParams.set("utm_content", clickedFrom);
+          return u.toString();
+        } catch {
+          return withStoredUtm(url);
+        }
+      };
+      const normal = withPlace(checkoutUrl);
       // Checkout opens in this tab. It goes to the checkout page directly so
       // the Fyxx app does not take over (see checkout-handoff.functions.ts),
       // and falls back to the normal link. (The spinner is already on from the
@@ -135,14 +155,22 @@ export function CartDrawer() {
           ok ? undefined : email ? setCartBuyerEmail(cartId!, email).catch(() => {}) : undefined,
         );
       // Also wait (max ~1 s) for GA4 begin_checkout to go out before leaving.
+      // After the member's details are on the cart, read the cart's checkout
+      // link again (Shopify issues a new one when buyer details change).
+      let fallback = normal;
       const prepared = (
         cartId
           ? Promise.all([refreshCartAttributes(cartId).catch(() => {}), prefill().catch(() => {})])
-          : Promise.resolve()
-      ).then(() => prepareCheckoutFn({ data: { url: normal } }));
+              .then(() => fetchFreshCheckoutUrl(cartId))
+              .then((fresh) => (fresh ? withPlace(fresh) : normal))
+          : Promise.resolve(normal)
+      ).then((url) => {
+        fallback = url;
+        return prepareCheckoutFn({ data: { url } });
+      });
       Promise.all([prepared, tracked.catch(() => {})])
-        .then(([r]) => go(r ? withStoredUtm(r.url) : normal))
-        .catch(() => go(normal));
+        .then(([r]) => go(r ? withPlace(r.url) : fallback))
+        .catch(() => go(fallback));
     }
   };
 
