@@ -305,7 +305,10 @@ function channelOf(o: {
 }) {
   const app = (o.app?.name ?? "").toLowerCase();
   const src = (o.sourceName ?? "").toLowerCase();
-  if (src === "pos" || app.includes("point of sale")) return "inStore";
+  // In store: Shopify POS (2025), Odoo POS (from 2026; its sales reach Shopify through
+  // the "Odoo Connector" app).
+  if (src === "pos" || app.includes("point of sale") || app.includes("odoo connector"))
+    return "inStore";
   // The Fyxx Friday site counts as website (it was landing in "other").
   if (src === "web" || app === "online store" || isFridaySite(o)) return "website";
   if (app.includes("mobile app") || app.includes("appmaker")) return "app";

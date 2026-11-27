@@ -703,8 +703,12 @@ function ChannelCompare({
     },
     { label: "of which Fyxx Friday site", sub: true, pick: (d) => d.channels.fridaySite },
     { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
-    { label: "In store (Point of Sale)", strong: true, pick: (d) => d.channels.inStore },
-    { label: "Staff and other orders (draft, phone, Odoo)", strong: true, pick: staff },
+    {
+      label: "In store (Shopify POS 2025, Odoo POS 2026)",
+      strong: true,
+      pick: (d) => d.channels.inStore,
+    },
+    { label: "Staff and other orders (draft, phone)", strong: true, pick: staff },
   ];
   const num = (v: number) =>
     v.toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
@@ -823,7 +827,8 @@ function ChannelCompare({
         Friday site orders (Shopify shows them as the &quot;Lovable&quot; app) count as website.
         Margin as in Zeid&apos;s sale sheet: price after discounts without the 16% sales tax, minus
         cost, on items with a known cost; free gifts count as cost, gift cards left out. 2025 margin
-        uses this year&apos;s costs. In-store sales from Odoo come later.
+        uses this year&apos;s costs. In-store sales in 2026 are the Odoo POS orders Shopify receives
+        through the Odoo Connector.
       </p>
     </Panel>
   );
