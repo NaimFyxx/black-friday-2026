@@ -695,10 +695,15 @@ function ChannelCompare({
   }> = [
     { label: "Total", strong: true, pick: (d) => d },
     { label: "Digital (website + app)", strong: true, pick: digital },
-    { label: "Website", sub: true, pick: (d) => d.channels.website },
+    {
+      label: "Website (myfyxx.com and Fyxx Friday site)",
+      sub: true,
+      pick: (d) => d.channels.website,
+    },
+    { label: "of which Fyxx Friday site", sub: true, pick: (d) => d.channels.fridaySite },
     { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
     { label: "In store (Point of Sale)", strong: true, pick: (d) => d.channels.inStore },
-    { label: "Staff orders (phone and draft)", strong: true, pick: staff },
+    { label: "Staff and other orders (draft, phone, Odoo)", strong: true, pick: staff },
   ];
   const cell = (b: Bucket | null) =>
     b ? (
@@ -746,10 +751,11 @@ function ChannelCompare({
       <p className="border-t border-border px-3 py-2 text-xs text-muted-foreground sm:px-4">
         Whole day, 00:00 to midnight Amman time: 28 Nov 2025 and Fri 27 Nov 2026
         {before ? " (fills in from Friday)" : " (so far)"}. Shopify orders, cancelled ones left out.
-        Average order = sales divided by orders. Margin as in Zeid&apos;s sale sheet: price after
-        discounts without the 16% sales tax, minus cost, on items with a known cost; free gifts
-        count as cost, gift cards are left out. 2025 margin is worked out with this year&apos;s
-        costs. In-store sales from Odoo come later.
+        Average order = sales divided by orders. Fyxx Friday site orders (Shopify shows them as the
+        "Lovable" app) count as website. Margin as in Zeid&apos;s sale sheet: price after discounts
+        without the 16% sales tax, minus cost, on items with a known cost; free gifts count as cost,
+        gift cards are left out. 2025 margin is worked out with this year&apos;s costs. In-store
+        sales from Odoo come later.
       </p>
     </Panel>
   );

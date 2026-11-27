@@ -667,6 +667,8 @@ export type Channels = {
   inStore: Bucket;
   staff: Bucket;
   other: Bucket;
+  /** Part of website: orders on the Fyxx Friday site (from 27 Nov 2026). */
+  fridaySite: Bucket;
 };
 export type DaySales = Bucket & { channels: Channels };
 export type SalesForecast = {
@@ -712,6 +714,7 @@ function toChannels(raw: unknown): Channels {
     inStore: b("inStore"),
     staff: b("staff"),
     other: b("other"),
+    fridaySite: b("fridaySite"),
   };
 }
 

@@ -290,11 +290,24 @@ const bucket = (): Bucket => ({
 const r3 = (x: number) => Math.round(x * 1000) / 1000;
 
 /** Which channel an order belongs to, from the Shopify app that created it. */
-function channelOf(o: { sourceName?: string | null; app?: { name?: string } | null }) {
+/** Placed on the Fyxx Friday site (friday.myfyxx.com): it checks out through the "Lovable" app. */
+function isFridaySite(o: { app?: { name?: string } | null; customAttributes?: unknown }) {
+  const app = (o.app?.name ?? "").toLowerCase();
+  // deno-lint-ignore no-explicit-any
+  const attrs = (Array.isArray(o.customAttributes) ? o.customAttributes : []) as any[];
+  return app === "lovable" || attrs.some((a) => a?.key === "_bf_session");
+}
+
+function channelOf(o: {
+  sourceName?: string | null;
+  app?: { name?: string } | null;
+  customAttributes?: unknown;
+}) {
   const app = (o.app?.name ?? "").toLowerCase();
   const src = (o.sourceName ?? "").toLowerCase();
   if (src === "pos" || app.includes("point of sale")) return "inStore";
-  if (src === "web" || app === "online store") return "website";
+  // The Fyxx Friday site counts as website (it was landing in "other").
+  if (src === "web" || app === "online store" || isFridaySite(o)) return "website";
   if (app.includes("mobile app") || app.includes("appmaker")) return "app";
   if (src === "shopify_draft_order" || app.includes("draft") || app.includes("shopify mobile"))
     return "staff";
@@ -316,6 +329,8 @@ async function daySales(since: string, until: string) {
     staff: bucket(),
     other: bucket(),
   };
+  // Part of "website": orders on the Fyxx Friday site only.
+  const fridaySite = bucket();
   // Costs: if they can't be read, sales still work (margin shows as unknown).
   let costs: Awaited<ReturnType<typeof loadCosts>> | null = null;
   try {
@@ -368,6 +383,7 @@ async function daySales(since: string, until: string) {
         one.margin += net - cost * (Number(li.quantity) || 0);
       }
       add(channels[channelOf(o)], one);
+      if (isFridaySite(o)) add(fridaySite, one);
       add(sum, one);
     }
     if (!d.orders.pageInfo.hasNextPage) break;
@@ -380,13 +396,14 @@ async function daySales(since: string, until: string) {
     return b;
   };
   for (const k of Object.keys(channels)) round(channels[k]);
+  round(fridaySite);
   return {
     status: "ok",
     costsLoaded: costs !== null,
     ...round(sum),
     online: round(online),
     inStore: channels.inStore,
-    channels,
+    channels: { ...channels, fridaySite },
   };
 }
 
