@@ -54,11 +54,11 @@ function PopupCard({ cfg, total, from }: { cfg: FreeBottlesConfig; total: number
         {cfg.text.headline || DEFAULT_TEXT.headline}
       </p>
       {upgraded && (
-        // Reached a new star with this add: say what they upgraded to.
+        // Reached a new star with this add: "Leveled up".
         <p className="ff-subline mt-1 text-sm leading-snug text-ff-cream">
           {upgraded.level === 1
-            ? "Free bottle unlocked"
-            : `Free bottle upgraded to ${upgraded.label}`}
+            ? "Free gift unlocked"
+            : `Leveled up! Your free gift is now ${upgraded.label}`}
         </p>
       )}
       <p className="mt-0.5 text-sm leading-snug">{awayLine(total, cfg)}</p>

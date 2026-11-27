@@ -45,14 +45,14 @@ export type FreeBottlesConfig = {
 export const REWARD_COUNT = 5;
 
 export const DEFAULT_TEXT = {
-  headline: "Spend more, upgrade your free bottle",
+  headline: "Spend more, level up your free gift",
   away: "You're {amount} away from {reward}",
   card: "Add {amount} more for {reward}",
-  done: "You've unlocked the best free bottle",
+  done: "Your free gift is fully leveled up",
   soon: "Revealed soon",
   // One free bottle that gets better at each level (not a new bottle each time).
-  first: "your free bottle",
-  upgrade: "a better free bottle ({level})",
+  first: "your free gift",
+  upgrade: "a free gift level up ({level})",
   current: "Your free gift: {level}",
   // [0] = free delivery (only shown when its amount is above 0), then one per star.
   labels: ["Free delivery", "Level 1", "Level 2", "Level 3", "Level 4", "Level 5"],

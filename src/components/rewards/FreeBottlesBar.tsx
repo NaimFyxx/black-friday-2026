@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { progress, type FreeBottlesConfig, type Milestone } from "@/lib/free-bottles";
 import { formatJod } from "@/lib/shopify";
 import { cn } from "@/lib/utils";
-import { RewardStar } from "./RewardStar";
+import { STAR_PATH } from "./RewardStar";
 
 /**
  * The free bottles progress bar: free delivery as a small dot (when set), then the stars
@@ -47,12 +47,14 @@ export function FreeBottlesBar({
     <div
       className={cn(
         "relative px-3",
-        compact ? "pt-1 pb-1" : dense ? "pt-3.5 pb-4 md:pt-6 md:pb-5" : "pt-6 pb-5",
+        // Room under the line for the amounts, so they never touch what follows.
+        compact ? "pt-1 pb-1" : dense ? "pt-3.5 pb-6 md:pt-6 md:pb-7" : "pt-6 pb-7",
       )}
     >
       <div
         className={cn(
-          "relative h-1.5 rounded-full",
+          // A hairline; the stars sit on it with a clean gap around them.
+          "relative h-0.5 rounded-full",
           tone === "burgundy" ? "bg-ff-cream/15" : "bg-ff-black/20",
         )}
       >
@@ -78,6 +80,43 @@ export function FreeBottlesBar({
         ))}
       </div>
     </div>
+  );
+}
+
+/**
+ * Andrea's starburst as a milestone: always solid (no jagged outlines), one
+ * size. Reached = solid accent, next = solid cream (burgundy on red), ahead = faint.
+ */
+function MilestoneStar({
+  state,
+  tone,
+  className,
+}: {
+  state: "reached" | "next" | "ahead";
+  tone: "red" | "burgundy";
+  className?: string;
+}) {
+  const dark = tone === "burgundy";
+  // Every star is one solid shape (no outlines), drawn over a base in the
+  // background colour so the line never shows through a faint star.
+  const base = dark ? "fill-ff-burgundy" : "fill-ff-red";
+  const fill =
+    state === "reached"
+      ? dark
+        ? "fill-ff-red"
+        : "fill-ff-cream"
+      : state === "next"
+        ? dark
+          ? "fill-ff-cream"
+          : "fill-ff-burgundy"
+        : dark
+          ? "fill-ff-cream/25"
+          : "fill-ff-black/25";
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={cn("block", className)}>
+      <path d={STAR_PATH} className={base} />
+      <path d={STAR_PATH} className={cn("transition-colors duration-300", fill)} />
+    </svg>
   );
 }
 
@@ -113,12 +152,11 @@ function Marker({
       {m.reached && !compact && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
     </span>
   ) : (
-    <RewardStar
-      light={!dark}
-      dark={dark}
-      filled={m.reached}
+    <MilestoneStar
+      state={m.reached ? "reached" : next ? "next" : "ahead"}
+      tone={tone}
       className={cn(
-        compact ? "h-4 w-4" : dense ? "h-[18px] w-[18px] md:h-6 md:w-6" : "h-6 w-6",
+        compact ? "h-4 w-4" : dense ? "h-5 w-5 md:h-6 md:w-6" : "h-6 w-6",
         pop && "ff-star-pop",
       )}
     />
