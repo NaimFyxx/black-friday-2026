@@ -840,6 +840,82 @@ Deno.serve(async (req) => {
     }
   }
 
+  // Read-only check: Odoo POS paid sales in a range by till and product category
+  // (Odoo product category and POS category), sales without tax and quantity.
+  if (body.action === "odoo_pos_categories") {
+    if (!isIso(body.since) || !isIso(body.until)) return json({ error: "Bad range" }, 400);
+    try {
+      const uid = await odooRpc("common", "authenticate", [ODOO_DB, ODOO_USER, ODOO_KEY, {}]);
+      const call = (
+        model: string,
+        method: string,
+        args: unknown[],
+        kw: Record<string, unknown> = {},
+      ) => odooRpc("object", "execute_kw", [ODOO_DB, uid, ODOO_KEY, model, method, args, kw]);
+      // deno-lint-ignore no-explicit-any
+      const orders: any[] = await call(
+        "pos.order",
+        "search_read",
+        [
+          [
+            ["date_order", ">=", odooTime(body.since)],
+            ["date_order", "<", odooTime(body.until)],
+            ["state", "in", ["paid", "done", "invoiced"]],
+          ],
+        ],
+        { fields: ["id", "config_id"], limit: 5000 },
+      );
+      const till = new Map(
+        orders.map((o) => [o.id, Array.isArray(o.config_id) ? o.config_id[1] : "?"]),
+      );
+      // deno-lint-ignore no-explicit-any
+      const lines: any[] = orders.length
+        ? await call("pos.order.line", "search_read", [[["order_id", "in", [...till.keys()]]]], {
+            fields: ["order_id", "product_id", "qty", "price_subtotal", "price_subtotal_incl"],
+            limit: 50000,
+          })
+        : [];
+      const pids = [...new Set(lines.filter((l) => l.product_id).map((l) => l.product_id[0]))];
+      // deno-lint-ignore no-explicit-any
+      const prods: any[] = pids.length
+        ? await call("product.product", "read", [pids], {
+            fields: ["categ_id", "pos_categ_ids"],
+            context: { active_test: false },
+          })
+        : [];
+      const posCatIds = [...new Set(prods.flatMap((p) => p.pos_categ_ids ?? []))];
+      // deno-lint-ignore no-explicit-any
+      const posCats: any[] = posCatIds.length
+        ? await call("pos.category", "read", [posCatIds], { fields: ["display_name"] })
+        : [];
+      const posName = new Map(posCats.map((c) => [c.id, c.display_name]));
+      const info = new Map(
+        prods.map((p) => [
+          p.id,
+          {
+            categ: Array.isArray(p.categ_id) ? p.categ_id[1] : "?",
+            pos:
+              (p.pos_categ_ids ?? []).map((i: number) => posName.get(i) ?? i).join(" + ") ||
+              "(none)",
+          },
+        ]),
+      );
+      const out: Record<string, { lines: number; qty: number; net: number; gross: number }> = {};
+      for (const l of lines) {
+        const i = l.product_id ? info.get(l.product_id[0]) : undefined;
+        const k = `${till.get(l.order_id[0])} || ${i?.pos ?? "?"} || ${i?.categ ?? "?"}`;
+        out[k] ??= { lines: 0, qty: 0, net: 0, gross: 0 };
+        out[k].lines += 1;
+        out[k].qty += Number(l.qty) || 0;
+        out[k].net = r3(out[k].net + (Number(l.price_subtotal) || 0));
+        out[k].gross = r3(out[k].gross + (Number(l.price_subtotal_incl) || 0));
+      }
+      return json({ status: "ok", groups: out });
+    } catch (e) {
+      return json({ status: "error", message: String((e as Error).message).slice(0, 300) });
+    }
+  }
+
   // Read-only check: Odoo POS orders in a range by till and state (counts and totals).
   if (body.action === "odoo_pos_states") {
     if (!isIso(body.since) || !isIso(body.until)) return json({ error: "Bad range" }, 400);
