@@ -718,10 +718,9 @@ async function daySales(since: string, until: string) {
           one.giftCards += paid;
           continue;
         }
-        // A "Tip" line (Shopify POS) is a tip, not a sale.
+        // A "Tip" line is the order's tip, not a sale: not an item, no margin.
         if (/^tips?$/i.test(String(li.title ?? "").trim())) {
-          one.total -= paid;
-          tips = r3(tips + paid);
+          // Already left out of the total through totalTipReceivedSet.
           continue;
         }
         const dine = pos && isDineLine(li);
