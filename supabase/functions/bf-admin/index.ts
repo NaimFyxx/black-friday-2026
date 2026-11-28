@@ -345,6 +345,22 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
   if (!uid) throw new Error("Odoo sign-in failed");
   const call = (model: string, method: string, args: unknown[], kw: Record<string, unknown> = {}) =>
     odooRpc("object", "execute_kw", [ODOO_DB, uid, ODOO_KEY, model, method, args, kw]);
+  // Dine-In vs Retail is decided by the product's POS category, not by the till
+  // (the tills aren't used as intended). bf_settings.pos_dine_in_categories lists
+  // the Dine-In POS categories; a category also covers its sub-categories
+  // ("TGR Food Menu" covers "TGR Food Menu / Deli"). Everything else is Retail.
+  const { data: cfg } = await db
+    .from("bf_settings")
+    .select("value")
+    .eq("key", "pos_dine_in_categories")
+    .maybeSingle();
+  const dineCats = (Array.isArray(cfg?.value) ? cfg.value : []).map((x: unknown) =>
+    String(x).trim().toLowerCase(),
+  );
+  const isDineCat = (name: string) => {
+    const n = name.trim().toLowerCase();
+    return dineCats.some((c: string) => n === c || n.startsWith(`${c} / `));
+  };
   const domain = [
     ["date_order", ">=", odooTime(since)],
     ["date_order", "<", odooTime(until)],
@@ -355,37 +371,88 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     fields: ["id", "amount_total", "partner_id", "config_id", "date_order"],
     limit: 5000,
   });
-  // Two tills: "Retail" (the shop, counted as In-store) and "Dine-In" (own row).
   const retail = bucket();
   const dineIn = bucket();
-  const tillName = (o: { config_id?: unknown }) =>
-    Array.isArray(o.config_id) ? String(o.config_id[1]) : "unknown";
-  const pick = (name: string) => (/dine/i.test(name) ? dineIn : retail);
-  const bucketOf = new Map<number, Bucket>();
-  // Orders and sales per Amman hour (date_order is UTC "YYYY-MM-DD HH:MM:SS").
   const hours = emptyHours();
+  const tills: Record<string, { orders: number; total: number }> = {};
+  if (!orders.length) return { retail, dineIn, tills, hours };
   for (const o of orders) {
-    const t = Date.parse(String(o.date_order).replace(" ", "T") + "Z");
-    if (Number.isFinite(t)) {
-      const h = hours[ammanHourOf(t)];
+    const t = Array.isArray(o.config_id) ? String(o.config_id[1]) : "unknown";
+    tills[t] ??= { orders: 0, total: 0 };
+    tills[t].orders += 1;
+    tills[t].total = r3(tills[t].total + (Number(o.amount_total) || 0));
+    const ts = Date.parse(String(o.date_order).replace(" ", "T") + "Z");
+    if (Number.isFinite(ts)) {
+      const h = hours[ammanHourOf(ts)];
       h.orders += 1;
       h.total = r3(h.total + (Number(o.amount_total) || 0));
     }
   }
-  // Orders and sales per till (POS config), so the dashboard can show what's included.
-  const tills: Record<string, { orders: number; total: number }> = {};
+  // deno-lint-ignore no-explicit-any
+  const lines: any[] = await call(
+    "pos.order.line",
+    "search_read",
+    [[["order_id", "in", orders.map((o) => o.id)]]],
+    {
+      fields: ["order_id", "product_id", "qty", "price_subtotal", "price_subtotal_incl"],
+      limit: 50000,
+    },
+  );
+  const productIds = [...new Set(lines.filter((l) => l.product_id).map((l) => l.product_id[0]))];
+  const prod = new Map<number, { sku: string | null; dine: boolean }>();
+  // deno-lint-ignore no-explicit-any
+  const prods: any[] = [];
+  for (let i = 0; i < productIds.length; i += 500) {
+    prods.push(
+      ...(await call("product.product", "read", [productIds.slice(i, i + 500)], {
+        fields: ["default_code", "pos_categ_ids"],
+        context: { active_test: false },
+      })),
+    );
+  }
+  const catIds = [...new Set(prods.flatMap((p) => p.pos_categ_ids ?? []))];
+  // deno-lint-ignore no-explicit-any
+  const cats: any[] = catIds.length
+    ? await call("pos.category", "read", [catIds], { fields: ["display_name"] })
+    : [];
+  const catName = new Map<number, string>(cats.map((c) => [c.id, String(c.display_name)]));
+  for (const p of prods) {
+    const names = (p.pos_categ_ids ?? []).map((i: number) => catName.get(i) ?? "");
+    prod.set(p.id, {
+      sku: p.default_code ? String(p.default_code).trim() : null,
+      dine: names.some((nm: string) => isDineCat(nm)),
+    });
+  }
+  // Line by line: sales and margin go to Dine-In or Retail by category.
+  const value = new Map<number, { dine: number; retail: number }>();
+  for (const l of lines) {
+    const info = l.product_id ? prod.get(l.product_id[0]) : undefined;
+    const b = info?.dine ? dineIn : retail;
+    const gross = Number(l.price_subtotal_incl) || 0;
+    const net = Number(l.price_subtotal) || 0;
+    b.total += gross;
+    const oid = Array.isArray(l.order_id) ? l.order_id[0] : l.order_id;
+    const v = value.get(oid) ?? { dine: 0, retail: 0 };
+    if (info?.dine) v.dine += gross;
+    else v.retail += gross;
+    value.set(oid, v);
+    const cost = info?.sku ? bySku?.get(info.sku) : undefined;
+    if (cost === undefined) {
+      b.uncosted += gross;
+      continue;
+    }
+    b.costedNet += net;
+    b.margin += net - cost * (Number(l.qty) || 0);
+  }
+  // Each order is counted once, in the side that holds most of its value.
+  const bucketOf = new Map<number, Bucket>();
   for (const o of orders) {
-    const t = tillName(o);
-    tills[t] ??= { orders: 0, total: 0 };
-    tills[t].orders += 1;
-    tills[t].total = r3(tills[t].total + (Number(o.amount_total) || 0));
-    const b = pick(t);
+    const v = value.get(o.id) ?? { dine: 0, retail: 0 };
+    const b = v.dine > v.retail ? dineIn : retail;
     bucketOf.set(o.id, b);
     b.orders += 1;
-    b.total += Number(o.amount_total) || 0;
     if (!o.partner_id) b.noCustomer += 1;
   }
-  if (!orders.length) return { retail, dineIn, tills, hours };
   // New customers: partners in these orders with no POS order before `since`.
   const partners = [...new Set(orders.filter((o) => o.partner_id).map((o) => o.partner_id[0]))];
   if (partners.length) {
@@ -408,36 +475,6 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     );
     for (const o of orders)
       if (o.partner_id && !seen.has(o.partner_id[0])) bucketOf.get(o.id)!.newCustomers += 1;
-  }
-  // Margin from the order lines (subtotal without tax), cost by the product's SKU.
-  // deno-lint-ignore no-explicit-any
-  const lines: any[] = await call(
-    "pos.order.line",
-    "search_read",
-    [[["order_id", "in", orders.map((o) => o.id)]]],
-    { fields: ["order_id", "product_id", "qty", "price_subtotal"], limit: 50000 },
-  );
-  const productIds = [...new Set(lines.filter((l) => l.product_id).map((l) => l.product_id[0]))];
-  const skuOf = new Map<number, string>();
-  for (let i = 0; i < productIds.length; i += 500) {
-    // deno-lint-ignore no-explicit-any
-    const ps: any[] = await call("product.product", "read", [productIds.slice(i, i + 500)], {
-      fields: ["default_code"],
-      context: { active_test: false },
-    });
-    for (const p of ps) if (p.default_code) skuOf.set(p.id, String(p.default_code).trim());
-  }
-  for (const l of lines) {
-    const b = (Array.isArray(l.order_id) && bucketOf.get(l.order_id[0])) || retail;
-    const net = Number(l.price_subtotal) || 0;
-    const sku = l.product_id ? skuOf.get(l.product_id[0]) : undefined;
-    const cost = sku ? bySku?.get(sku) : undefined;
-    if (cost === undefined) {
-      b.uncosted += net * SALES_TAX;
-      continue;
-    }
-    b.costedNet += net;
-    b.margin += net - cost * (Number(l.qty) || 0);
   }
   return { retail, dineIn, tills, hours };
 }

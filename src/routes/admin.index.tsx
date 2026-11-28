@@ -935,11 +935,11 @@ function ChannelCompare({
     { label: "Lovable", sub: true, pick: (d) => d.channels.fridaySite },
     { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
     {
-      label: "Shop (in-store + Dine-In)",
+      label: "Shop (Retail + Dine-In)",
       strong: true,
       pick: (d) => sumBuckets(d.channels.inStore, d.channels.dineIn),
     },
-    { label: "In-store (Retail till)", sub: true, pick: (d) => d.channels.inStore },
+    { label: "Retail", sub: true, pick: (d) => d.channels.inStore },
     { label: "Dine-In", sub: true, pick: (d) => d.channels.dineIn },
     { label: "Staff and other orders (draft, phone)", strong: true, pick: staff },
   ];
@@ -1079,9 +1079,10 @@ function ChannelCompare({
         orders that were the shopper&apos;s first ever Fyxx order (orders with no customer attached,
         common in store, can&apos;t be counted). Margin as in Zeid&apos;s sale sheet: price after
         discounts without the 16% sales tax, minus cost, on items with a known cost; free gifts
-        count as cost, gift cards left out. 2025 margin uses this year&apos;s costs. In 2026
-        in-store (the Retail till) and Dine-In are read straight from Odoo POS; in 2025 in-store was
-        Shopify POS.
+        count as cost, gift cards left out. 2025 margin uses this year&apos;s costs. In 2026 the
+        shop&apos;s sales are read straight from Odoo POS and split by product category, not by
+        till: food, cocktails, Spirits (BTG), mixers, water and coffee are Dine-In, everything else
+        is Retail (an order counts where most of its value is). In 2025 in-store was Shopify POS.
       </p>
     </Panel>
   );
