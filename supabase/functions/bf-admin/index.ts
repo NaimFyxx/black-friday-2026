@@ -213,11 +213,12 @@ const DAY_SALES_QUERY = `
         id createdAt cancelledAt test sourceName
         app { name }
         totalPriceSet { shopMoney { amount } }
+        currentTotalPriceSet { shopMoney { amount } }
         customAttributes { key value }
         customer { id orders(first: 1, sortKey: CREATED_AT) { nodes { id } } }
         lineItems(first: 60) {
           nodes {
-            quantity isGiftCard sku
+            quantity currentQuantity isGiftCard sku
             variant { legacyResourceId sku }
             originalTotalSet { shopMoney { amount } }
             discountAllocations { allocatedAmountSet { shopMoney { amount } } }
@@ -507,6 +508,10 @@ async function daySales(since: string, until: string) {
   let odoo: { retail: Bucket; dineIn: Bucket } | null = null;
   // Orders and sales per Amman hour, every channel (the forecast's hourly chart).
   const byHour = emptyHours();
+  // Shopify orders cancelled (left out of sales) and orders changed after
+  // they were placed (edits, refunds): change = current total minus placed total.
+  const cancelled = { orders: 0, total: 0 };
+  const edited = { orders: 0, change: 0 };
   let odooTills: Record<string, { orders: number; total: number }> = {};
   let odooError: string | null = null;
   if (since >= ODOO_POS_FROM) {
@@ -535,10 +540,23 @@ async function daySales(since: string, until: string) {
     // deno-lint-ignore no-explicit-any
     const d: any = await gql(DAY_SALES_QUERY, { q, after });
     for (const o of d.orders.nodes) {
-      if (o.cancelledAt || o.test) continue;
+      if (o.test) continue;
+      if (o.cancelledAt) {
+        // Left out of sales; shown on the dashboard as cancellations.
+        cancelled.orders += 1;
+        cancelled.total = r3(cancelled.total + (Number(o.totalPriceSet.shopMoney.amount) || 0));
+        continue;
+      }
       const one = bucket();
       one.orders = 1;
-      one.total = Number(o.totalPriceSet.shopMoney.amount) || 0;
+      // Current total: after order edits and refunds (what Shopify reports now).
+      const placed = Number(o.totalPriceSet.shopMoney.amount) || 0;
+      const current = Number(o.currentTotalPriceSet?.shopMoney?.amount ?? placed) || 0;
+      one.total = current;
+      if (Math.abs(placed - current) >= 0.001) {
+        edited.orders += 1;
+        edited.change = r3(edited.change + (current - placed));
+      }
       // deno-lint-ignore no-explicit-any
       const member = (o.customAttributes ?? []).some(
         (a: any) => a.key === "_ff_member" && a.value === "1",
@@ -557,7 +575,12 @@ async function daySales(since: string, until: string) {
           (t: number, a: any) => t + (Number(a.allocatedAmountSet?.shopMoney?.amount) || 0),
           0,
         );
-        const paid = Math.max(0, gross - off); // after every discount, incl. free gifts
+        // After every discount (incl. free gifts), for the quantity still on the
+        // order after edits and refunds.
+        const qty = Number(li.quantity) || 0;
+        const cur = li.currentQuantity == null ? qty : Number(li.currentQuantity) || 0;
+        const share = qty > 0 ? cur / qty : 1;
+        const paid = Math.max(0, gross - off) * share;
         if (li.isGiftCard) {
           one.giftCards += paid;
           continue;
@@ -572,7 +595,7 @@ async function daySales(since: string, until: string) {
         }
         const net = paid / SALES_TAX;
         one.costedNet += net;
-        one.margin += net - cost * (Number(li.quantity) || 0);
+        one.margin += net - cost * cur;
       }
       // With Odoo POS read directly, the copies the Odoo Connector puts in
       // Shopify are left out (they would count the same till sales twice).
@@ -601,6 +624,8 @@ async function daySales(since: string, until: string) {
     inStoreSource: useOdoo ? "odoo_pos" : "shopify",
     odooTills,
     byHour,
+    cancelled,
+    edited,
     odooError,
     ...round(sum),
     online: round(online),
