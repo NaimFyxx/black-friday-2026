@@ -214,6 +214,7 @@ const DAY_SALES_QUERY = `
         app { name }
         totalPriceSet { shopMoney { amount } }
         currentTotalPriceSet { shopMoney { amount } }
+        totalTipReceivedSet { shopMoney { amount } }
         customAttributes { key value }
         customer { id orders(first: 1, sortKey: CREATED_AT) { nodes { id } } }
         lineItems(first: 60) {
@@ -512,6 +513,7 @@ async function daySales(since: string, until: string) {
   // they were placed (edits, refunds): change = current total minus placed total.
   const cancelled = { orders: 0, total: 0 };
   const edited = { orders: 0, change: 0 };
+  let tips = 0;
   let odooTills: Record<string, { orders: number; total: number }> = {};
   let odooError: string | null = null;
   if (since >= ODOO_POS_FROM) {
@@ -552,7 +554,10 @@ async function daySales(since: string, until: string) {
       // Current total: after order edits and refunds (what Shopify reports now).
       const placed = Number(o.totalPriceSet.shopMoney.amount) || 0;
       const current = Number(o.currentTotalPriceSet?.shopMoney?.amount ?? placed) || 0;
-      one.total = current;
+      // Tips are left out of sales, as in Shopify's own sales reports.
+      const tip = Number(o.totalTipReceivedSet?.shopMoney?.amount) || 0;
+      tips = r3(tips + tip);
+      one.total = current - tip;
       if (Math.abs(placed - current) >= 0.001) {
         edited.orders += 1;
         edited.change = r3(edited.change + (current - placed));
@@ -626,6 +631,7 @@ async function daySales(since: string, until: string) {
     byHour,
     cancelled,
     edited,
+    tips,
     odooError,
     ...round(sum),
     online: round(online),
