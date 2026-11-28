@@ -703,6 +703,13 @@ export type SalesForecast = {
   thisYearError: string | null;
   pace: number | null;
   tooEarlyBefore: number;
+  /** Shopify orders cancelled (not counted), changed after placing, and tips (not counted). */
+  changes: {
+    cancelled: { orders: number; total: number };
+    edited: { orders: number; change: number };
+    tips: number;
+  } | null;
+  saleStart: string;
   /** Orders and sales per Amman hour (0 to 23): today and last year's Fyxx Friday. */
   hours: { thisYear: HourCount[] | null; lastYear: HourCount[] | null };
   /** Best Black Friday so far (bf_settings.forecast_record), e.g. 29 Nov 2024. */
@@ -813,6 +820,7 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
 
     let thisYear: DaySales | null = null;
     let thisYearHours: HourCount[] | null = null;
+    let changes: SalesForecast["changes"] = null;
     let thisYearError: string | null = null;
     let pace: number | null = null;
     if (mode !== "before") {
@@ -828,6 +836,13 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
         if (r.status === "ok") {
           thisYear = { ...toBucket(r), channels: toChannels(r.channels) };
           thisYearHours = toHours(r["byHour"]);
+          const c = (r["cancelled"] ?? {}) as Record<string, unknown>;
+          const e = (r["edited"] ?? {}) as Record<string, unknown>;
+          changes = {
+            cancelled: { orders: n(c["orders"]), total: n(c["total"]) },
+            edited: { orders: n(e["orders"]), change: n(e["change"]) },
+            tips: n(r["tips"]),
+          };
           if (mode === "friday" && ly?.share_by_hour) {
             pace = paceByMidnight({
               soFar: thisYear.total,
@@ -854,6 +869,8 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
         }
       : null;
     return {
+      changes,
+      saleStart: saleStart.toISOString(),
       hours: {
         thisYear: thisYearHours,
         lastYear: toHours((ly as Record<string, unknown> | undefined)?.["by_hour"]),

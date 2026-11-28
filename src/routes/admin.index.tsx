@@ -572,6 +572,44 @@ function SalesForecastSection() {
                       )}
                     </p>
                   )}
+                  {data.changes &&
+                    (data.changes.cancelled.orders > 0 ||
+                      data.changes.edited.orders > 0 ||
+                      data.changes.tips > 0) && (
+                      <div className="rounded-lg bg-foreground/5 px-3 py-2 text-xs">
+                        <p className="mb-1 text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+                          Changes (online orders)
+                        </p>
+                        {data.changes.cancelled.orders > 0 && (
+                          <p>
+                            Cancelled: {data.changes.cancelled.orders} orders,{" "}
+                            <span className="tabular-nums">
+                              {formatJod(data.changes.cancelled.total)}
+                            </span>{" "}
+                            <span className="text-muted-foreground">(not counted)</span>
+                          </p>
+                        )}
+                        {data.changes.edited.orders > 0 && (
+                          <p>
+                            Edited or refunded after placing: {data.changes.edited.orders} orders,{" "}
+                            <span className="tabular-nums">
+                              {data.changes.edited.change > 0 ? "+" : ""}
+                              {formatJod(data.changes.edited.change)}
+                            </span>{" "}
+                            <span className="text-muted-foreground">(already in the total)</span>
+                          </p>
+                        )}
+                        {data.changes.tips > 0 && (
+                          <p>
+                            Tips:{" "}
+                            <span className="tabular-nums">{formatJod(data.changes.tips)}</span>{" "}
+                            <span className="text-muted-foreground">
+                              (not counted, as in Shopify&apos;s reports)
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                    )}
                   {data.thisYear.costedNet > 0 && (
                     <p className="text-sm">
                       Margin{" "}
@@ -624,6 +662,8 @@ function SalesForecastSection() {
               thisYear={data.hours.thisYear}
               lastYear={data.hours.lastYear}
               nowHour={data.mode === "friday" ? ammanNowHour(data.now) : null}
+              saleStart={data.saleStart}
+              now={data.now}
             />
           )}
         </div>
@@ -745,11 +785,27 @@ function HoursChart({
   thisYear,
   lastYear,
   nowHour,
+  saleStart,
+  now,
 }: {
   thisYear: HourCount[] | null;
   lastYear: HourCount[];
   nowHour: number | null;
+  saleStart: string;
+  now: string;
 }) {
+  // Average pace since the sale opened (10:00), today and over the same hours last year.
+  const startHour = ammanNowHour(saleStart);
+  const end = Math.min(Date.parse(now), Date.parse(saleStart) + (24 - startHour) * 3_600_000);
+  const hoursOpen = Math.max((end - Date.parse(saleStart)) / 3_600_000, 0);
+  const sinceStart = (list: HourCount[], upTo: number) =>
+    list.slice(startHour, upTo + 1).reduce((t, x) => t + x.orders, 0);
+  const todayOrders = thisYear ? sinceStart(thisYear, 23) : 0;
+  const perHour = hoursOpen > 0 ? todayOrders / hoursOpen : null;
+  const lyPerHour = sinceStart(lastYear, 23) / (24 - startHour);
+  const peak = thisYear ? Math.max(...thisYear.slice(startHour).map((x) => x.orders)) : 0;
+  const fmt1 = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 1 });
+  const every = (ph: number) => (ph > 0 ? `one every ${fmt1(60 / ph)} min` : "");
   const rows = lastYear.map((ly, h) => ({
     hour: `${String(h).padStart(2, "0")}:00`,
     // Hours still to come today stay empty rather than showing 0.
@@ -773,6 +829,36 @@ function HoursChart({
             {thisYear[busiest]!.orders} orders ({formatJod(thisYear[busiest]!.total)})
           </p>
         )}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div>
+          <p className="font-display text-2xl tabular-nums">
+            {perHour !== null ? fmt1(perHour) : "–"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            orders per hour since {String(startHour).padStart(2, "0")}:00
+          </p>
+        </div>
+        <div>
+          <p className="font-display text-2xl tabular-nums">
+            {perHour !== null ? (perHour / 60).toFixed(2) : "–"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            orders per minute{perHour ? ` (${every(perHour)})` : ""}
+          </p>
+        </div>
+        <div>
+          <p className="font-display text-2xl tabular-nums">{peak || "–"}</p>
+          <p className="text-xs text-muted-foreground">
+            in the busiest hour{peak ? ` (${(peak / 60).toFixed(2)} per minute)` : ""}
+          </p>
+        </div>
+        <div>
+          <p className="font-display text-2xl tabular-nums text-foreground/50">{fmt1(lyPerHour)}</p>
+          <p className="text-xs text-muted-foreground">
+            orders per hour in 2025 ({String(startHour).padStart(2, "0")}:00 to midnight)
+          </p>
+        </div>
       </div>
       <div className="mt-3 h-56">
         <ResponsiveContainer width="100%" height="100%">
