@@ -210,7 +210,7 @@ const DAY_SALES_QUERY = `
     orders(first: 50, after: $after, query: $q, sortKey: CREATED_AT) {
       pageInfo { hasNextPage endCursor }
       nodes {
-        id createdAt cancelledAt test sourceName
+        id name createdAt cancelledAt test sourceName
         app { name }
         totalPriceSet { shopMoney { amount } }
         currentTotalPriceSet { shopMoney { amount } }
@@ -219,7 +219,8 @@ const DAY_SALES_QUERY = `
         customer { id orders(first: 1, sortKey: CREATED_AT) { nodes { id } } }
         lineItems(first: 60) {
           nodes {
-            quantity currentQuantity isGiftCard sku
+            quantity currentQuantity isGiftCard sku title vendor
+            product { productType }
             variant { legacyResourceId sku }
             originalTotalSet { shopMoney { amount } }
             discountAllocations { allocatedAmountSet { shopMoney { amount } } }
@@ -267,6 +268,25 @@ async function loadCosts(): Promise<{
   return { bySku, byVariant };
 }
 
+type ItemSold = { title: string; category: string; qty: number; sales: number };
+
+/** Sum items by a key, biggest quantity first. */
+function rollUp(list: ItemSold[], key: (i: ItemSold) => string, limit: number) {
+  const m = new Map<string, { name: string; category: string; qty: number; sales: number }>();
+  for (const i of list) {
+    const k = key(i);
+    const x = m.get(k) ?? { name: k, category: i.category, qty: 0, sales: 0 };
+    x.qty += i.qty;
+    x.sales += i.sales;
+    m.set(k, x);
+  }
+  return [...m.values()]
+    .filter((x) => x.qty > 0)
+    .sort((a, b) => b.qty - a.qty || b.sales - a.sales)
+    .slice(0, limit)
+    .map((x) => ({ ...x, qty: r3(x.qty), sales: r3(x.sales) }));
+}
+
 type Bucket = {
   orders: number;
   total: number;
@@ -278,6 +298,9 @@ type Bucket = {
   uncosted: number;
   /** Gift card sales (no product cost: left out of the margin). */
   giftCards: number;
+  /** Free gifts given with these orders (Fyxx Friday 2026 final list): count and cost. */
+  giftOrders: number;
+  giftCost: number;
   /** Orders placed by a signed-in Fyxx Rewards member on the Friday site. */
   memberOrders: number;
   memberTotal: number;
@@ -295,6 +318,8 @@ const bucket = (): Bucket => ({
   costedNet: 0,
   uncosted: 0,
   giftCards: 0,
+  giftOrders: 0,
+  giftCost: 0,
   memberOrders: 0,
   memberTotal: 0,
 });
@@ -375,7 +400,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
   const dineIn = bucket();
   const hours = emptyHours();
   const tills: Record<string, { orders: number; total: number }> = {};
-  if (!orders.length) return { retail, dineIn, tills, hours };
+  if (!orders.length) return { retail, dineIn, tills, hours, items: [] as ItemSold[] };
   for (const o of orders) {
     const t = Array.isArray(o.config_id) ? String(o.config_id[1]) : "unknown";
     tills[t] ??= { orders: 0, total: 0 };
@@ -399,13 +424,16 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     },
   );
   const productIds = [...new Set(lines.filter((l) => l.product_id).map((l) => l.product_id[0]))];
-  const prod = new Map<number, { sku: string | null; dine: boolean }>();
+  const prod = new Map<
+    number,
+    { sku: string | null; dine: boolean; name: string; category: string }
+  >();
   // deno-lint-ignore no-explicit-any
   const prods: any[] = [];
   for (let i = 0; i < productIds.length; i += 500) {
     prods.push(
       ...(await call("product.product", "read", [productIds.slice(i, i + 500)], {
-        fields: ["default_code", "pos_categ_ids"],
+        fields: ["default_code", "pos_categ_ids", "display_name", "categ_id"],
         context: { active_test: false },
       })),
     );
@@ -418,11 +446,15 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
   const catName = new Map<number, string>(cats.map((c) => [c.id, String(c.display_name)]));
   for (const p of prods) {
     const names = (p.pos_categ_ids ?? []).map((i: number) => catName.get(i) ?? "");
+    const categ = Array.isArray(p.categ_id) ? String(p.categ_id[1]) : "";
     prod.set(p.id, {
       sku: p.default_code ? String(p.default_code).trim() : null,
       dine: names.some((nm: string) => isDineCat(nm)),
+      name: String(p.display_name ?? ""),
+      category: categ.split("/").pop()?.trim() || "Other",
     });
   }
+  const items: ItemSold[] = [];
   // Line by line: sales and margin go to Dine-In or Retail by category.
   const value = new Map<number, { dine: number; retail: number }>();
   for (const l of lines) {
@@ -431,6 +463,15 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     const gross = Number(l.price_subtotal_incl) || 0;
     const net = Number(l.price_subtotal) || 0;
     b.total += gross;
+    // Items sold (Retail only): for the category and best-seller lists.
+    if (!info?.dine && info) {
+      items.push({
+        title: info.name,
+        category: info.category,
+        qty: Number(l.qty) || 0,
+        sales: gross,
+      });
+    }
     const oid = Array.isArray(l.order_id) ? l.order_id[0] : l.order_id;
     const v = value.get(oid) ?? { dine: 0, retail: 0 };
     if (info?.dine) v.dine += gross;
@@ -476,7 +517,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     for (const o of orders)
       if (o.partner_id && !seen.has(o.partner_id[0])) bucketOf.get(o.id)!.newCustomers += 1;
   }
-  return { retail, dineIn, tills, hours };
+  return { retail, dineIn, tills, hours, items };
 }
 
 /** An Odoo POS sale copied into Shopify by the "Odoo Connector" app. */
@@ -541,6 +582,35 @@ async function daySales(since: string, until: string) {
   const add = (b: Bucket, x: Bucket) => {
     for (const k of Object.keys(b) as Array<keyof Bucket>) b[k] += x[k];
   };
+  // Free gifts given (final list, bf_ff26_foc): cost per Shopify order name.
+  const giftCostOf = new Map<string, number>();
+  try {
+    const { data: gifts } = await db.from("bf_ff26_foc").select("order_name, sku, qty");
+    for (const g of gifts ?? []) {
+      const c = (costs?.bySku.get(String(g.sku).trim()) ?? 0) * (Number(g.qty) || 1);
+      giftCostOf.set(g.order_name, (giftCostOf.get(g.order_name) ?? 0) + c);
+    }
+  } catch (e) {
+    console.error("[bf-admin] gifts", String((e as Error).message).slice(0, 200));
+  }
+  // Shopify POS (2025 and before): Dine-In lines by vendor (bf_settings
+  // shopify_dine_in_vendors, e.g. "Fyxx | The Green Room") or a corkage line.
+  const { data: dv } = await db
+    .from("bf_settings")
+    .select("value")
+    .eq("key", "shopify_dine_in_vendors")
+    .maybeSingle();
+  const dineVendors = (Array.isArray(dv?.value) ? dv.value : []).map((x: unknown) =>
+    String(x).trim().toLowerCase(),
+  );
+  // deno-lint-ignore no-explicit-any
+  const isDineLine = (li: any) =>
+    dineVendors.includes(
+      String(li.vendor ?? "")
+        .trim()
+        .toLowerCase(),
+    ) || /corkage/i.test(String(li.title ?? ""));
+  const items: ItemSold[] = [];
   // In-store from Odoo POS itself for days after the move to Odoo; if Odoo
   // can't be read, fall back to the Odoo Connector's copies in Shopify.
   let odoo: { retail: Bucket; dineIn: Bucket } | null = null;
@@ -557,6 +627,7 @@ async function daySales(since: string, until: string) {
     try {
       const r = await odooPos(since, until, costs?.bySku ?? null);
       odoo = { retail: r.retail, dineIn: r.dineIn };
+      items.push(...r.items);
       r.hours.forEach((h, i) => {
         byHour[i].orders += h.orders;
         byHour[i].total = r3(byHour[i].total + h.total);
@@ -610,6 +681,19 @@ async function daySales(since: string, until: string) {
       // New customer: this order is the first order on their Shopify customer.
       if (!o.customer) one.noCustomer = 1;
       else if (o.customer.orders?.nodes?.[0]?.id === o.id) one.newCustomers = 1;
+      // Free gifts given with this order: their cost comes off the margin.
+      const giftCost = giftCostOf.get(o.name);
+      if (giftCost !== undefined) {
+        one.giftOrders = 1;
+        one.giftCost = giftCost;
+        one.margin -= giftCost;
+      }
+      // Shop orders are split into Retail and Dine-In lines (Shopify POS years).
+      const pos = channelOf(o) === "inStore";
+      const dinePart = bucket();
+      let dinePaid = 0;
+      let retailPaid = 0;
+      const orderItems: ItemSold[] = [];
       for (const li of o.lineItems?.nodes ?? []) {
         const gross = Number(li.originalTotalSet?.shopMoney?.amount) || 0;
         const off = (li.discountAllocations ?? []).reduce(
@@ -627,27 +711,56 @@ async function daySales(since: string, until: string) {
           one.giftCards += paid;
           continue;
         }
+        const dine = pos && isDineLine(li);
+        if (dine) dinePaid += paid;
+        else {
+          retailPaid += paid;
+          orderItems.push({
+            title: String(li.title ?? ""),
+            category: String(li.product?.productType ?? "").trim() || "Other",
+            qty: cur,
+            sales: paid,
+          });
+        }
+        // Margin of Dine-In lines is kept apart, then moved to the Dine-In row.
+        const tgt = dine ? dinePart : one;
         const sku = String(li.sku ?? li.variant?.sku ?? "").trim();
         const cost =
           (sku ? costs?.bySku.get(sku) : undefined) ??
           costs?.byVariant.get(String(li.variant?.legacyResourceId ?? ""));
         if (cost === undefined) {
-          one.uncosted += paid;
+          tgt.uncosted += paid;
           continue;
         }
         const net = paid / SALES_TAX;
-        one.costedNet += net;
-        one.margin += net - cost * cur;
+        tgt.costedNet += net;
+        tgt.margin += net - cost * cur;
       }
       // With Odoo POS read directly, the copies the Odoo Connector puts in
       // Shopify are left out (they would count the same till sales twice).
       if (useOdoo && isOdooConnector(o)) continue;
+      items.push(...orderItems);
+      const orderTotal = one.total;
+      if (pos && dinePaid > 0) {
+        // Sales split by line value; the order counts where most of its value is.
+        const share = dinePaid / (dinePaid + retailPaid || 1);
+        dinePart.total = one.total * share;
+        one.total -= dinePart.total;
+        if (dinePaid > retailPaid) {
+          for (const k of ["orders", "newCustomers", "noCustomer", "memberOrders"] as const) {
+            dinePart[k] = one[k];
+            one[k] = 0;
+          }
+        }
+        add(channels.dineIn, dinePart);
+        add(sum, dinePart);
+      }
       add(channels[channelOf(o)], one);
       if (isFridaySite(o)) add(fridaySite, one);
       add(sum, one);
       const hr = byHour[ammanHourOf(Date.parse(o.createdAt))];
       hr.orders += 1;
-      hr.total = r3(hr.total + one.total);
+      hr.total = r3(hr.total + orderTotal);
     }
     if (!d.orders.pageInfo.hasNextPage) break;
     after = d.orders.pageInfo.endCursor;
@@ -666,6 +779,10 @@ async function daySales(since: string, until: string) {
     inStoreSource: useOdoo ? "odoo_pos" : "shopify",
     odooTills,
     byHour,
+    items: {
+      byCategory: rollUp(items, (i) => i.category, 30),
+      top: rollUp(items, (i) => i.title, 15),
+    },
     cancelled,
     edited,
     tips,
