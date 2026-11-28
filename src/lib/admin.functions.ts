@@ -662,6 +662,9 @@ export type Bucket = {
   memberTotal: number;
   /** Orders that were the customer's first ever order. */
   newCustomers: number;
+  /** Orders that got a free gift and the gifts' cost (already taken off margin). */
+  giftOrders: number;
+  giftCost: number;
   /** Orders with no customer attached (new or returning unknown). */
   noCustomer: number;
 };
@@ -678,6 +681,22 @@ export type Channels = {
 };
 export type DaySales = Bucket & { channels: Channels };
 export type HourCount = { orders: number; total: number };
+export type ItemRow = { name: string; category: string; qty: number; sales: number };
+export type ItemsSold = { byCategory: ItemRow[]; top: ItemRow[] };
+function toItems(raw: unknown): ItemsSold | null {
+  const r = raw as { byCategory?: unknown; top?: unknown } | undefined;
+  if (!r || !Array.isArray(r.byCategory) || !Array.isArray(r.top)) return null;
+  const row = (x: unknown): ItemRow => {
+    const o = (x ?? {}) as Record<string, unknown>;
+    return {
+      name: String(o["name"] ?? ""),
+      category: String(o["category"] ?? ""),
+      qty: n(o["qty"]),
+      sales: n(o["sales"]),
+    };
+  };
+  return { byCategory: r.byCategory.map(row), top: r.top.map(row) };
+}
 function toHours(raw: unknown): HourCount[] | null {
   if (!Array.isArray(raw) || raw.length !== 24) return null;
   return raw.map((h) => {
@@ -710,6 +729,10 @@ export type SalesForecast = {
     tips: number;
   } | null;
   saleStart: string;
+  /** Items sold (Retail, no Dine-In): by category and best sellers, today and last year. */
+  items: { thisYear: ItemsSold | null; lastYear: ItemsSold | null };
+  /** Marketing costs for this year's Fyxx Friday (bf_settings.forecast_costs). */
+  costs: { metaAds: number; flyers: number } | null;
   /** Orders and sales per Amman hour (0 to 23): today and last year's Fyxx Friday. */
   hours: { thisYear: HourCount[] | null; lastYear: HourCount[] | null };
   /** Best Black Friday so far (bf_settings.forecast_record), e.g. 29 Nov 2024. */
@@ -729,6 +752,8 @@ function toBucket(raw: unknown): Bucket {
     memberOrders: n(r["memberOrders"]),
     memberTotal: n(r["memberTotal"]),
     newCustomers: n(r["newCustomers"]),
+    giftOrders: n(r["giftOrders"]),
+    giftCost: n(r["giftCost"]),
     noCustomer: n(r["noCustomer"]),
   };
 }
@@ -766,6 +791,7 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
       "forecast_too_early_before_hour",
       "forecast_buy_rates",
       "forecast_record",
+      "forecast_costs",
     ];
     const { data: rows, error } = await client
       .from("bf_settings")
@@ -821,6 +847,7 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
     let thisYear: DaySales | null = null;
     let thisYearHours: HourCount[] | null = null;
     let changes: SalesForecast["changes"] = null;
+    let thisYearItems: ItemsSold | null = null;
     let thisYearError: string | null = null;
     let pace: number | null = null;
     if (mode !== "before") {
@@ -836,6 +863,7 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
         if (r.status === "ok") {
           thisYear = { ...toBucket(r), channels: toChannels(r.channels) };
           thisYearHours = toHours(r["byHour"]);
+          thisYearItems = toItems(r["items"]);
           const c = (r["cancelled"] ?? {}) as Record<string, unknown>;
           const e = (r["edited"] ?? {}) as Record<string, unknown>;
           changes = {
@@ -868,7 +896,13 @@ export const getSalesForecast = createServerFn({ method: "GET" }).handler(
           orders: n(rec["orders"]),
         }
       : null;
+    const fc = cfg.get("forecast_costs") as Record<string, unknown> | undefined;
     return {
+      items: {
+        thisYear: thisYearItems,
+        lastYear: toItems((ly as Record<string, unknown> | undefined)?.["items"]),
+      },
+      costs: fc ? { metaAds: n(fc["meta_ads"]), flyers: n(fc["flyers"]) } : null,
       changes,
       saleStart: saleStart.toISOString(),
       hours: {

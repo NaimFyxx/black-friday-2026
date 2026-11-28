@@ -58,6 +58,7 @@ import {
   type Bucket,
   type DaySales,
   type HourCount,
+  type ItemsSold,
   type SourceRow,
   getOrdersList,
   getVisitors,
@@ -453,6 +454,8 @@ function sumBuckets(...bs: Bucket[]): Bucket {
     memberTotal: 0,
     newCustomers: 0,
     noCustomer: 0,
+    giftOrders: 0,
+    giftCost: 0,
   };
   for (const b of bs) for (const k of Object.keys(out) as Array<keyof Bucket>) out[k] += b[k];
   return out;
@@ -611,13 +614,7 @@ function SalesForecastSection() {
                       </div>
                     )}
                   {data.thisYear.costedNet > 0 && (
-                    <p className="text-sm">
-                      Margin{" "}
-                      <span className="tabular-nums">
-                        {formatJod(data.thisYear.margin)} (
-                        {marginPct(data.thisYear.margin, data.thisYear.costedNet)})
-                      </span>
-                    </p>
+                    <MarginBox day={data.thisYear} costs={data.costs} lastYear={data.lastYear} />
                   )}
                 </>
               ) : (
@@ -665,6 +662,9 @@ function SalesForecastSection() {
               saleStart={data.saleStart}
               now={data.now}
             />
+          )}
+          {data.items.thisYear && (
+            <ItemsSoldPanel thisYear={data.items.thisYear} lastYear={data.items.lastYear} />
           )}
         </div>
       )}
@@ -774,6 +774,170 @@ function RewardsSection() {
         </div>
       )}
     </Section>
+  );
+}
+
+/** Items sold by category (today vs 2025) and the best sellers. Retail only, no Dine-In. */
+function ItemsSoldPanel({
+  thisYear,
+  lastYear,
+}: {
+  thisYear: ItemsSold;
+  lastYear: ItemsSold | null;
+}) {
+  const cats = thisYear.byCategory.slice(0, 12);
+  const lyQty = new Map((lastYear?.byCategory ?? []).map((c) => [c.name, c.qty]));
+  const max = Math.max(1, ...cats.map((c) => Math.max(c.qty, lyQty.get(c.name) ?? 0)));
+  const totalQty = thisYear.byCategory.reduce((t, c) => t + c.qty, 0);
+  const lyTotal = (lastYear?.byCategory ?? []).reduce((t, c) => t + c.qty, 0);
+  const qty = (v: number) => v.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  return (
+    <Panel className="lg:col-span-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <p className="text-[10px] tracking-[0.2em] text-muted-foreground uppercase">
+          What sold (bottles and items, without Dine-In)
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {qty(totalQty)} items
+          {lyTotal > 0 ? ` (2025: ${qty(lyTotal)})` : ""}
+        </p>
+      </div>
+      <div className="mt-3 grid gap-6 lg:grid-cols-2">
+        <div>
+          <p className="mb-2 text-xs font-medium">By category</p>
+          <ul className="space-y-1.5">
+            {cats.map((c) => {
+              const ly = lyQty.get(c.name) ?? 0;
+              return (
+                <li
+                  key={c.name}
+                  className="grid grid-cols-[7rem_1fr_auto] items-center gap-2 text-xs"
+                >
+                  <span className="truncate">{c.name}</span>
+                  <span className="space-y-0.5">
+                    <span
+                      className="block h-2.5 rounded-sm bg-ff-red"
+                      style={{ width: `${(c.qty / max) * 100}%` }}
+                    />
+                    {ly > 0 && (
+                      <span
+                        className="block h-1.5 rounded-sm bg-foreground/15"
+                        style={{ width: `${(ly / max) * 100}%` }}
+                      />
+                    )}
+                  </span>
+                  <span className="text-right tabular-nums">
+                    {qty(c.qty)}
+                    {ly > 0 && <span className="ml-1 text-foreground/40">({qty(ly)})</span>}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Red: 2026. Grey (and in brackets): Fyxx Friday 2025.
+          </p>
+        </div>
+        <div>
+          <p className="mb-2 text-xs font-medium">Best sellers</p>
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-left text-muted-foreground">
+                <th className="pb-1 font-normal">#</th>
+                <th className="pb-1 font-normal">Product</th>
+                <th className="pb-1 text-right font-normal">Sold</th>
+                <th className="pb-1 text-right font-normal">Sales (JOD)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {thisYear.top.map((t, i) => (
+                <tr key={t.name} className="border-t border-border/60">
+                  <td className="py-1 pr-2 text-muted-foreground tabular-nums">{i + 1}</td>
+                  <td className="py-1 pr-2">
+                    {t.name}
+                    <span className="block text-[10px] text-muted-foreground">{t.category}</span>
+                  </td>
+                  <td className="py-1 text-right tabular-nums">{qty(t.qty)}</td>
+                  <td className="py-1 text-right tabular-nums">
+                    {t.sales.toLocaleString("en-US", {
+                      minimumFractionDigits: 3,
+                      maximumFractionDigits: 3,
+                    })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        Every channel (online, app, staff orders and the shop&apos;s Retail sales); Dine-In, gift
+        cards and tips left out. Category = Shopify product type (online) or Odoo product category
+        (shop).
+      </p>
+    </Panel>
+  );
+}
+
+/**
+ * Margins in the "so far today" box: Black Friday (without Dine-In), the whole
+ * day, free gifts (already taken off) and marketing (Meta ads, flyers).
+ */
+function MarginBox({
+  day,
+  costs,
+  lastYear,
+}: {
+  day: DaySales;
+  costs: { metaAds: number; flyers: number } | null;
+  lastYear: DaySales | null;
+}) {
+  const bf = minusBucket(day, day.channels.dineIn);
+  const lyBf = lastYear ? minusBucket(lastYear, lastYear.channels.dineIn) : null;
+  const marketing = costs ? costs.metaAds + costs.flyers : 0;
+  const line = (label: string, v: number, pct?: string, strong?: boolean) => (
+    <p className={`flex justify-between gap-3 text-sm ${strong ? "font-medium" : ""}`}>
+      <span>{label}</span>
+      <span className="text-right tabular-nums">
+        {formatJod(v)}
+        {pct ? <span className="ml-1 text-xs text-muted-foreground">{pct}</span> : null}
+      </span>
+    </p>
+  );
+  return (
+    <div className="space-y-1 border-t border-border pt-2">
+      {line(
+        "Black Friday margin (without Dine-In)",
+        bf.margin,
+        bf.costedNet > 0 ? marginPct(bf.margin, bf.costedNet) : undefined,
+        true,
+      )}
+      {lyBf && lyBf.costedNet > 0 && (
+        <p className="text-right text-[11px] text-muted-foreground tabular-nums">
+          2025: {formatJod(lyBf.margin)} ({marginPct(lyBf.margin, lyBf.costedNet)})
+        </p>
+      )}
+      {line(
+        "Whole day margin (incl. Dine-In)",
+        day.margin,
+        day.costedNet > 0 ? marginPct(day.margin, day.costedNet) : undefined,
+      )}
+      {day.giftOrders > 0 && (
+        <p className="text-xs text-muted-foreground">
+          Free gifts: {day.giftOrders} orders, cost {formatJod(day.giftCost)}, already taken off the
+          margins above.
+        </p>
+      )}
+      {costs && marketing > 0 && (
+        <>
+          <p className="pt-1 text-xs text-muted-foreground">
+            Marketing: Meta ads {formatJod(costs.metaAds)} + flyers {formatJod(costs.flyers)} ={" "}
+            {formatJod(marketing)}
+          </p>
+          {line("Black Friday margin after marketing", bf.margin - marketing, undefined, true)}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -911,13 +1075,17 @@ function ChannelCompare({
 }) {
   const digital = (d: DaySales) => sumBuckets(d.channels.website, d.channels.app);
   const staff = (d: DaySales) => sumBuckets(d.channels.staff, d.channels.other);
+  // Black Friday = everything except Dine-In (food and drinks at the bar aren't part of the sale).
+  const blackFriday = (d: DaySales) => minusBucket(d, d.channels.dineIn);
   const rows: Array<{
     label: string;
     sub?: boolean;
+    level2?: boolean;
     strong?: boolean;
     pick: (d: DaySales) => Bucket;
   }> = [
-    { label: "Total", strong: true, pick: (d) => d },
+    { label: "Black Friday total (without Dine-In)", strong: true, pick: blackFriday },
+    { label: "Whole day (incl. Dine-In)", strong: true, pick: (d) => d },
     {
       label: "Total without in-store and Dine-In",
       strong: true,
@@ -927,12 +1095,13 @@ function ChannelCompare({
     { label: "Digital (website + app)", strong: true, pick: digital },
     // Website split by the Shopify sales channel: "Online Store" = myfyxx.com,
     // "Lovable" = the Fyxx Friday site.
+    { label: "Website sales", sub: true, pick: (d) => d.channels.website },
     {
       label: "Online Store",
-      sub: true,
+      level2: true,
       pick: (d) => minusBucket(d.channels.website, d.channels.fridaySite),
     },
-    { label: "Lovable", sub: true, pick: (d) => d.channels.fridaySite },
+    { label: "Lovable", level2: true, pick: (d) => d.channels.fridaySite },
     { label: "Mobile app", sub: true, pick: (d) => d.channels.app },
     {
       label: "Shop (Retail + Dine-In)",
@@ -1034,7 +1203,13 @@ function ChannelCompare({
                 <td className={TD}>
                   <span
                     className={
-                      r.sub ? "block pl-4 text-muted-foreground" : r.strong ? "font-medium" : ""
+                      r.level2
+                        ? "block pl-8 text-[12px] text-muted-foreground"
+                        : r.sub
+                          ? "block pl-4 text-muted-foreground"
+                          : r.strong
+                            ? "font-medium"
+                            : ""
                     }
                   >
                     {r.label}

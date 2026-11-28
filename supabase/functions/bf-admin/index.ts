@@ -400,7 +400,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
   const dineIn = bucket();
   const hours = emptyHours();
   const tills: Record<string, { orders: number; total: number }> = {};
-  if (!orders.length) return { retail, dineIn, tills, hours, items: [] as ItemSold[] };
+  if (!orders.length) return { retail, dineIn, tills, hours, items: [] as ItemSold[], tips: 0 };
   for (const o of orders) {
     const t = Array.isArray(o.config_id) ? String(o.config_id[1]) : "unknown";
     tills[t] ??= { orders: 0, total: 0 };
@@ -455,12 +455,18 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     });
   }
   const items: ItemSold[] = [];
+  let tipsTotal = 0;
   // Line by line: sales and margin go to Dine-In or Retail by category.
   const value = new Map<number, { dine: number; retail: number }>();
   for (const l of lines) {
     const info = l.product_id ? prod.get(l.product_id[0]) : undefined;
-    const b = info?.dine ? dineIn : retail;
     const gross = Number(l.price_subtotal_incl) || 0;
+    // Tips are not sales (as in Shopify's reports): left out, counted apart.
+    if (info && /^tips?$/i.test(info.name.trim())) {
+      tipsTotal += gross;
+      continue;
+    }
+    const b = info?.dine ? dineIn : retail;
     const net = Number(l.price_subtotal) || 0;
     b.total += gross;
     // Items sold (Retail only): for the category and best-seller lists.
@@ -517,7 +523,7 @@ async function odooPos(since: string, until: string, bySku: Map<string, number> 
     for (const o of orders)
       if (o.partner_id && !seen.has(o.partner_id[0])) bucketOf.get(o.id)!.newCustomers += 1;
   }
-  return { retail, dineIn, tills, hours, items };
+  return { retail, dineIn, tills, hours, items, tips: r3(tipsTotal) };
 }
 
 /** An Odoo POS sale copied into Shopify by the "Odoo Connector" app. */
@@ -628,6 +634,7 @@ async function daySales(since: string, until: string) {
       const r = await odooPos(since, until, costs?.bySku ?? null);
       odoo = { retail: r.retail, dineIn: r.dineIn };
       items.push(...r.items);
+      tips = r3(tips + r.tips);
       r.hours.forEach((h, i) => {
         byHour[i].orders += h.orders;
         byHour[i].total = r3(byHour[i].total + h.total);
@@ -709,6 +716,12 @@ async function daySales(since: string, until: string) {
         const paid = Math.max(0, gross - off) * share;
         if (li.isGiftCard) {
           one.giftCards += paid;
+          continue;
+        }
+        // A "Tip" line (Shopify POS) is a tip, not a sale.
+        if (/^tips?$/i.test(String(li.title ?? "").trim())) {
+          one.total -= paid;
+          tips = r3(tips + paid);
           continue;
         }
         const dine = pos && isDineLine(li);
