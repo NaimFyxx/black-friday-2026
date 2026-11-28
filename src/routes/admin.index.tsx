@@ -1254,10 +1254,12 @@ function ChannelCompare({
         orders that were the shopper&apos;s first ever Fyxx order (orders with no customer attached,
         common in store, can&apos;t be counted). Margin as in Zeid&apos;s sale sheet: price after
         discounts without the 16% sales tax, minus cost, on items with a known cost; free gifts
-        count as cost, gift cards left out. 2025 margin uses this year&apos;s costs. In 2026 the
-        shop&apos;s sales are read straight from Odoo POS and split by product category, not by
-        till: food, cocktails, Spirits (BTG), mixers, water and coffee are Dine-In, everything else
-        is Retail (an order counts where most of its value is). In 2025 in-store was Shopify POS.
+        count as cost, gift cards left out. 2025 margin uses Shopify&apos;s cost at the time of
+        sale; 2026 uses Odoo costs, with the free gifts&apos; cost taken off. Dine-In 2025 = The
+        Green Room vendors and corkage. In 2026 the shop&apos;s sales are read straight from Odoo
+        POS and split by product category, not by till: food, cocktails, Spirits (BTG), mixers,
+        water and coffee are Dine-In, everything else is Retail (an order counts where most of its
+        value is). In 2025 in-store was Shopify POS.
       </p>
     </Panel>
   );
